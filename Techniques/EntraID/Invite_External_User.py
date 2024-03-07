@@ -1,6 +1,5 @@
 # Invite external user to tenant
 from core.GraphFunctions import graph_post_request
-from dash import dcc,html
 
 def TechniqueMain(external_user_email):
     endpoint_url = f"https://graph.microsoft.com/v1.0/invitations"

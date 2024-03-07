@@ -1,6 +1,5 @@
 # Modify named locations to add trusted IP
 from core.GraphFunctions import graph_post_request
-from dash import dcc,html
 
 def TechniqueMain(trusted_policy_name, ip_addr):
     '''
@@ -26,34 +25,6 @@ def TechniqueMain(trusted_policy_name, ip_addr):
     trusted_ip_config = graph_post_request(url = endpoint_url, data = data)
     print(trusted_ip_config)
     return trusted_ip_config
-
-def TechniqueConfigDisplay():
-    '''This function returns the config display for all inputs required for technique execution'''
-    technique_config = []
-    technique_config.append(html.Br())
-    technique_config.append(html.H5("Attack Technique Config"))
-    technique_config.append(html.B("New Policy Name: "))
-    technique_config.append(
-        dcc.Input(
-            id = "mod-trstd-ip-config-policy-name-text-input",
-            type = "text",
-            placeholder = "Attacker Trusted IP Policy",
-        )
-    )
-    technique_config.append(html.Br())
-    technique_config.append(html.Br())
-    technique_config.append(html.B("IP Address with subnet: "))
-    technique_config.append(
-        dcc.Input(
-            id = "mod-trstd-ip-config-ip-text-input",
-            type = "text",
-            placeholder = "1.1.1.1/22",
-        )
-    )
-    technique_config.append(html.Br())
-    technique_config.append(html.Br())
-
-    return technique_config
 
 def TechniqueInputSrc() -> list:
     '''Returns the input fields required as parameters for the technique execution'''

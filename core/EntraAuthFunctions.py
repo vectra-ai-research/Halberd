@@ -58,9 +58,6 @@ def AzureAppAccess(client_id, client_secret,tenant_id, save_token = True):
         if 'access_token' in token_result:
             access_token = token_result['access_token']
         else:
-            # print(token_result.get('error'))
-            # print(token_result.get('error_description'))
-            # print(token_result.get('correlation'))
             WriteAppLog("AzureAppAccess: Token request failed")
 
         headers = {'Content-Type': 'application/json','Authorization': 'Bearer ' + access_token}
@@ -80,7 +77,7 @@ def AzureAppAccess(client_id, client_secret,tenant_id, save_token = True):
 def SaveTokens(new_token):
 
     '''Add new access tokens to tokens yaml file'''
-    tokens_file = "./Local/MSFT_Graph_Tokens.yml"
+    tokens_file = "./local/MSFT_Graph_Tokens.yml"
 
     '''If read fails because file does not exist - create file and initialize tokens array'''
     try:
@@ -108,7 +105,7 @@ def SaveTokens(new_token):
 def FetchAllTokens():
 
     '''Fetch access tokens from the tokens yaml file'''
-    tokens_file = "./Local/MSFT_Graph_Tokens.yml"
+    tokens_file = "./local/MSFT_Graph_Tokens.yml"
 
     if tokens_file != None:
         with open(tokens_file, "r") as tokens_data:
@@ -123,7 +120,7 @@ def FetchAllTokens():
 def SetSelectedToken(access_token):
 
     '''Set a token as selected for use all across by the user'''
-    tokens_file = "./Local/MSFT_Graph_Tokens.yml"
+    tokens_file = "./local/MSFT_Graph_Tokens.yml"
 
     if tokens_file != None:
         with open(tokens_file, "r") as tokens_data:
@@ -140,7 +137,7 @@ def SetSelectedToken(access_token):
 def FetchSelectedToken():
 
     '''Fetch token selected by user for use'''
-    tokens_file = "./Local/MSFT_Graph_Tokens.yml"
+    tokens_file = "./local/MSFT_Graph_Tokens.yml"
 
     if tokens_file != None:
         with open(tokens_file, "r") as tokens_data:

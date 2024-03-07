@@ -5,7 +5,7 @@ import msal
 
 def TechniqueMain(new_token):
     '''Add new access tokens to tokens yaml file'''
-    tokens_file = "./Local/MSFT_Graph_Tokens.yml"
+    tokens_file = "./local/MSFT_Graph_Tokens.yml"
 
     '''If read fails because file does not exist - create file and initialize tokens array'''
     try:
