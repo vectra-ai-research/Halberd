@@ -1,6 +1,7 @@
 # Halberd
-![logo](/assets/favicon.ico)
-
+<p align="center">
+    ![logo](/assets/favicon.ico)
+</p>
 Halberd is an open-source security testing tool that enables cyber security professionals to proactively assess their security measures by executing a comprehensive array of attack techniques across multiple surfaces.
 
 Developed & maintained by Vectra AI, Halberd's intuitive web interface makes effective testing easier than ever.
@@ -17,7 +18,7 @@ $ python3 Halbred.py
 
 ### Usage
 ```
-Access: [http://127.0.0.1:8050/](http://127.0.0.1:8050/)
+Access: http://127.0.0.1:8050/
 ```
 
 ### Requirements
