@@ -1,7 +1,7 @@
 # Halberd
-<p align="center">
-    ![logo](/assets/favicon.ico)
-</p>
+
+![logo](/assets/favicon.ico)
+
 Halberd is an open-source security testing tool that enables cyber security professionals to proactively assess their security measures by executing a comprehensive array of attack techniques across multiple surfaces.
 
 Developed & maintained by Vectra AI, Halberd's intuitive web interface makes effective testing easier than ever.
