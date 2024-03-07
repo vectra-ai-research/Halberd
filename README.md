@@ -10,10 +10,10 @@ Harnessing a collection of meticulously crafted executable attack techniques, Ha
 
 ## Setup
 ```
-$ git clone https://github.com/vectra-ai-research/Halbred
-$ cd Halbred
+$ git clone https://github.com/vectra-ai-research/Halberd
+$ cd Halberd
 $ pip install -r requirements.txt
-$ python3 Halbred.py
+$ python3 Halberd.py
 ```
 
 ### Usage
@@ -36,7 +36,7 @@ Access: http://127.0.0.1:8050/
 - Download Testing Report
 
 ## Getting Started
-Once you are setup, access Halbert by visiting http://127.0.0.1:8050/ in your browser. 
+Once you are setup, access Halberd by visiting http://127.0.0.1:8050/ in your browser. 
 
 The `Access` page allows your to manage access token and review your current access to various environments.
 
@@ -53,7 +53,7 @@ Attack Modules require different access & privileges for execution. Start by lev
 - Enhance Usability - Add new useful features & visualizations to assist in testing process and post testing evaluation
 
 ## Contribute
-- Thanks for considering contributing to Halbert! Your contributions will help make security testing easier & better.
+- Thanks for considering contributing to Halberd! Your contributions will help make security testing easier & better.
 - Submit bugs & issues directly to GitHub Issues
 - Share ideas or suggestions in GitHub Discussions
 
