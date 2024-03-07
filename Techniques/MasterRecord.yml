@@ -1,0 +1,620 @@
+### Sample record ###
+# Attack Surfaces : [EntraID, Azure, AWS, M365]
+# Template
+# EntraID001 :
+#   Name: "EntraID Password Access"
+#   AttackSurface: "EntraID"
+#   ExecutionPath: EntraID/Access.py
+#   References:
+#     MITRE:
+#       T1078.004 :
+#         Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
+#         Technique : Valid Accounts
+#         SubTechnique: "Cloud Accounts"
+#         TechniqueID : T1078.004
+#     AzureThreatResearchMatrix:
+#       - ~
+#   Resources:
+#     - https://attack.mitre.org/techniques/T1078/004/
+#   Notes:
+#     - Any additional instruction on technique usage
+### Sample Record End ###
+
+###Entra ID Techniques###
+EntraID-001 :
+  Name: "EntraID Delegated Access"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Delegated_Access.py
+  References:
+    MITRE:
+      T1078.004 :
+        Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
+        Technique : Valid Accounts
+        SubTechnique: "Cloud Accounts"
+        TechniqueID : T1078.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1078/004/
+  Notes:
+    - N/A
+
+EntraID-002 :
+  Name: "Entra ID App Only Access"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/App_Only_Access.py
+  References:
+    MITRE:
+      T1078.004 :
+        Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
+        Technique : Valid Accounts
+        SubTechnique: Cloud Accounts
+        TechniqueID : T1078.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1078/004/
+  Notes:
+    - N/A
+
+EntraID-003 :
+  Name: "Entra ID Direct Token Access"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Direct_Token_Access.py
+  References:
+    MITRE:
+      T1078.004 :
+        Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
+        Technique : Valid Accounts
+        SubTechnique: Cloud Accounts
+        TechniqueID : T1078.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1078/004/
+  Notes:
+    - N/A
+
+EntraID-004 :
+  Name: "Create Backdoor Account in Tenant"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Create_Backdoor_Account.py
+  References:
+    MITRE:
+      T1136.003 :
+        Tactic : [Persistence]
+        Technique : Create Account
+        SubTechnique: Cloud Account
+        TechniqueID : T1136.003
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1136/003/
+  Notes:
+    - Requires authenticated session
+
+EntraID-005 :
+  Name: "Modify Trusted IP"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Modify_Trusted_IP.py
+  References:
+    MITRE:
+      T1136.003 :
+        Tactic : [Defense Evasion, Privilege Escalation]
+        Technique : Domain Policy Modification
+        SubTechnique: Cloud Account
+        TechniqueID : T1136.003
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1484/
+    - https://learn.microsoft.com/en-us/graph/api/conditionalaccessroot-post-namedlocations?view=graph-rest-1.0&tabs=http
+  Notes:
+    - N/A
+
+EntraID-006 :
+  Name: "Remove User Account"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Remove_Account.py
+  References:
+    MITRE:
+      T1531 :
+        Tactic : [Impact]
+        Technique : Account Access Removal
+        SubTechnique: ~
+        TechniqueID : T1531
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1531/
+  Notes:
+    - N/A
+
+EntraID-007 :
+  Name: "Recon Tenant Info"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Recon_Tenant_Info.py
+  References:
+    MITRE:
+      T1531 :
+        Tactic : [Discovery]
+        Technique : ~
+        SubTechnique: ~
+        TechniqueID : T1531
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/tactics/TA0007/
+  Notes:
+    - N/A
+
+EntraID-008 :
+  Name: "Discover Applications"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Discover_Applications.py
+  References:
+    MITRE:
+      T1531 :
+        Tactic : [Discovery]
+        Technique : Account Discovery
+        SubTechnique: Cloud Account
+        TechniqueID : T1531
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1087/004/
+  Notes:
+    - N/A
+
+EntraID-009 :
+  Name: "Discover Groups"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Discover_Groups.py
+  References:
+    MITRE:
+      T1069.003 :
+        Tactic : [Discovery]
+        Technique : Permission Groups Discovery
+        SubTechnique: ~
+        TechniqueID : T1069.003
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1069/003/
+  Notes:
+    - N/A
+
+EntraID-010 :
+  Name: "Discover User Accounts"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Discover_User_Accounts.py
+  References:
+    MITRE:
+      T1087.004 :
+        Tactic : [Discovery]
+        Technique : Account Discovery
+        SubTechnique: Cloud Account
+        TechniqueID : T1087.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1087/004/
+  Notes:
+    - N/A
+
+EntraID-011 :
+  Name: "Discover Conditional Access Policies"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Discover_Conditional_Access_Policies.py
+  References:
+    MITRE:
+      T1518.001 :
+        Tactic : [Discovery]
+        Technique : Software Discovery
+        SubTechnique: ~
+        TechniqueID : T1518.001
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1518/001/
+  Notes:
+    - N/A
+
+EntraID-012 :
+  Name: "Discover User One Drive"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Discover_One_Drive.py
+  References:
+    MITRE:
+      T1526 :
+        Tactic : [Discovery]
+        Technique : Cloud Service Discovery
+        SubTechnique: ~
+        TechniqueID : T1526
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1526/
+  Notes:
+    - N/A
+
+EntraID-013 :
+  Name: "Discover SharePoint Sites"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Discover_SP_Sites.py
+  References:
+    MITRE:
+      T1526 :
+        Tactic : [Discovery]
+        Technique : Cloud Service Discovery
+        SubTechnique: ~
+        TechniqueID : T1526
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1526/
+  Notes:
+    - N/A
+
+EntraID-014 :
+  Name: "Bruteforce Graph Access Token - Delegated Access"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Bruteforce_Graph_API_Tokens.py
+  References:
+    MITRE:
+      T1078.004 :
+        Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
+        Technique : Valid Accounts
+        SubTechnique: Cloud Accounts
+        TechniqueID : T1078.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1526/
+  Notes:
+    - N/A
+
+EntraID-015 :
+  Name: "Invite Enternal User to Tenant"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Invite_External_User.py
+  References:
+    MITRE:
+      T1136.003 :
+        Tactic : [Persistence]
+        Technique : Create Account
+        SubTechnique: Cloud Account
+        TechniqueID : T1136.003
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1136/003/
+  Notes:
+    - N/A
+
+EntraID-016 :
+  Name: "EntraID Device Code Flow Access"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Device_Code_Flow_Access.py
+  References:
+    MITRE:
+      T1078.004 :
+        Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
+        Technique : Valid Accounts
+        SubTechnique: "Cloud Accounts"
+        TechniqueID : T1078.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1078/004/
+  Notes:
+    - N/A
+
+EntraID-017 :
+  Name: "Bruteforce Password"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Bruteforce_Password_Access.py
+  References:
+    MITRE:
+      T1078.004 :
+        Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
+        Technique : Valid Accounts
+        SubTechnique: "Cloud Accounts"
+        TechniqueID : T1078.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1078/004/
+  Notes:
+    - N/A
+
+EntraID-018 :
+  Name: "Add User to Group"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Add_User_To_Group.py
+  References:
+    MITRE:
+      T1098.003 :
+        Tactic : [Persistence, Privilege Escalation]
+        Technique : Account Manipulation
+        SubTechnique: Additional Cloud Roles
+        TechniqueID : T1098.003
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1098/003/
+  Notes:
+    - N/A
+
+EntraID-019 :
+  Name: "Assign Directory Role to User"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Assign_Directory_Role_To_User.py
+  References:
+    MITRE:
+      T1098.003 :
+        Tactic : [Persistence, Privilege Escalation]
+        Technique : Account Manipulation
+        SubTechnique: Additional Cloud Roles
+        TechniqueID : T1098.003
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1098/003/
+  Notes:
+    - N/A
+
+EntraID-020 :
+  Name: "Password Spray"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Password_Spray.py
+  References:
+    MITRE:
+      T1078.004 :
+        Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
+        Technique : Valid Accounts
+        SubTechnique: "Cloud Accounts"
+        TechniqueID : T1078.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1078/004/
+    - https://github.com/dafthack/MSOLSpray
+  Notes:
+    - N/A
+
+###AWS Techniques###
+AWS-001 :
+  Name: "AWS Access"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/Access.py
+  References:
+    MITRE:
+      T1078.004 :
+        Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
+        Technique : Valid Accounts
+        SubTechnique: "Cloud Accounts"
+        TechniqueID : T1078.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1526/
+  Notes:
+    - N/A
+
+AWS-002 :
+  Name: "List Buckets"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/List_Buckets.py
+  References:
+    MITRE:
+      T1580 :
+        Tactic : [Discovery]
+        Technique : Cloud Infrastructure Discovery
+        SubTechnique: ~
+        TechniqueID : T1580
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1580/
+  Notes:
+    - N/A
+
+AWS-003 :
+  Name: "Get Bucket ACL"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/Get_Bucket_ACL.py
+  References:
+    MITRE:
+      T1580 :
+        Tactic : [Discovery]
+        Technique : Cloud Infrastructure Discovery
+        SubTechnique: ~
+        TechniqueID : T1580
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1580/
+  Notes:
+    - N/A
+
+AWS-004 :
+  Name: "List Bucket Objects"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/List_Bucket_Objects.py
+  References:
+    MITRE:
+      T1580 :
+        Tactic : [Discovery]
+        Technique : Cloud Infrastructure Discovery
+        SubTechnique: ~
+        TechniqueID : T1580
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1580/
+  Notes:
+    - N/A
+
+AWS-005 :
+  Name: "Download Bucket"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/Download_Bucket.py
+  References:
+    MITRE:
+      T1580 :
+        Tactic : [Collection]
+        Technique : Automated Collection
+        SubTechnique: ~
+        TechniqueID : T1119
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1119/
+  Notes:
+    - N/A
+
+###M365 Techniques###
+M365-001 :
+  Name: "Setup Email Forwarding Rule"
+  AttackSurface: "M365"
+  ExecutionPath: /M365/Email_Forwarding_Rule.py
+  References:
+    MITRE:
+      T1114.003 :
+        Tactic : [Collection]
+        Technique : Email Collection
+        SubTechnique: Email Forwarding Rule
+        TechniqueID : T1114.003
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1114/003/
+  Notes:
+    - N/A
+
+M365-002 :
+  Name: "Setup Email Deletion Rule"
+  AttackSurface: "M365"
+  ExecutionPath: /M365/Email_Deletion_Rule.py
+  References:
+    MITRE:
+      T1564.008 :
+        Tactic : [Defense Evasion]
+        Technique : Hide Artifacts
+        SubTechnique: Email Hiding Rules
+        TechniqueID : T1564.008
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1564/008/
+  Notes:
+    - N/A
+
+M365-003 :
+  Name: "Search User Teams Chat"
+  AttackSurface: "M365"
+  ExecutionPath: /M365/Search_Teams_Chat.py
+  References:
+    MITRE:
+      T1530 :
+        Tactic : [Collection]
+        Technique : Data from Cloud Storage
+        SubTechnique: ~
+        TechniqueID : T1530
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1530/
+  Notes:
+    - N/A
+
+M365-004 :
+  Name: "Search Teams Messages"
+  AttackSurface: "M365"
+  ExecutionPath: /M365/Search_Teams_Messages.py
+  References:
+    MITRE:
+      T1213 :
+        Tactic : [Collection]
+        Technique : Data from Information Repositories
+        SubTechnique: ~
+        TechniqueID : T1213
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1213/
+  Notes:
+    - N/A
+
+M365-005 :
+  Name: "Search User SP One Drive"
+  AttackSurface: "M365"
+  ExecutionPath: /M365/Search_User_SP_One_Drive.py
+  References:
+    MITRE:
+      T1213.002 :
+        Tactic : [Collection]
+        Technique : Data from Information Repositories
+        SubTechnique: Sharepoint
+        TechniqueID : T1213.002
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1213/002/
+  Notes:
+    - N/A
+
+M365-006 :
+  Name: "Search User Outlook Messages"
+  AttackSurface: "M365"
+  ExecutionPath: /M365/Search_Outlook_Messages.py
+  References:
+    MITRE:
+      T1213 :
+        Tactic : [Collection]
+        Technique : Data from Information Repositories
+        SubTechnique: ~
+        TechniqueID : T1213
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1213/
+  Notes:
+    - N/A
+
+M365-007 :
+  Name: "Send Email (Spear-Phishing)"
+  AttackSurface: "M365"
+  ExecutionPath: /M365/Send_Outlook_Email.py
+  References:
+    MITRE:
+      T1534 :
+        Tactic : [Lateral Movement]
+        Technique : Internal Spearphishing
+        SubTechnique: ~
+        TechniqueID : T1534
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1534/
+  Notes:
+    - N/A
+
+M365-008 :
+  Name: "Exfil User Mailbox"
+  AttackSurface: "M365"
+  ExecutionPath: /M365/Exfil_User_Mailbox.py
+  References:
+    MITRE:
+      T1114.002 :
+        Tactic : [Collection]
+        Technique : Email Collection
+        SubTechnique: Remote Email Collection
+        TechniqueID : T1114.002
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1114/002/
+  Notes:
+    - N/A
