@@ -10,7 +10,7 @@ Harnessing a collection of meticulously crafted executable attack techniques, Ha
 
 ## Setup
 ```
-$ git clone https://github.com/vectra-ai-research/Halberd
+$ git clone https://github.com/vectra-ai-research/Halberd.git
 $ cd Halberd
 $ pip install -r requirements.txt
 $ python3 Halberd.py
