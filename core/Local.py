@@ -1,6 +1,7 @@
 import csv
 from datetime import datetime
 from pathlib import Path
+import os
 
 def WriteAppLog(action, result = "success"):
     log_file = "./local/App_Log.csv"
@@ -25,6 +26,11 @@ def ReadTraceLog():
     return csv.DictReader(f)
 
 def InitializationCheck():
+    if Path("./local").exists():
+        pass
+    else:
+        os.makedirs("./local")
+
     if Path("./local/App_Log.csv").exists():
         pass
     else:
