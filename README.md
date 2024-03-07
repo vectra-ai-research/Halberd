@@ -36,9 +36,13 @@ Access: [http://127.0.0.1:8050/](http://127.0.0.1:8050/)
 
 ## Getting Started
 Once you are setup, access Halbert by visiting http://127.0.0.1:8050/ in your browser. 
+
 The `Access` page allows your to manage access token and review your current access to various environments.
+
 The `Attack` page allows your to view and execute various attack techniques. Select an attack surface Tab to see its available Tactics & Attack Modules. 
+
 For example, to get started with EntraID / M365, go to `Attack` -> `EntraID` -> `Initial Access` and choose a module to establish access. Once done, go back to `Access` page to view details of your access.
+
 The `Attack Trace` page displays trace of all executed attack techniques and allows users to download a report.
 
 Attack Modules require different access & privileges for execution. Start by leveraging modules within `Initial Access` tactic under each attack surface to continue testing with other attack modules. 
