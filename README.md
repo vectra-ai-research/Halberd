@@ -2,13 +2,18 @@
 
 ![logo](/assets/favicon.ico)
 
-Halberd is an open-source security testing tool that enables cyber security professionals to proactively assess their security measures by executing a comprehensive array of attack techniques across multiple surfaces.
+Halberd is an open-source security testing tool to proactively assess security measures by executing a comprehensive array of attack techniques across multiple surfaces.
 
 Developed & maintained by Vectra AI, Halberd's intuitive web interface makes effective testing easier than ever.
 
-Harnessing a collection of meticulously crafted executable attack techniques, Halberd enables users to evaluate their defenses across various attack vectors, including Entra ID, M365, Azure and AWS.
+Harnessing a collection of meticulously crafted executable attack techniques, Halberd enables users to evaluate their defenses across various attack vectors, including [Entra ID](https://learn.microsoft.com/en-us/entra/identity/), [M365](https://learn.microsoft.com/en-us/microsoft-365/?view=o365-worldwide), [Azure](https://learn.microsoft.com/en-us/azure/?product=popular) and [AWS](https://docs.aws.amazon.com).
 
 ## Setup
+
+Halberd is an easy & quick to setup tool.
+
+### Install
+
 ```
 $ git clone https://github.com/vectra-ai-research/Halberd.git
 $ cd Halberd
@@ -16,16 +21,20 @@ $ pip install -r requirements.txt
 $ python3 Halberd.py
 ```
 
-### Usage
+Checkout detailed instructions in [deployment guide](https://github.com/vectra-ai-research/Halberd/wiki/Deployment-Guide). 
+
+### Launch
 ```
 Access: http://127.0.0.1:8050/
 ```
 
 ### Requirements
-- Officially supported in Linux and macOS
-- Python 3.9+
+- Officially supported on Linux and macOS
+- [Python 3.9+](https://www.python.org/downloads/) & few Python libraries
 
 ## Overview
+[Module details](https://github.com/vectra-ai-research/Halberd/wiki/Module-Details) & [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) elaborates on specific testing modules and other capabalities of Halberd. 
+
 - Intutive Web-Interface for security testing
 - Entra ID Testing Modules
 - M365 Testing Modules
@@ -33,29 +42,29 @@ Access: http://127.0.0.1:8050/
 - AWS Testing Modules
 - Useful Visualizations
 - Access Manager
-- Download Testing Report
+- Reporting
 
 ## Getting Started
-Once you are setup, access Halberd by visiting http://127.0.0.1:8050/ in your browser. 
 
-The `Access` page allows your to manage access token and review your current access to various environments.
+Once Halberd is deployed, start testing by visiting http://127.0.0.1:8050/ in your browser. 
 
-The `Attack` page allows your to view and execute various attack techniques. Select an attack surface Tab to see its available Tactics & Attack Modules. 
+`Access` allows users to manage access tokens / clients and review current access information for various targets.
 
-For example, to get started with EntraID / M365, go to `Attack` -> `EntraID` -> `Initial Access` and choose a module to establish access. Once done, go back to `Access` page to view details of your access.
+`Attack` allows users to view and execute attack techniques. Select an attack surface from the attack tab to view available tactics & attack modules. 
 
-The `Attack Trace` page displays trace of all executed attack techniques and allows users to download a report.
+For example, to get started with EntraID testing, go to `Attack` -> `EntraID` -> `Initial Access` -> `EntraID Delegated Access`. Once done, go back to `Access` to view details of your access.
 
-Attack Modules require different access & privileges for execution. Start by leveraging modules within `Initial Access` tactic under each attack surface to continue testing with other attack modules. 
+`Attack Trace` displays trace of all executed attack techniques and allows users to download a report.
 
-## Project Development Goals
-- Increase Attack Testing Coverage - Add new attack techniques to allow for more robust testing
-- Enhance Usability - Add new useful features & visualizations to assist in testing process and post testing evaluation
+Attack modules require varying access & privileges for successful execution. Start by establishing relevant access using `Initial Access` tactic under each attack surface to continue testing with other attack modules. 
+
+Checkout [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) for more information on testing with Halberd. 
 
 ## Contribute
 - Thanks for considering contributing to Halberd! Your contributions will help make security testing easier & better.
-- Submit bugs & issues directly to GitHub Issues
-- Share ideas or suggestions in GitHub Discussions
+- Submit bugs & issues [here](https://github.com/vectra-ai-research/Halberd/issues/new)
+
+If you are interested in contributing to Halberd, checkout [development focus areas](https://github.com/vectra-ai-research/Halberd/wiki/Contributions#areas-of-focus) & guidance on [contributions](https://github.com/vectra-ai-research/Halberd/wiki/Contributions).
 
 ## Contact
 If you found this tool useful, want to share an interesting use-case or idea - reach out & share them
