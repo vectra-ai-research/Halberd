@@ -52,9 +52,11 @@ Once Halberd is deployed, start testing by visiting http://127.0.0.1:8050/ in yo
 
 `Attack` allows users to view and execute attack techniques. Select an attack surface from the attack tab to view available tactics & attack modules. 
 
-For example, to get started with EntraID testing, go to `Attack` -> `EntraID` -> `Initial Access` -> `EntraID Delegated Access`. Once done, go back to `Access` to view details of your access.
+> Example - To get started with EntraID testing, navigate to `Attack` -> `EntraID` -> `Initial Access` -> `EntraID Delegated Access`. Enter the required config and hit `Execute Technique`. Once done, navigate back to `Access` to view details of your access.
 
 `Attack Trace` displays trace of all executed attack techniques and allows users to download a report.
+
+`Entity Map` executes sequence of automatic recon and generates an interactive graph of target entity's access & privilege in Entra ID environment.
 
 Attack modules require varying access & privileges for successful execution. Start by establishing relevant access using `Initial Access` tactic under each attack surface to continue testing with other attack modules. 
 
