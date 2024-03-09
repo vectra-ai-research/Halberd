@@ -1,3 +1,7 @@
+'''
+Name : TechniqueExecutor.py
+Description : Loads techniques functions to display technique config, logs event on technique execution and parses technique response to display standardized output in 'execution-output-div'.
+'''
 import yaml
 import re
 import importlib
@@ -9,6 +13,7 @@ master_record_file = "./Techniques/MasterRecord.yml"
 with open(master_record_file, "r") as master_record_data:
     techniques_info = yaml.safe_load(master_record_data)
 
+
 def TechniqueInputs(t_id):
     execution_path = techniques_info[t_id]['ExecutionPath']
 
@@ -18,6 +23,7 @@ def TechniqueInputs(t_id):
 
     return TechniqueExecutionFunction()
 
+# function to parse technique output and return standardized output
 def TechniqueOutput(t_id, technique_input, file_content = None):
 
     execution_path = techniques_info[t_id]['ExecutionPath']
@@ -39,7 +45,7 @@ def TechniqueOutput(t_id, technique_input, file_content = None):
         
         output_div_elements = []
         for item in response:
-            output_div_elements.append(html.Div(str(item), style={"overflowY": "scroll", "border":"1px solid #ccc"}))
+            output_div_elements.append(html.Div(str(item), style={"overflowY": "auto", "border":"1px solid #ccc"}))
             output_div_elements.append(html.Br())
 
         return html.Div(output_div_elements)
@@ -50,11 +56,11 @@ def TechniqueOutput(t_id, technique_input, file_content = None):
         
         output_div_elements = []
         for item in response:
+            output_div_elements.append(html.H3(item))
             output_div_elements.append(
                 html.Div([
-                    html.Div(item),
                     html.Div(str(response[item])),
-                ], style={"overflowY": "scroll", "border":"1px solid #ccc"})
+                ], style={"overflowY": "auto", "border":"1px solid #ccc"})
             )
             output_div_elements.append(html.Br())
 
@@ -63,8 +69,7 @@ def TechniqueOutput(t_id, technique_input, file_content = None):
     else:
         return str(response)
 
-
-
+# function to log event on execution
 def LogEventOnTrigger(tactic, t_id):
     technique_name = techniques_info[t_id]['Name']
     attack_surface = techniques_info[t_id]['AttackSurface']
