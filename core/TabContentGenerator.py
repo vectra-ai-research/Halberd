@@ -1,6 +1,6 @@
 '''
 Name : TabContentGenerator.py
-Description : Generates content on 'Attack' page based on the attack surface tab selected. Returns output to 'tabs-content-div' 
+Description : Generates 'Attack' page content based on the attack surface tab selected. Returns output to 'tabs-content-div'.
 '''
 import dash_bootstrap_components as dbc
 from dash import dcc,html
@@ -55,13 +55,13 @@ def TabContentGenerator(tab):
     tab_content_elements.append(html.Br())
     tab_content_elements.append(html.Br())
 
-    # add element to display output of technique execution
+    # add element to display output of executed technique
     tab_content_elements.append(html.H4("Response"))
     tab_content_elements.append(
         dcc.Loading(
             id="attack-output-loading",
             type="default",
-            children=html.Div(id= "execution-output-div",style={"height":"40vh", "overflowY": "auto", "border":"1px solid #ccc"})
+            children=html.Div(id= "execution-output-div",style={"height":"40vh", "overflowY": "auto", "border":"1px solid #ccc", "padding-right": "10px", "padding-left": "10px", "padding-top": "10px", "padding-bottom": "10px"})
         )
     )
 
