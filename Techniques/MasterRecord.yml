@@ -381,7 +381,8 @@ EntraID-020 :
     - https://attack.mitre.org/techniques/T1078/004/
     - https://github.com/dafthack/MSOLSpray
   Notes:
-    - N/A
+    - The response contains access tokens for usernames with successful authentication.
+    - The module also returns error codes for all usernames. Review error codes to identify valid usersnames in the target environment.  
 
 ###AWS Techniques###
 AWS-001 :
@@ -399,13 +400,14 @@ AWS-001 :
       - ~
   Resources:
     - https://attack.mitre.org/techniques/T1526/
+    - https://docs.aws.amazon.com/general/latest/gr/rande.html#regional-endpoints
   Notes:
     - N/A
 
 AWS-002 :
-  Name: "List Buckets"
+  Name: "List S3 Buckets"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/List_Buckets.py
+  ExecutionPath: /AWS/List_S3_Buckets.py
   References:
     MITRE:
       T1580 :
@@ -417,6 +419,7 @@ AWS-002 :
       - ~
   Resources:
     - https://attack.mitre.org/techniques/T1580/
+    - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/list_buckets.html
   Notes:
     - N/A
 
@@ -457,9 +460,9 @@ AWS-004 :
     - N/A
 
 AWS-005 :
-  Name: "Download Bucket"
+  Name: "Download S3 Bucket"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/Download_Bucket.py
+  ExecutionPath: /AWS/Download_S3_Bucket.py
   References:
     MITRE:
       T1580 :
@@ -471,6 +474,64 @@ AWS-005 :
       - ~
   Resources:
     - https://attack.mitre.org/techniques/T1119/
+  Notes:
+    - N/A
+
+AWS-006 :
+  Name: "Enumerate EC2 Instances"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/EC2_Enum.py
+  References:
+    MITRE:
+      T1580 :
+        Tactic : [Discovery]
+        Technique : Cloud Infrastructure Discovery
+        SubTechnique: ~
+        TechniqueID : T1580
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1580/
+    - https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_InstanceState.html
+    - https://docs.aws.amazon.com/general/latest/gr/rande.html#regional-endpoints
+  Notes:
+    - Valid instance states - pending | running | shutting-down | terminated | stopping | stopped
+
+AWS-007 :
+  Name: "Recon Available Services"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/List_Available_Services.py
+  References:
+    MITRE:
+      T1580 :
+        Tactic : [Discovery]
+        Technique : Cloud Infrastructure Discovery
+        SubTechnique: ~
+        TechniqueID : T1580
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1580/
+  Notes:
+    - N/A
+
+AWS-008 :
+  Name: "Assume Role"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/Assume_Role.py
+  References:
+    MITRE:
+      T1098.003 :
+        Tactic : [Persistence, Privilege Escalation]
+        Technique : Account Manipulation
+        SubTechnique: Additional Cloud Roles
+        TechniqueID : T1098.003
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1098/003/
+    - https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html
+    - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sts/client/assume_role.html#
   Notes:
     - N/A
 
