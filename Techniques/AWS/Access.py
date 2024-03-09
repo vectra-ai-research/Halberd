@@ -1,3 +1,8 @@
+'''
+Module Name: Access
+Description: Establish aws session to create service clients and resources
+Ref: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/core/session.html
+'''
 import boto3
 import boto3.session
 
@@ -7,18 +12,24 @@ def TechniqueMain(aws_access_key_id, aws_secret_access_key, aws_region = None, s
     boto3.DEFAULT_SESSION = None
 
     try:
-        # aws region defined
-        if aws_region:
-            new_session = boto3.session.Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key, region_name=aws_region)
-        
         # use default aws region to create session
-        else:
-            # no session token defined
+        if aws_region in [None, ""]:
+            # no session token
             if session_token in [None, ""]:
                 new_session = boto3.session.Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key)
-            # use session token to create session
+            # use supplied session token to create session
             else:
                 new_session = boto3.session.Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key, aws_session_token = session_token)
+        
+        # use supplied aws region
+        else:
+            # no session token
+            if session_token in [None, ""]:
+                new_session = boto3.session.Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key, region_name=aws_region)
+            # use supplied session token to create session
+            else:
+                new_session = boto3.session.Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key, region_name=aws_region, aws_session_token = session_token)
+            
                 
         # current session info
         sts = new_session.client('sts')
