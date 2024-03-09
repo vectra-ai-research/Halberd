@@ -1,3 +1,7 @@
+'''
+Name : Local.py
+Description : Local functions to checks and initiate application files
+'''
 import csv
 from datetime import datetime
 from pathlib import Path
@@ -26,11 +30,13 @@ def ReadTraceLog():
     return csv.DictReader(f)
 
 def InitializationCheck():
+    # Check for local folder
     if Path("./local").exists():
         pass
     else:
         os.makedirs("./local")
 
+    # Check for application log file
     if Path("./local/App_Log.csv").exists():
         pass
     else:
@@ -42,9 +48,9 @@ def InitializationCheck():
 
         write_log = csv.DictWriter(f, fieldnames= fields)
         write_log.writerow(log_input)
-        print("App_Log file created.")
+        print("Application log file created")
 
-
+    # Check for trace log file
     if Path("./local/Trace_Log.csv").exists():
         pass
     else:
@@ -56,4 +62,4 @@ def InitializationCheck():
 
         write_log = csv.DictWriter(f, fieldnames= fields)
         write_log.writerow(log_input)
-        print("Trace_Log file created.")
+        print("Trace log file created")

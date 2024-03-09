@@ -63,7 +63,7 @@ Attack modules require varying access & privileges for successful execution. Sta
 Checkout [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) for more information on testing with Halberd. 
 
 ## Contribute
-- Thanks for considering contributing to Halberd! Your contributions will help make security testing easier & better.
+- Thanks for considering contributing to Halberd! Your contributions will make security testing easier & better.
 - Submit bugs & issues [here](https://github.com/vectra-ai-research/Halberd/issues/new)
 
 If you are interested in contributing to Halberd, checkout [development focus areas](https://github.com/vectra-ai-research/Halberd/wiki/Contributions#areas-of-focus) & guidance on [contributions](https://github.com/vectra-ai-research/Halberd/wiki/Contributions).

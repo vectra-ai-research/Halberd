@@ -62,7 +62,7 @@ def TechniqueInputSrc():
 
     return [
         {"title" : "Username", "id" : "bf-text-input-username", "type" : "text", "placeholder" : "user@corp.com", "element_type" : "dcc.Input"},
-        {"title" : "Wait (Seconds)", "id" : "bf-text-input-username", "type" : "number", "placeholder" : "5", "element_type" : "dcc.Input"},
-        {"title" : "App ID (Optional)", "id" : "bf-text-input-client-id", "type" : "text", "placeholder" : "Optional (Default: Microsoft Office)", "element_type" : "dcc.Input"},
+        {"title" : "Wait (Seconds)", "id" : "bf-wait-input", "type" : "number", "placeholder" : "5", "element_type" : "dcc.Input"},
+        {"title" : "App ID (Optional)", "id" : "bf-client-id-text-input", "type" : "text", "placeholder" : "Optional (Default: Microsoft Office)", "element_type" : "dcc.Input"},
         {"title" : "Password File", "id" : "bf-password-file-uploader", "type" : "password", "placeholder" : "you got this right?", "element_type" : "dcc.Upload"}
     ]

@@ -460,9 +460,9 @@ AWS-004 :
     - N/A
 
 AWS-005 :
-  Name: "Download S3 Bucket"
+  Name: "Exfil S3 Bucket"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/Download_S3_Bucket.py
+  ExecutionPath: /AWS/Exfil_S3_Bucket.py
   References:
     MITRE:
       T1580 :
@@ -474,8 +474,9 @@ AWS-005 :
       - ~
   Resources:
     - https://attack.mitre.org/techniques/T1119/
+    - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/download_file.html
   Notes:
-    - N/A
+    - No object Name in config will attempt to download all objects in bucket
 
 AWS-006 :
   Name: "Enumerate EC2 Instances"

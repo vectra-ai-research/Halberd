@@ -1,6 +1,7 @@
 '''
 Module Name: EC2_Enum
 Description: Enumerate instances in AWS EC2. Pass additional parameters to filter results.
+Ref: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/ec2/client/describe_instances.html
 '''
 from core.AWSFunctions import valid_aws_regions, CreateClient
 
