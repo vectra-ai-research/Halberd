@@ -1,19 +1,22 @@
+'''
+Name : TabContentGenerator.py
+Description : Generates content on 'Attack' page based on the attack surface tab selected. Returns output to 'tabs-content-div' 
+'''
 import dash_bootstrap_components as dbc
 from dash import dcc,html
 import yaml
 
 
 def TabContentGenerator(tab):
-    tab_container_elements = []
+    tab_content_elements = []
 
+    # load all tactics information for each attack surface from the TacticsMap.yml file
     tactics_map_file = "./Techniques/TacticsMap.yml"
 
     with open(tactics_map_file, "r") as tactics_file_data:
         tactics_map = yaml.safe_load(tactics_file_data)
 
-    tab_container_elements.append(html.Div(id='attack-hidden-div', style={'display':'none'}))
-    tab_container_elements.append(dcc.Store(id='attack-result-store'))
-
+    # from tab selected, create tactics dropdown list from the available tactics in the attack surface
     if tab == "tab-attack-M365":
         tactics_options = tactics_map['M365_Tactics']
     if tab == "tab-attack-EntraID":
@@ -22,7 +25,8 @@ def TabContentGenerator(tab):
         tactics_options = tactics_map['Azure_Tactics']
     if tab == "tab-attack-AWS":
         tactics_options = tactics_map['AWS_Tactics']
-        
+    
+    # create the dropdown element
     tactic_dropdown_option = []    
     for tactic in tactics_options:
         tactic_dropdown_option.append(
@@ -32,9 +36,11 @@ def TabContentGenerator(tab):
             }
         )    
 
-    tab_container_elements.append(dcc.Dropdown(options = tactic_dropdown_option, value = tactic_dropdown_option[0]["value"], id='tactic-dropdown'))
-    tab_container_elements.append(html.Br())
-    tab_container_elements.append(
+    tab_content_elements.append(dcc.Dropdown(options = tactic_dropdown_option, value = tactic_dropdown_option[0]["value"], id='tactic-dropdown'))
+    tab_content_elements.append(html.Br())
+
+    # add element to display technique options under each tactic
+    tab_content_elements.append(
         html.Div([
             dbc.Row([
                 dbc.Col([
@@ -46,22 +52,24 @@ def TabContentGenerator(tab):
             ])  
         ])
     )
-    tab_container_elements.append(html.Br())
-    tab_container_elements.append(html.Br())
-    tab_container_elements.append(html.H4("Response"))
-    tab_container_elements.append(
+    tab_content_elements.append(html.Br())
+    tab_content_elements.append(html.Br())
+
+    # add element to display output of technique execution
+    tab_content_elements.append(html.H4("Response"))
+    tab_content_elements.append(
         dcc.Loading(
             id="attack-output-loading",
             type="default",
-            children=html.Div(id= "execution-output-div",style={"height":"30vh", "overflowY": "scroll", "border":"1px solid #ccc"})
+            children=html.Div(id= "execution-output-div",style={"height":"40vh", "overflowY": "auto", "border":"1px solid #ccc"})
         )
     )
 
-    tab_content = dbc.Container(
-        html.Div(tab_container_elements, style={"height":"87vh"}, className="bg-dark"),
-        fluid=True,
-        className="mt-4 advanced-homepage",
-        style={"height":"87vh"}
+    # final tab div to return
+    tab_content = html.Div(
+        tab_content_elements,
+        style={"height":"87vh", "padding-right": "20px", "padding-left": "20px", "padding-top": "20px", "padding-bottom": "20px"}, 
+        className="bg-dark"
     )
 
     return tab_content
