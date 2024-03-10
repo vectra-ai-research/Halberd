@@ -632,6 +632,44 @@ AWS-013 :
   Notes:
     - N/A
 
+AWS-014 :
+  Name: "Recon IAM Users"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/List_IAM_Users.py
+  References:
+    MITRE:
+      T1087.004 :
+        Tactic : [Discovery]
+        Technique : Account Discovery
+        SubTechnique: Cloud Account
+        TechniqueID : T1087.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1087/004/
+    - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/list_users.html
+  Notes:
+    - N/A
+
+AWS-015 :
+  Name: "Recon IAM Policies"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/List_IAM_Policies.py
+  References:
+    MITRE:
+      T1087.004 :
+        Tactic : [Discovery]
+        Technique : Account Discovery
+        SubTechnique: Cloud Account
+        TechniqueID : T1087.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1087/004/
+    - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/list_policies.html
+  Notes:
+    - "Acceptable policy scope values : All | AWS | Local"
+
 ###M365 Techniques###
 M365-001 :
   Name: "Setup Email Forwarding Rule"
