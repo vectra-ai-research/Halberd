@@ -609,6 +609,26 @@ AWS-012 :
   Resources:
     - https://attack.mitre.org/techniques/T1619/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/list_tables.html
+    - https://docs.aws.amazon.com/general/latest/gr/rande.html#regional-endpoints
+  Notes:
+    - N/A
+
+AWS-013 :
+  Name: "Delete DynamoDB Table"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/Delete_DynamoDB_Table.py
+  References:
+    MITRE:
+      T1485 :
+        Tactic : [Impact]
+        Technique : Data Destruction
+        SubTechnique: ~
+        TechniqueID : T1485
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1485/
+    - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/delete_table.html
   Notes:
     - N/A
 
