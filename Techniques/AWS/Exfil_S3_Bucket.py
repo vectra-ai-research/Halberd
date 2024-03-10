@@ -1,6 +1,6 @@
 '''
 Module Name: Exfil_S3_Bucket.py
-Description: Download an object or all objects in a target S3 Bucket
+Description: Download an object or all objects in a target S3 Bucket to local directory
 Ref: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/download_file.html
 '''
 from core.AWSFunctions import CreateClient
@@ -32,17 +32,20 @@ def TechniqueMain(bucket_name, object = None):
     downloaded_objects = []
 
     # create local download path with bucket name
-    download_path = f"./local/s3_bucket_download/{bucket_name}"
-    if Path(download_path).exists():
-        pass
-    else:
-        os.makedirs(download_path)
+    download_path = f"./output/s3_bucket_download/{bucket_name}"
 
     # download all objects in list
     try:
         for object_key in all_bucket_object_keys:
             download_file = f"{download_path}/{object_key}"
-            # download 
+            
+            # check local download file path exists and create if not
+            if Path(os.path.dirname(download_file)).exists():
+                pass
+            else:
+                os.makedirs(os.path.dirname(download_file))
+            
+            # download objects
             response = my_client.download_file(bucket_name, object_key, download_file)
             # add object to downloaded objects list
             downloaded_objects.append(object_key)
