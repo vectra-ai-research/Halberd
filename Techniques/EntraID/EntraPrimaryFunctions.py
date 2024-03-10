@@ -5,7 +5,6 @@ def ReadAllGraphPermissions():
 
     endpoint_url = "https://graph.microsoft.com/v1.0/servicePrincipals(appId='00000003-0000-0000-c000-000000000000')?$select=id,appId,displayName,appRoles,oauth2PermissionScopes,resourceSpecificApplicationPermissions"
     graph_response = graph_get_request(url = endpoint_url)
-    print(graph_response)
     return graph_response
 
 def GetAllUserOwnedObjects(user_id):
@@ -13,7 +12,6 @@ def GetAllUserOwnedObjects(user_id):
     endpoint_url = f"https://graph.microsoft.com/v1.0/servicePrincipals/{user_id}/ownedObjects"
 
     graph_response = graph_get_request(url=endpoint_url)
-    print(graph_response)
     return graph_response
 
 def GetAllUsers():
@@ -27,7 +25,6 @@ def GetUserInfo():
     endpoint_url = "https://graph.microsoft.com/v1.0/me"
 
     user_info = graph_get_request(url = endpoint_url)
-    print(user_info)
     user_name = user_info['userPrincipalName']
     display_name = user_info['displayName']
     user_object_id = user_info['id']
@@ -68,7 +65,6 @@ def ListObjectsMemberOf():
         endpoint_url = f"https://graph.microsoft.com/v1.0/users/{user_object_id}/memberOf"
 
         member_objects_list = graph_get_request(url = endpoint_url)
-        print(member_objects_list)
 
         group_list = []
         roles_list = []

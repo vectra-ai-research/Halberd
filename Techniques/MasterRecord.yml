@@ -58,7 +58,7 @@ EntraID-002 :
     - N/A
 
 EntraID-003 :
-  Name: "Entra ID Direct Token Access"
+  Name: "Entra ID Direct Access Token"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Direct_Token_Access.py
   References:
@@ -73,7 +73,7 @@ EntraID-003 :
   Resources:
     - https://attack.mitre.org/techniques/T1078/004/
   Notes:
-    - N/A
+    - "Token is saved in tool. Select token on 'Access' page to use it"
 
 EntraID-004 :
   Name: "Create Backdoor Account in Tenant"
@@ -110,7 +110,7 @@ EntraID-005 :
     - https://attack.mitre.org/techniques/T1484/
     - https://learn.microsoft.com/en-us/graph/api/conditionalaccessroot-post-namedlocations?view=graph-rest-1.0&tabs=http
   Notes:
-    - N/A
+    - "IP with subnet format : 10.0.0.1/24"
 
 EntraID-006 :
   Name: "Remove User Account"

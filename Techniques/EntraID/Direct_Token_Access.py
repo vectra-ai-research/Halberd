@@ -1,7 +1,4 @@
-from core.GraphFunctions import graph_post_request, graph_base_url
-from dash import dcc,html
 import yaml
-import msal 
 
 def TechniqueMain(new_token):
     '''Add new access tokens to tokens yaml file'''
@@ -21,9 +18,9 @@ def TechniqueMain(new_token):
         with open(tokens_file, 'w') as file:
             yaml.dump(all_tokens_data, file)
 
-        return True
+        return {"Access token added" : "Activate token from 'Access' page"}
     else:
-        return None
+        return "Error : Failed to add access token"
 
 
 def TechniqueInputSrc() -> list:

@@ -88,8 +88,8 @@ def display_page(pathname):
         from pages.entity_map import page_layout
         return page_layout
     elif pathname == '/attack-trace':
-        from pages.AttackTrace import page_layout
-        return page_layout
+        from pages.attack_trace import GenerateAttackTraceView
+        return GenerateAttackTraceView()
     else:
         from pages.home import page_layout
         return page_layout
