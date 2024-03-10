@@ -14,15 +14,6 @@ def TechniqueMain(bucket_name, object_key_name, confirm_prompt = None):
     my_client = CreateClient('s3')
 
     # list objects in bucket
-    try:
-        response = my_client.delete_object(
-            Bucket = bucket_name,
-            Key = object_key_name
-            )
-
-    except Exception as e:
-        return f"Error: {e}"
-
     all_bucket_object_keys = []
 
     if object_key_name in [None, ""]:
@@ -35,7 +26,7 @@ def TechniqueMain(bucket_name, object_key_name, confirm_prompt = None):
 
     # only add object specified to delete list
     else:
-        all_bucket_object_keys.append(object)
+        all_bucket_object_keys.append(object_key_name)
 
     # initialize list to track deleted objects
     deleted_objects = []

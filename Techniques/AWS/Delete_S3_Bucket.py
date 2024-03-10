@@ -13,21 +13,11 @@ def TechniqueMain(bucket_name, confirm_prompt = None):
     # initialize boto3 s3 client
     my_client = CreateClient('s3')
 
-    # list objects in bucket
-    try:
-        response = my_client.delete_object(
-            Bucket = bucket_name
-            )
-
-    except Exception as e:
-        return f"Error: {e}"
-
     try:
         # delete bucket 
         response = my_client.delete_bucket(
             Bucket = bucket_name
             )
-        print(response)
 
     except Exception as e:
         return f"Error: {e}"
