@@ -410,15 +410,15 @@ AWS-002 :
   ExecutionPath: /AWS/List_S3_Buckets.py
   References:
     MITRE:
-      T1580 :
+      T1619 :
         Tactic : [Discovery]
-        Technique : Cloud Infrastructure Discovery
+        Technique : Cloud Storage Object Discovery
         SubTechnique: ~
-        TechniqueID : T1580
+        TechniqueID : T1619
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1580/
+    - https://attack.mitre.org/techniques/T1619/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/list_buckets.html
   Notes:
     - N/A
@@ -447,15 +447,15 @@ AWS-004 :
   ExecutionPath: /AWS/List_Bucket_Objects.py
   References:
     MITRE:
-      T1580 :
+      T1619 :
         Tactic : [Discovery]
-        Technique : Cloud Infrastructure Discovery
+        Technique : Cloud Storage Object Discovery
         SubTechnique: ~
-        TechniqueID : T1580
+        TechniqueID : T1619
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1580/
+    - https://attack.mitre.org/techniques/T1619/
   Notes:
     - N/A
 
@@ -590,6 +590,25 @@ AWS-011 :
   Resources:
     - https://attack.mitre.org/techniques/T1485/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/delete_bucket.html
+  Notes:
+    - N/A
+
+AWS-012 :
+  Name: "List DynamoDB Tables"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/List_DynamoDB_Tables.py
+  References:
+    MITRE:
+      T1619 :
+        Tactic : [Discovery]
+        Technique : Cloud Storage Object Discovery
+        SubTechnique: ~
+        TechniqueID : T1619
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1619/
+    - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/list_tables.html
   Notes:
     - N/A
 
