@@ -5,7 +5,7 @@ Ref: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/
 '''
 from core.AWSFunctions import valid_aws_regions, CreateClient
 
-def TechniqueMain(region_name = "us-east-1", instance_id = None, state = None, max_results = None, dryRun = False):
+def TechniqueMain(region_name = None, instance_id = None, state = None, max_results = None, dryRun = False):
 
     # set default region
     if region_name in [None, ""]:
@@ -73,7 +73,7 @@ def TechniqueMain(region_name = "us-east-1", instance_id = None, state = None, m
 def TechniqueInputSrc() -> list:
     '''This function returns the input fields required as parameters for the technique execution'''
     return [
-        {"title" : "Region Name (Optional)", "id" : "ec2-region-name-text-input", "type" : "text", "placeholder" : "us-east-1", "element_type" : "dcc.Input"},
+        {"title" : "Region Name (Optional)", "id" : "region-name-text-input", "type" : "text", "placeholder" : "us-east-1", "element_type" : "dcc.Input"},
         {"title" : "Instance ID (Optional)", "id" : "ec2-instance-id-text-input", "type" : "text", "placeholder" : "i-myinstance12432423", "element_type" : "dcc.Input"},
         {"title" : "State (Optional)", "id" : "ec2-instance-state-text-input", "type" : "text", "placeholder" : "us-west-2", "element_type" : "dcc.Input"},
         {"title" : "Max Results (Optional)", "id" : "ec2-enum-max-result-input", "type" : "number", "placeholder" : "5", "element_type" : "dcc.Input"},
