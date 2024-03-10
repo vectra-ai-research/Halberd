@@ -671,5 +671,6 @@ FodyWeavers.xsd
 # End of https://www.gitignore.io/api/*
 
 ### Tool specific ###
+output/
 local/
 tests.py

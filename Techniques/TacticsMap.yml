@@ -1,19 +1,20 @@
 AWS_Tactics:
-- Defense Evasion
-- Discovery
-- Privilege Escalation
-- Initial Access
-- Collection
 - Persistence
+- Privilege Escalation
+- Discovery
+- Collection
+- Impact
+- Defense Evasion
+- Initial Access
 Azure_Tactics: []
 Entra_Id_Tactics:
-- Defense Evasion
-- Impact
-- Discovery
-- Privilege Escalation
-- Initial Access
 - Persistence
+- Privilege Escalation
+- Discovery
+- Impact
+- Defense Evasion
+- Initial Access
 M365_Tactics:
+- Collection
 - Defense Evasion
 - Lateral Movement
-- Collection

@@ -465,15 +465,15 @@ AWS-005 :
   ExecutionPath: /AWS/Exfil_S3_Bucket.py
   References:
     MITRE:
-      T1580 :
+      T1530 :
         Tactic : [Collection]
-        Technique : Automated Collection
+        Technique : Data from Cloud Storage
         SubTechnique: ~
-        TechniqueID : T1119
+        TechniqueID : T1530
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1119/
+    - https://attack.mitre.org/techniques/T1530/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/download_file.html
   Notes:
     - No object Name in config will attempt to download all objects in bucket
@@ -552,6 +552,44 @@ AWS-009 :
   Resources:
     - https://attack.mitre.org/techniques/T1069/003/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/list_roles.html
+  Notes:
+    - N/A
+
+AWS-010 :
+  Name: "Delete Bucket Object"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/Delete_Bucket_Objects.py
+  References:
+    MITRE:
+      T1485 :
+        Tactic : [Impact]
+        Technique : Data Destruction
+        SubTechnique: ~
+        TechniqueID : T1485
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1485/
+    - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/delete_object.html
+  Notes:
+    - N/A
+
+AWS-011 :
+  Name: "Delete S3 Bucket"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/Delete_S3_Bucket.py
+  References:
+    MITRE:
+      T1485 :
+        Tactic : [Impact]
+        Technique : Data Destruction
+        SubTechnique: ~
+        TechniqueID : T1485
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1485/
+    - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/delete_bucket.html
   Notes:
     - N/A
 
