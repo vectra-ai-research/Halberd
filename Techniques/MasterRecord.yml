@@ -536,6 +536,25 @@ AWS-008 :
   Notes:
     - N/A
 
+AWS-009 :
+  Name: "List IAM Roles"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/List_IAM_Roles.py
+  References:
+    MITRE:
+      T1069.003 :
+        Tactic : [Discovery]
+        Technique : Permission Groups Discovery
+        SubTechnique: Cloud Groups
+        TechniqueID : T1069.003
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1069/003/
+    - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/list_roles.html
+  Notes:
+    - N/A
+
 ###M365 Techniques###
 M365-001 :
   Name: "Setup Email Forwarding Rule"
