@@ -38,7 +38,7 @@ page_layout = html.Div([
                 html.H3("Modules"),
                 daq.LEDDisplay(
                     id='techniques-LED-display-1',
-                    value=35,
+                    value=42,
                     size=80,
                     color = "Black"
                 ),
@@ -48,7 +48,7 @@ page_layout = html.Div([
                 html.H3("Surface"),
                 daq.LEDDisplay(
                     id='surfaces-LED-display-1',
-                    value="04",
+                    value="03",
                     size=80,
                     color = "Black"
                 ),
