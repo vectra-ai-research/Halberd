@@ -6,6 +6,7 @@ import csv
 from datetime import datetime
 from pathlib import Path
 import os
+import yaml
 
 def WriteAppLog(action, result = "success"):
     log_file = "./local/App_Log.csv"
@@ -63,3 +64,13 @@ def InitializationCheck():
         write_log = csv.DictWriter(f, fieldnames= fields)
         write_log.writerow(log_input)
         print("Trace log file created")
+
+    # check for msft tokens file
+    if Path("./local/MSFT_Graph_Tokens.yml").exists():
+        pass
+    else:
+        tokens_file = "./local/MSFT_Graph_Tokens.yml"
+        all_tokens_data = {'AllTokens':[]}
+
+        with open(tokens_file, 'w') as file:
+            yaml.dump(all_tokens_data, file)
