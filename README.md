@@ -4,7 +4,7 @@
 
 Halberd is an open-source security testing tool to proactively assess cloud security by executing a comprehensive array of attack techniques across multiple surfaces.
 
-Leveraging Halberd, security teams can execute attack techniques such as cloud resource discovery, priv esc by tenant config modification, persistence through backdoor creation, deleting / modifying cloud resources and several others via a simple interactive web interface. This means no need to find or learn tool commmands to execute techniques.
+Leveraging Halberd, security teams can execute attack techniques such as cloud resource discovery, priv esc by tenant config modification, persistence through backdoor creation, deleting / modifying cloud resources and several others via a simple interactive web interface. This means no need to find or learn commmands to execute techniques.
 
 Evaluate defenses across multiple attack surfaces, including [Entra ID](https://learn.microsoft.com/en-us/entra/identity/), [M365](https://learn.microsoft.com/en-us/microsoft-365/?view=o365-worldwide), [Azure](https://learn.microsoft.com/en-us/azure/?product=popular) and [AWS](https://docs.aws.amazon.com).
 
