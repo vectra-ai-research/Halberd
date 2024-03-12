@@ -384,6 +384,49 @@ EntraID-020 :
     - The response contains access tokens for usernames with successful authentication.
     - The module also returns error codes for all usernames. Review error codes to identify valid usersnames in the target environment.  
 
+EntraID-021 :
+  Name: "Generate Application Credentials"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Generate_App_Password.py
+  References:
+    MITRE:
+      T1098.001 :
+        Tactic : [Persistence, Privilege Escalation]
+        Technique : Account Manipulation
+        SubTechnique: Additional Cloud Credentials
+        TechniqueID : T1098.001
+    AzureThreatResearchMatrix:
+      - AZT405.3 :
+          Tactic : [Privilege Escalation]
+          Technique : Azure AD Application
+          SubTechnique : Application Registration Owner
+          TechniqueID : AZT405.3
+  Resources:
+    - hhttps://attack.mitre.org/techniques/T1098/001/
+    - https://microsoft.github.io/Azure-Threat-Research-Matrix/PrivilegeEscalation/AZT405/AZT405-3/
+    - https://learn.microsoft.com/en-us/graph/api/application-addpassword?view=graph-rest-1.0&tabs=http
+  Notes:
+    - Requires App-only access to execute
+
+EntraID-022 :
+  Name: "Create New Application"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Create_New_App.py
+  References:
+    MITRE:
+      T1098.001 :
+        Tactic : [Persistence, Privilege Escalation]
+        Technique : Account Manipulation
+        SubTechnique: Additional Cloud Credentials
+        TechniqueID : T1098.001
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - hhttps://attack.mitre.org/techniques/T1098/001/
+    - https://learn.microsoft.com/en-us/graph/api/application-post-applications?view=graph-rest-1.0&tabs=http
+  Notes:
+    - N/A
+
 ###AWS Techniques###
 AWS-001 :
   Name: "AWS Access"
