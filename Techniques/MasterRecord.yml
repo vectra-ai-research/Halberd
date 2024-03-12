@@ -149,7 +149,7 @@ EntraID-007 :
     - N/A
 
 EntraID-008 :
-  Name: "Discover Applications"
+  Name: "Recon Applications"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_Applications.py
   References:
@@ -167,7 +167,7 @@ EntraID-008 :
     - N/A
 
 EntraID-009 :
-  Name: "Discover Groups"
+  Name: "Recon Groups"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_Groups.py
   References:
@@ -185,7 +185,7 @@ EntraID-009 :
     - N/A
 
 EntraID-010 :
-  Name: "Discover User Accounts"
+  Name: "Recon User Accounts"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_User_Accounts.py
   References:
@@ -203,7 +203,7 @@ EntraID-010 :
     - N/A
 
 EntraID-011 :
-  Name: "Discover Conditional Access Policies"
+  Name: "Recon Conditional Access Policies"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_Conditional_Access_Policies.py
   References:
@@ -221,7 +221,7 @@ EntraID-011 :
     - N/A
 
 EntraID-012 :
-  Name: "Discover User One Drive"
+  Name: "Recon User One Drive"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_One_Drive.py
   References:
@@ -239,7 +239,7 @@ EntraID-012 :
     - N/A
 
 EntraID-013 :
-  Name: "Discover SharePoint Sites"
+  Name: "Recon SharePoint Sites"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_SP_Sites.py
   References:
@@ -424,6 +424,24 @@ EntraID-022 :
   Resources:
     - hhttps://attack.mitre.org/techniques/T1098/001/
     - https://learn.microsoft.com/en-us/graph/api/application-post-applications?view=graph-rest-1.0&tabs=http
+  Notes:
+    - N/A
+
+EntraID-023 :
+  Name: "Recon Directory Roles"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Discover_Directory_Roles.py
+  References:
+    MITRE:
+      T1069.003 :
+        Tactic : [Discovery]
+        Technique : Permission Groups Discovery
+        SubTechnique: Cloud Groups
+        TechniqueID : T1069.003
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1069/003/
   Notes:
     - N/A
 
