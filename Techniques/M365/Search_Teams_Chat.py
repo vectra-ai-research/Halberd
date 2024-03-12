@@ -2,7 +2,9 @@ from core.GraphFunctions import graph_get_request
 
 def TechniqueMain(user_id, search_keyword):
     all_chats = RetrieveTeamsChats(user_id)
-    print(all_chats)
+    # check for error in response
+    if 'error' in all_chats.keys():
+        return all_chats
 
     all_matched_messages = []
 

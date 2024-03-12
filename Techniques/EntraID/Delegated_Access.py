@@ -27,17 +27,22 @@ def TechniqueMain(user_name, password, client_id = "d3590ed6-52b3-4102-aeff-aad2
 
     '''Request access token'''
     try:
-        token_request = requests.post(url = endpoint_url, headers = headers, data = data).json()
-        access_token = token_request['access_token']
-
-        '''Save access token to tokens file'''
-        if save_token == True:
-            SaveTokens(access_token)
-            return access_token
-
+        response = requests.post(url = endpoint_url, headers = headers, data = data).json()
+        # check for errors in response
+        if 'error' in response.keys():
+            # return error message
+            return response
+        
     except Exception as e:
-        return None
+        return e
 
+    # extract access token from response
+    access_token = response['access_token']
+
+    # save access token to msft tokens file
+    if save_token == True:
+        SaveTokens(access_token)
+        return access_token
 
 def SaveTokens(new_token):
 
