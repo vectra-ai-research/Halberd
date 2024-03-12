@@ -27,7 +27,7 @@ def TechniqueOptionsGenerator(tab, tactic):
             if tactic in techniques_info[technique]['References']['MITRE'][mitre_technique]['Tactic']:
                 technique_options_list.append(
                     {
-                        "label": html.Div([techniques_info[technique]['Name']], style={'font-size': 20}, className="bg-dark text-body"),
+                        "label": html.Div([techniques_info[technique]['Name']], style={"padding-left": "10px","padding-top": "5px", "padding-bottom": "5px", "font-size": 20}, className="bg-dark text-body"),
                         "value": technique,
                     }
                 )
