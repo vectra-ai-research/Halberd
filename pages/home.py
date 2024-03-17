@@ -1,6 +1,14 @@
 import dash_bootstrap_components as dbc
 from dash import html
 import dash_daq as daq
+import os
+
+folders = ['EntraID','Azure','M365','AWS']
+module_count = 0
+for folder in folders:
+    for module_file in os.listdir(f"./Techniques/{folder}"):
+        if module_file.endswith(".py"):
+            module_count += 1
 
 page_layout = html.Div([
     html.Br(),
@@ -48,7 +56,7 @@ page_layout = html.Div([
                 html.H3("Modules"),
                 daq.LEDDisplay(
                     id='techniques-LED-display-1',
-                    value=44,
+                    value = module_count,
                     size=80,
                     color = "Black"
                 ),
