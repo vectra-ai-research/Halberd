@@ -1,8 +1,10 @@
-# Halberd
-
-![logo](/assets/favicon.ico)
-
+<h1 align="center">    
+    <img src="assets/halberd_nbg_lg.png" height="25" width="25">
+    Halberd
+</h1>
+<p align="center">
 Halberd is an open-source security testing tool to proactively assess cloud security by executing a comprehensive array of attack techniques across multiple surfaces.
+</p>
 
 Leveraging Halberd, security teams can execute attack techniques such as cloud resource discovery, priv esc by tenant config modification, persistence through backdoor creation, deleting / modifying cloud resources and several others via a simple interactive web interface. This means no need to find or learn commmands to execute techniques.
 
