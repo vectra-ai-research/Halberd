@@ -13,7 +13,7 @@ def TechniqueMain(region_name = None, instance_id = None, state = None, max_resu
     
     # validate user input for region
     if region_name not in valid_aws_regions:
-        return "Invalid Region Name"
+        return False, {"Error" : "Invalid region name"}, None
 
     # initialize boto3 ec2 client
     my_client = CreateClient('ec2', region_name = region_name)
@@ -45,30 +45,34 @@ def TechniqueMain(region_name = None, instance_id = None, state = None, max_resu
     # Fetch EC2 instances
     try:
         if max_results:
-            response = my_client.describe_instances(Filters = filters, DryRun = dryRun, MaxResults = max_results)
+            raw_response = my_client.describe_instances(Filters = filters, DryRun = dryRun, MaxResults = max_results)
         else:
-            response = my_client.describe_instances(Filters = filters, DryRun = dryRun)
+            raw_response = my_client.describe_instances(Filters = filters, DryRun = dryRun)
 
-    except Exception as e:
-        return e       
+        # request successful
+        if 200 <= raw_response['ResponseMetadata']['HTTPStatusCode'] <300:
+            # enumerate EC2 instance details
+            pretty_response = {}
+            for reservation in raw_response['Reservations']:
+                for instance in reservation['Instances']:
+                    pretty_response[instance['InstanceId']] = {
+                        'InstanceId': instance['InstanceId'],
+                        'InstanceType': instance['InstanceType'],
+                        'State': instance['State']['Name'],
+                        'PublicIpAddress': instance.get('PublicIpAddress', 'N/A'),
+                        'PrivateIpAddress': instance.get('PrivateIpAddress', 'N/A'),
+                        'Monitoring': instance.get('Monitoring', 'N/A').get('State','N/A'),
+                        'LaunchTime': instance['LaunchTime'].strftime('%Y-%m-%d %H:%M:%S'),
+                        'Tags': instance.get('Tags', [])
+                    }
+
+            return True, raw_response, pretty_response
+        else:
+            # request failed
+            return False, {"Error" : raw_response}, None
     
-    # Enumerate EC2 instance details
-    instances = []
-    for reservation in response['Reservations']:
-        for instance in reservation['Instances']:
-            instance_details = {
-                'InstanceId': instance['InstanceId'],
-                'InstanceType': instance['InstanceType'],
-                'State': instance['State']['Name'],
-                'PublicIpAddress': instance.get('PublicIpAddress', 'N/A'),
-                'PrivateIpAddress': instance.get('PrivateIpAddress', 'N/A'),
-                'Monitoring': instance.get('Monitoring', 'N/A').get('State','N/A'),
-                'LaunchTime': instance['LaunchTime'].strftime('%Y-%m-%d %H:%M:%S'),
-                'Tags': instance.get('Tags', [])
-            }
-            instances.append(instance_details)
-
-    return instances
+    except Exception as e:
+        return False, {"Error" : e}, None 
 
 def TechniqueInputSrc() -> list:
     '''This function returns the input fields required as parameters for the technique execution'''

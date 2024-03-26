@@ -1,20 +1,18 @@
 '''
-Module Name: List_DynamoDB_Tables.py
-Description: List tables associated with current account in dynamodb
+Module Name: List_DynamoDB_Tables
+Module Description: List tables associated with current account in dynamodb
 Ref: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/list_tables.html
 '''
 from core.AWSFunctions import CreateClient, valid_aws_regions
 
 def TechniqueMain(region_name = None, limit = None):
 
-    # initialize boto3 dynamodb client
     # set default region
     if region_name in [None, ""]:
         region_name = "us-east-1"
-    
-    # validate user input for region
+
     if region_name not in valid_aws_regions:
-        return "Invalid Input: Invalid Region Name"
+        return False, {"Error" : "Invalid Region Name"}, None
 
     # initialize boto3 dynamodb client
     my_client = CreateClient('dynamodb', region_name = region_name)
@@ -22,17 +20,32 @@ def TechniqueMain(region_name = None, limit = None):
     try:
         # list dynamodb tables
         if limit in [None, ""]:
-            response = my_client.list_tables()
+            raw_response = my_client.list_tables()
         else:
-            response = my_client.list_tables(
+            raw_response = my_client.list_tables(
                 Limit = limit
             )
-        
-        tables = response['TableNames']
-        return tables
+        try:
+            # parse raw response => pretty response
+            pretty_response = {}
+            all_tables = raw_response['TableNames']
+            
+            # operation successful
+            if 200 <= raw_response['ResponseMetadata']['HTTPStatusCode'] <300:
+                for table in all_tables:
+                    pretty_response[table] = {
+                        "Table Name" : table,
+                        "Region" : region_name
+                    }
+                return True, raw_response, pretty_response
+            else:
+                return False, {"Error" : raw_response}, None
+        except:
+            # return only raw response if pretty response fails
+            return True, raw_response, None
 
     except Exception as e:
-        return f"Failed to enumerate dynamodb tables: {e}"
+        return False, {"Error" : e}, None
 
 def TechniqueInputSrc() -> list:
     '''This function returns the input fields required as parameters for the technique execution'''

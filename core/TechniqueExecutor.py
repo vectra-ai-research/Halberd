@@ -8,6 +8,7 @@ import importlib
 import csv
 from datetime import datetime
 from dash import html
+import dash_bootstrap_components as dbc
 
 master_record_file = "./Techniques/MasterRecord.yml"
 with open(master_record_file, "r") as master_record_data:
@@ -34,66 +35,102 @@ def TechniqueOutput(t_id, technique_input, file_content = None):
     print(f"Executing {exec_module}")
     TechniqueMainFunction = getattr(exec_module, "TechniqueMain")
     
+    # check if the technique input is a file content
     if file_content != None:
-        raw_response = TechniqueMainFunction(*technique_input, file_content)
+        technique_response = TechniqueMainFunction(*technique_input, file_content)
     else:
-        raw_response = TechniqueMainFunction(*technique_input)
+        technique_response = TechniqueMainFunction(*technique_input)
 
-    # parse output
+    # check if technique output is in the expected tuple format (success, raw_response, pretty_response)
+    if isinstance(technique_response, tuple) and len(technique_response) == 3:
+        success, raw_response, pretty_response = technique_response
+        # parse output
+        if pretty_response != None:
+            response = pretty_response
+        else:
+            response = raw_response
+    else:
+        response = technique_response
+
+    # initialize the response div elements list
+    response_div_elements = []
+
+    # display notification based on technique result
     try:
-        # use technique output function to parse output
-        TechniqueOutputFunction = getattr(exec_module, "TechniqueOutput")
-        response = TechniqueOutputFunction(raw_response)
+        if success == True:
+            response_div_elements.append(
+                dbc.Toast(
+                    children = "Success",
+                    id="output-notification",
+                    header="Technique Result",
+                    is_open=True,
+                    dismissable=True,
+                    duration=5000,
+                    color="success",
+                    style={"position": "fixed", "top": 166, "right": 10, "width": 350},
+                )
+            )
+        else:
+            response_div_elements.append(
+                dbc.Toast(
+                    children = "Failed",
+                    id="output-notification",
+                    header="Technique Result",
+                    is_open=True,
+                    dismissable=True,
+                    duration=5000,
+                    color="danger",
+                    style={"position": "fixed", "top": 168, "right": 10, "width": 350},
+                )
+            )
     except:
-        # if output function is not defined for technique, parse raw response
-        response = raw_response
+        pass
 
     '''Format parsed response based on response data type (dict / list / str)'''
-    if type(response) == list:
+    if isinstance(response,list):
+        # if the response is a null then return message
         if response == []:
             return html.H4("No results returned", style ={"textAlign": "center", "padding": "5px"})
         
-        output_div_elements = []
         for item in response:
-            output_div_elements.append(html.Div(str(item), style={"overflowY": "auto", "border":"1px solid #ccc"}))
-            output_div_elements.append(html.Br())
+            response_div_elements.append(html.Div(str(item), style={"overflowY": "auto", "border":"1px solid #ccc"}))
+            response_div_elements.append(html.Br())
 
-        return html.Div(output_div_elements)
+        return html.Div(response_div_elements)
 
-    elif type(response) == dict:
+    elif isinstance(response,dict):
         # if the response is a null then return message
         if response == {}:
             return html.H4("No results returned", style ={"textAlign": "center", "padding": "5px"})
         
-        output_div_elements = []
         for item in response:
-            output_div_elements.append(html.H3(f"{item}"))
+            response_div_elements.append(html.H3(f"{item}"))
 
-            if type(response[item]) == dict:
-                sub_output_div_elements = []
+            if isinstance(response[item], dict):
+                sub_response_div_elements = []
                 for sub_item in response[item]:
-                    sub_output_div_elements.append(
+                    sub_response_div_elements.append(
                         f"{sub_item} : {response[item][sub_item]}"
                     )
-                    sub_output_div_elements.append(html.Br())
-                    sub_output_div_elements.append(html.Br())
+                    sub_response_div_elements.append(html.Br())
+                    sub_response_div_elements.append(html.Br())
                 
-                output_div_elements.append(
+                response_div_elements.append(
                     html.Div([
-                        html.Div(sub_output_div_elements),
+                        html.Div(sub_response_div_elements),
                     ], style={"overflowY": "auto", "border":"1px solid #ccc"})
                 )
-                output_div_elements.append(html.Br())
+                response_div_elements.append(html.Br())
 
             else:
-                output_div_elements.append(
+                response_div_elements.append(
                     html.Div([
                         html.Div(str(response[item])),
                     ], style={"overflowY": "auto", "border":"1px solid #ccc"})
                 )
-                output_div_elements.append(html.Br())
+                response_div_elements.append(html.Br())
 
-        return html.Div(output_div_elements)
+        return html.Div(response_div_elements)
 
     else:
         return str(response)

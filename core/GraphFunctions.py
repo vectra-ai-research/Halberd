@@ -26,48 +26,31 @@ def graph_get_request(url,pagination=True):
                     url = None
             else:
                 url = None
-        except:
+        except Exception as e:
             print("GET request failed!")
-            break
-    print('GET request successful')
+            return e
     return graph_results
 
-#Function to make a POST request to Graph
+# Function to make a POST request to Graph
 def graph_post_request(url, data):
     headers = CreateHeader(FetchSelectedToken())
 
     try:
         graph_result = requests.post(url=url, headers = headers, data=json.dumps(data))
+        return graph_result
 
-        if graph_result.status_code in [200,201,202,204,205,206]:
-            print("POST request successful!")
-            if graph_result.status_code in [204,202]:
-                return graph_result
-            else:
-                return graph_result.json()
-        else:
-            print(f"POST request failed: {graph_result.status_code}")
-        
     except Exception as e:
-        print(e)
-        print("POST request failed!")
-        return None
-    
+        return e
 
-#Function to make DELETE request to Graph
+# Function to make DELETE request to Graph
 def graph_delete_request(url):
     headers = CreateHeader(FetchSelectedToken())
 
     try:
         graph_result = requests.delete(url=url, headers=headers)
-        if graph_result.status_code == 204:
-            print('DELETE request successfull!')
-        else:
-            print(graph_result.text)
-            print('DELETE request failed!')
-    except:
-        print(graph_result.raw)
-        print(graph_result.status_code)
+    except Exception as e:
+        return e
+
     return graph_result
 
 #Function to make PATCH request to Graph
@@ -97,4 +80,3 @@ def graph_put_request(url, data):
         print(e)
         print('PUT request failed!')
         return None
-

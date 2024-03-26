@@ -308,7 +308,7 @@ EntraID-016 :
   Resources:
     - https://attack.mitre.org/techniques/T1078/004/
   Notes:
-    - N/A
+    - Check terminal for device code flow link and code
 
 EntraID-017 :
   Name: "Bruteforce Password"
@@ -325,6 +325,7 @@ EntraID-017 :
       - ~
   Resources:
     - https://attack.mitre.org/techniques/T1078/004/
+    - https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes#aadsts-error-codes
   Notes:
     - N/A
 
@@ -402,11 +403,11 @@ EntraID-021 :
           SubTechnique : Application Registration Owner
           TechniqueID : AZT405.3
   Resources:
-    - hhttps://attack.mitre.org/techniques/T1098/001/
+    - https://attack.mitre.org/techniques/T1098/001/
     - https://microsoft.github.io/Azure-Threat-Research-Matrix/PrivilegeEscalation/AZT405/AZT405-3/
     - https://learn.microsoft.com/en-us/graph/api/application-addpassword?view=graph-rest-1.0&tabs=http
   Notes:
-    - Requires App-only access to execute
+    - N/A
 
 EntraID-022 :
   Name: "Create New Application"
@@ -730,6 +731,44 @@ AWS-015 :
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/list_policies.html
   Notes:
     - "Acceptable policy scope values : All | AWS | Local"
+
+AWS-016 :
+  Name: "Recon Connected Account Auth Details"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/Recon_Acc_Authorization_Details.py
+  References:
+    MITRE:
+      T1087.004 :
+        Tactic : [Discovery]
+        Technique : Account Discovery
+        SubTechnique: Cloud Account
+        TechniqueID : T1087.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1087/004/
+    - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/get_account_authorization_details.html
+  Notes:
+    - N/A
+
+AWS-017 :
+  Name: "Recon User Details"
+  AttackSurface: "AWS"
+  ExecutionPath: /AWS/Recon_User_Details.py
+  References:
+    MITRE:
+      T1087.004 :
+        Tactic : [Discovery]
+        Technique : Account Discovery
+        SubTechnique: Cloud Account
+        TechniqueID : T1087.004
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://attack.mitre.org/techniques/T1087/004/
+    - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/get_user.html
+  Notes:
+    - N/A
 
 ###M365 Techniques###
 M365-001 :

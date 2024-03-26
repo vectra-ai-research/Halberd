@@ -1,13 +1,18 @@
-# Modify named locations to add trusted IP
+'''
+Module Name : Modify_Trusted_IP
+Module Description: Modify named locations to add trusted IP in conditional access policy. Permission required: Policy.Read.All and Policy.ReadWrite.ConditionalAccess
+Reference : https://learn.microsoft.com/en-us/graph/api/conditionalaccessroot-post-namedlocations?view=graph-rest-1.0&tabs=http
+'''
 from core.GraphFunctions import graph_post_request
 
 def TechniqueMain(trusted_policy_name, ip_addr):
-    '''
-    Description: Modify Trusted IP Configuration
-    Privileges: Policy.Read.All and Policy.ReadWrite.ConditionalAccess
-    Ref: https://learn.microsoft.com/en-us/graph/api/conditionalaccessroot-post-namedlocations?view=graph-rest-1.0&tabs=http
-    '''
-
+    
+    # input validation
+    if trusted_policy_name in [None, ""]:
+        return False, {"Error" : "Invalid Technique Input"}, None
+    if ip_addr in [None, ""]:
+        return False, {"Error" : "Invalid Technique Input"}, None
+    
     endpoint_url = "https://graph.microsoft.com/v1.0/identity/conditionalAccess/namedLocations"
 
     data = {
@@ -22,9 +27,34 @@ def TechniqueMain(trusted_policy_name, ip_addr):
         ]
     }
 
-    trusted_ip_config = graph_post_request(url = endpoint_url, data = data)
-    print(trusted_ip_config)
-    return trusted_ip_config
+    try:
+        raw_response = graph_post_request(url = endpoint_url, data = data)
+
+        # create trusted IP policy operation successfull
+        if 200 <= raw_response.status_code < 300:
+            # parse raw response => pretty response
+            try:
+                # create pretty response
+                pretty_response = {}
+
+                pretty_response["Success"] = {
+                    'Message' : "Trusted IP policy created",
+                    'Policy Name' : raw_response.json().get('displayName', 'N/A'),
+                    'Policy Id' : raw_response.json().get('id', 'N/A'),
+                    'IP' : ip_addr,
+                    'Is Trusted' : raw_response.json().get('isTrusted', 'N/A')
+                }
+                return True, raw_response, pretty_response
+            except:
+                # return only raw response if pretty response fails
+                return True, raw_response, None
+        
+        # create trusted IP policy operation failed
+        else:
+            return False, {"Error" : {"Response Status" : raw_response.status_code, "Code" : raw_response.json().get('error').get('code', 'N/A'), "Message" : raw_response.json().get('error').get('message', 'N/A')}}, None
+    
+    except Exception as e:
+        return False, {"Error" : e}, None
 
 def TechniqueInputSrc() -> list:
     '''Returns the input fields required as parameters for the technique execution'''

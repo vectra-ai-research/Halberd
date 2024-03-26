@@ -7,6 +7,11 @@ import boto3
 import boto3.session
 
 def TechniqueMain(aws_access_key_id, aws_secret_access_key, aws_region = None, session_token = None):
+    # input validation
+    if aws_access_key_id in [None, ""]:
+        return False, {"Error" : "Invalid input: Enter access key id"}, None
+    if aws_secret_access_key in [None, ""]:
+        return False, {"Error" : "Invalid input: Enter secret"}, None
     
     # Remove any default session
     boto3.DEFAULT_SESSION = None
@@ -30,7 +35,6 @@ def TechniqueMain(aws_access_key_id, aws_secret_access_key, aws_region = None, s
             else:
                 new_session = boto3.session.Session(aws_access_key_id=aws_access_key_id, aws_secret_access_key=aws_secret_access_key, region_name=aws_region, aws_session_token = session_token)
             
-                
         # current session info
         sts = new_session.client('sts')
         caller_info = sts.get_caller_identity()
@@ -44,10 +48,12 @@ def TechniqueMain(aws_access_key_id, aws_secret_access_key, aws_region = None, s
         # set new session as default session to use
         boto3.DEFAULT_SESSION = new_session
 
-        return session_info
+        raw_response = caller_info
+        pretty_response = session_info
+        return True, raw_response, pretty_response
         
     except Exception as e:
-        return f"Failed : {e}"
+        return False, {"Error" : e}, None
 
 
 def TechniqueInputSrc() -> list:
@@ -58,3 +64,9 @@ def TechniqueInputSrc() -> list:
         {"title" : "Region (Optional)", "id" : "region-text-input", "type" : "text", "placeholder" : "us-east-1", "element_type" : "dcc.Input"},
         {"title" : "Session Token (Optional)", "id" : "session-token-text-input", "type" : "text", "placeholder" : "dasdhashdjasdj-t0lk3n", "element_type" : "dcc.Input"}
     ]
+
+def TechniqueOutput(raw_response):
+    '''Returns a structured response'''
+    # initialize pretty response
+    pretty_response = raw_response
+    return pretty_response

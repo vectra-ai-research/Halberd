@@ -1,38 +1,54 @@
-from core.GraphFunctions import graph_post_request, graph_base_url
-from dash import dcc,html
+'''
+Module Name: App_Only_Access
+Module Description: Generates graph access token by authenticating with a application client credentials
+'''
 import yaml
 import msal 
 
 def TechniqueMain(client_id, client_secret,tenant_id, save_token = True):
-    '''Generates graph access token by authenticating with a application client credentials'''
+    # input validation
+    if client_id in [None, ""]:
+        return False, {"Error" : "Invalid Technique Input"}, None
+    if client_secret in [None, ""]:
+        return False, {"Error" : "Invalid Technique Input"}, None
+    if tenant_id in [None, ""]:
+        return False, {"Error" : "Invalid Technique Input"}, None
+
     try:
         client = msal.ConfidentialClientApplication(client_id, authority=f"https://login.microsoftonline.com/{tenant_id}", client_credential=client_secret)
 
-        token_result = client.acquire_token_for_client(scopes=['https://graph.microsoft.com/.default'])
-        if 'access_token' in token_result:
-            access_token = token_result['access_token']
+        raw_response = client.acquire_token_for_client(scopes=['https://graph.microsoft.com/.default'])
+
+        if 'access_token' in raw_response:
+            access_token = raw_response['access_token']
+            # save token
+            if save_token == True:
+                SaveTokens(access_token)
+            try:
+                # create pretty response
+                pretty_response = {}
+
+                pretty_response["Success"] = {
+                    "Access Token" : access_token,
+                    "Expires In" : raw_response.get('expires_in', 'N/A'),
+                    "Token Saved" : save_token
+                }
+                return True, raw_response, pretty_response
+            except:
+                # return only raw response if pretty response fails
+                return True, raw_response, None
         else:
-            pass
-            
-        headers = {'Content-Type': 'application/json','Authorization': 'Bearer ' + access_token}
-        data = {}
-        data['headers'] = headers
+            return False, {"Error": {"Error" : raw_response.get('error', 'N/A')}, "Description": raw_response.get('error_description', 'N/A'), "Error Code": raw_response.get('error_codes', 'N/A')}, None
 
-        '''Save accquired token'''
-        if save_token == True:
-            SaveTokens(access_token)
-            
-        return access_token
-
-    except:
-        return None
+    except Exception as e:
+        return False, {"Error" : e}, None
 
 def SaveTokens(new_token):
 
-    '''Add new access tokens to tokens yaml file'''
+    # add new access token to tokens yaml file
     tokens_file = "./Local/MSFT_Graph_Tokens.yml"
 
-    '''If read fails because file does not exist - create file and initialize tokens array'''
+    # if read fails because file does not exist - create file and initialize tokens array
     try:
         with open(tokens_file, "r") as tokens_data:
             all_tokens_data = yaml.safe_load(tokens_data)

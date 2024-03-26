@@ -1,37 +1,57 @@
 '''
-Module Name: Delete_DynamoDB_Table.py
+Module Name: Delete_DynamoDB_Table
 Description: Delete a table in dynamodb
 Ref: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/delete_table.html
 '''
 from core.AWSFunctions import CreateClient, valid_aws_regions
+
 def TechniqueMain(table_name, region_name = None, confirm_prompt = None):
+    # input validation
+    if table_name in [None, ""]:
+        return False, {"Error" : "Invalid input"}, None
 
     # confirm deletion to avoid accidental execution by user
     if confirm_prompt != "[confirm delete]":
-        return "Aborted : Enter [confirm delete]"
+        return False, {"Error" : "Enter [confirm delete]"}, None
 
-    # initialize boto3 dynamodb client
     # set default region
     if region_name in [None, ""]:
         region_name = "us-east-1"
     
     # validate user input for region
     if region_name not in valid_aws_regions:
-        return "Invalid Input: Invalid Region Name"
+        return False, {"Error" : "Invalid Input: Invalid Region Name"}, None
 
     # initialize boto3 dynamodb client
     my_client = CreateClient('dynamodb', region_name = region_name)
 
     try:
         # delete table 
-        response = my_client.delete_table(
+        raw_response = my_client.delete_table(
             TableName = table_name
             )
+            
+        # deletion successful
+        if 200 <= raw_response['ResponseMetadata']['HTTPStatusCode'] <300:
+            try:
+                # parse raw response => pretty response
+                pretty_response = {}
+                pretty_response["Success"] = {
+                    "Message" : "Table deletion successful",
+                    "Table Name" : raw_response.get('TableDescription','N/A').get('TableName','N/A'),
+                    "Table Size in Bytes" : raw_response.get('TableDescription','N/A').get('TableSizeBytes','N/A'),
+                    "Item Count" : raw_response.get('TableDescription','N/A').get('ItemCount','N/A'),
+                    "Table ARN" : raw_response.get('TableDescription','N/A').get('TableArn','N/A')
+                }
+                return True, raw_response, pretty_response
+            except:
+                return True, raw_response, None
+        else:
+            # deletion failed
+            return False, {"Error" : raw_response}, None
 
     except Exception as e:
-        return f"Error: {e}"
-
-    return {"Table Deleted" : table_name}
+        return False, {"Error" : e}, None
 
 def TechniqueInputSrc() -> list:
     '''This function returns the input fields required as parameters for the technique execution'''

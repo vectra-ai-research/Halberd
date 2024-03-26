@@ -1,3 +1,7 @@
+'''
+Module Name : EntraPrimaryFunctions
+Module Description : Stores primary reusable functions for Entra ID modules
+'''
 from core.GraphFunctions import graph_get_request
 
 def ReadAllGraphPermissions():

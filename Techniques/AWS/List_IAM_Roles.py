@@ -1,6 +1,6 @@
 '''
-Module Name: List_IAM_Roles.py
-Description: List all IAM roles or supply path prefix to filter certain roles.
+Module Name: List_IAM_Roles
+Module Description: List all IAM roles or supply path prefix to filter certain roles.
 Ref: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/list_roles.html
 '''
 from core.AWSFunctions import CreateClient
@@ -11,31 +11,32 @@ def TechniqueMain(path_prefix = None):
     my_client = CreateClient('iam')
 
     try:
-        # list all iam roles
         if path_prefix in [None,""]:
-            response = my_client.list_roles()
-        # list roles with supplied path prefix
+            # list all iam roles
+            raw_response = my_client.list_roles()
         else:
-            response = my_client.list_roles( PathPrefix=path_prefix)
+            # list roles with supplied path prefix
+            raw_response = my_client.list_roles(PathPrefix=path_prefix)
         
-        all_roles = response['Roles']
+        try:
+            pretty_response = {}
+            all_roles = raw_response['Roles']
+            for role in all_roles:
+                # all_user_output[user['UserId']] = user
+                pretty_response[role['RoleId']]= {
+                    "Role Name" : role.get('RoleName', 'N/A'),
+                    "Role ID" : role.get('RoleId', 'N/A'),
+                    "ARN" : role.get('Arn', 'N/A'),
+                    "Path" : role.get('Path', 'N/A'),
+                    "Max Session Duration" : role.get('MaxSessionDuration', 'N/A')
+                }
+            return True, raw_response, pretty_response
+        except:
+            # return only raw response if pretty response fails
+            return True, raw_response, None
 
     except Exception as e:
-        return f"Failed to list roles: {e}"
-
-    # create response display
-    role_info = {}
-
-    for role in all_roles:
-        role_info[role['RoleName']] = {
-            "Role Name" : role.get('RoleName', 'N/A'),
-            "Role ID" : role.get('RoleId', 'N/A'),
-            "ARN" : role.get('MaxSessionDuration', 'N/A'),
-            "Path" : role.get('Path', 'N/A'),
-            "Max Session Duration" : role.get('MaxSessionDuration', 'N/A')
-        }
-    
-    return role_info
+        return False, {"Error" : e}, None
 
 def TechniqueInputSrc() -> list:
     '''This function returns the input fields required as parameters for the technique execution'''
