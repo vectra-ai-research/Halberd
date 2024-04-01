@@ -100,5 +100,5 @@ def TechniqueInputSrc() -> list:
     '''Returns the input fields required as parameters for the technique execution'''
     return [
         {"title" : "Tenant ID", "id" : "device-code-flow-tenant-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"},
-        {"title" : "Client ID", "id" : "device-code-flow-client-id-text-input", "type" : "text", "placeholder" : "(Optonal)1234-5678-9098-7654-3210", "element_type" : "dcc.Input"}
+        {"title" : "Client ID (Optional)", "id" : "device-code-flow-client-id-text-input", "type" : "text", "placeholder" : "(Optonal)1234-5678-9098-7654-3210", "element_type" : "dcc.Input"}
     ]
