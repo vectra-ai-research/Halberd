@@ -9,13 +9,19 @@ from dash import html
 import dash_daq as daq
 import os
 
-folders = ['EntraID','Azure','M365','AWS']
+# folder list
+folders = ['EntraID','M365','AWS']
+
+# initiate counter for modules
 module_count = 0
+
+# enumerate all techniques folders to count modules
 for folder in folders:
     for module_file in os.listdir(f"./Techniques/{folder}"):
         if module_file.endswith(".py"):
             module_count += 1
 
+# define home page layout
 page_layout = html.Div([
     html.Br(),
     html.Br(),
