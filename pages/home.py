@@ -1,3 +1,9 @@
+'''
+Page Navigation url : app/home
+
+Page Description : Hosts the launch page of Halberd. Displays information regarding the tool and overview of included modules.
+'''
+
 import dash_bootstrap_components as dbc
 from dash import html
 import dash_daq as daq

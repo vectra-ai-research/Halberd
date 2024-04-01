@@ -13,7 +13,7 @@ def TechniqueMain(role_arn = None, role_session_name = None):
     if role_session_name in [None, ""]:
         return False, {"Error" : "Enter a session name"}, None
 
-    # initialize boto3 s3 client
+    # initialize boto3 sts client
     my_client = CreateClient('sts')
 
     try:

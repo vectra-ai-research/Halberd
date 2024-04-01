@@ -61,7 +61,7 @@ def TechniqueMain(user_name, password, client_id = "d3590ed6-52b3-4102-aeff-aad2
         
         # delegated access operation failed
         else:
-            return False, {"Error" : {"Response Status" : raw_response.status_code, "Code" : raw_response.json().get('error').get('code', 'N/A'), "Message" : raw_response.json().get('error').get('message', 'N/A')}}, None
+            return False, {"Error" : {"Response Status" : raw_response.status_code, "Code" : raw_response.json().get('error'), "Message" : raw_response.json().get('error_description')}}, None
     
     except Exception as e:
         return False, {"Error" : e}, None

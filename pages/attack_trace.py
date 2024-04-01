@@ -1,3 +1,9 @@
+'''
+Page Navigation url : app/attack-trace
+
+Page Description : Page displays a log of executed modules and allows exporting the data in a csv format. The logs are generated from local/Trace_Log.csv which is created locally on the users host.  
+'''
+
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 from csv import DictReader 

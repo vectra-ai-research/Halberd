@@ -1,7 +1,9 @@
 '''
-Name : attack.py
-Description : Defines the page layout for /attack page
+Page Navigation url : app/attack
+
+Page Description : Allows interaction with Halberd attack modules. Displays attack surfaces, tactics, techniques and corresponding technique config. The main content of the page is generated dynamically by core/TabContentGenerator.py (generates the content as per selected attack surface tab), core/TechniqueOptionsGenerator.py (generates the techniques available in each tactic of an attack surface) & core/TechniqueInfoGenerator.py (generates techniques information pane). The technique configuration form is generated dynamically by callback C004.
 '''
+
 import dash_bootstrap_components as dbc
 from dash import html
 

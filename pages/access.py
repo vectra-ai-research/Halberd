@@ -1,3 +1,9 @@
+'''
+Page Navigation url : app/access
+
+Page Description : Page functions as an access manager for Halberd. Displays real time access information to various platforms and provides options to manage access. The information on the page is dynamically generated through series of callbacks - C010, C011.
+'''
+
 from dash import dcc,html
 
 page_layout = html.Div(
