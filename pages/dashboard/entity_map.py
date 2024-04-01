@@ -1,8 +1,14 @@
-import dash_cytoscape as cyto
-from dash import html
+'''
+Dashboard Name: Entity Map
+Dashboard Description: Displays an interactive graph of access & privilege of an entra ID entity. Content is dynamically generated 
+'''
+from dash import html, dcc
+import dash_bootstrap_components as dbc
 from Techniques.EntraID.EntraPrimaryFunctions import GetUserInfo, ListJoinedTeams, ListObjectsMemberOf, ListAppRoleAssignments, ListDrives
 from core.EntraAuthFunctions import FetchSelectedToken, ExtractTokenInfo
+import dash_cytoscape as cyto
 
+# generate entity map
 def GenerateEntityMappingGraph():
     active_token = FetchSelectedToken()
     active_token_info = ExtractTokenInfo(active_token)
@@ -165,3 +171,13 @@ def GenerateEntityMappingGraph():
             html.Br(),
             html.B("Select a delegated access token on 'Access' page")
             ])
+
+# create page layout
+page_layout = html.Div([
+    dbc.Button("Generate Entity Map", id="generate-entity-map-button", n_clicks=0, color="danger", style={'float': 'right', 'margin-left': '10px'}),
+    dcc.Loading(
+        id="attack-output-loading",
+        type="default",
+        children = html.Div(id = "entity-map-display-div", style= {"height": "100vh"})
+    ),
+    ],className = "bg-dark")

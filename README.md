@@ -53,11 +53,13 @@ Once Halberd is deployed, start testing by visiting http://127.0.0.1:8050/ in yo
 
 > Example : To start testing EntraID, navigate to `Attack` -> `EntraID` -> `Initial Access` -> `EntraID Delegated Access`. Enter the required details and hit `Execute Technique`. Navigate back to `Access` to view details of your established access.
 
-`Attack Trace` displays trace of all executed attack techniques and allows users to download a report.
+`Recon` provides numerous advanced reconnaissance dashboards enabling fast and easy information gathering by automatically executing sequence of reconnaissance in the environment. 
 
-`Entity Map` automatically executes sequence of reconnaissance in the environment and generates an interactive graph of access & privilege in the cloud environment.
+> Example: Navigate to `Recon` -> `Entity Map` and click on `Generate Entity Map` to access an interactive graph of access & privileges in the cloud environment.
 
-Note: Attack modules require varying access & privileges for successful execution. Start by establishing relevant access using `Initial Access` tactic under each attack surface to continue testing with other attack modules. 
+`Trace` displays trace of all executed attack techniques and allows users to download a report.
+
+Note: Attack modules require varying access & privileges for successful execution. Start by establishing relevant access using `Initial Access` under each attack surface to continue testing with other attack modules. 
 
 Checkout [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) for more information on testing with Halberd. 
 

@@ -7,7 +7,7 @@ from dash import dcc, html, Patch, ALL
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from core.EntraAuthFunctions import FetchSelectedToken, ExtractTokenInfo, SetSelectedToken, FetchAllTokens
-from viz.Entra_ID_Entity_Map import GenerateEntityMappingGraph
+from pages.dashboard.entity_map import GenerateEntityMappingGraph
 from core.Local import InitializationCheck
 from core.TabContentGenerator import *
 from core.TechniqueOptionsGenerator import *
@@ -26,8 +26,8 @@ navbar = dbc.NavbarSimple(
     children=[
         dbc.NavItem(dbc.NavLink("Access", href="/access")),
         dbc.NavItem(dbc.NavLink("Attack", href="/attack")),
-        dbc.NavItem(dbc.NavLink("Entity Map", href="/entity-map")),
-        dbc.NavItem(dbc.NavLink("Attack Trace", href="/attack-trace")),
+        dbc.NavItem(dbc.NavLink("Recon", href="/recon")),
+        dbc.NavItem(dbc.NavLink("Trace", href="/attack-trace")),
     ],
     brand= html.Div([
         dbc.Row(
@@ -72,7 +72,7 @@ app.layout = html.Div([
 ])
 
 
-# Callback to update the page content based on the URL
+'''C001 - Callback to update the page content based on the URL'''
 @app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
 def display_page(pathname):
     if pathname == '/home':
@@ -84,8 +84,8 @@ def display_page(pathname):
     elif pathname == '/attack':
         from pages.attack import page_layout
         return page_layout
-    elif pathname == '/entity-map':
-        from pages.entity_map import page_layout
+    elif pathname == '/recon':
+        from pages.recon import page_layout
         return page_layout
     elif pathname == '/attack-trace':
         from pages.attack_trace import GenerateAttackTraceView
@@ -94,18 +94,18 @@ def display_page(pathname):
         from pages.home import page_layout
         return page_layout
 
-'''Callback to display tab content'''
+'''C002 - Callback to display tab content'''
 @app.callback(Output("tabs-content-div", "children"), Input("attack-surface-tabs", "active_tab"))
 def TabSwitcher(tab):
     tab_content = TabContentGenerator(tab)
     return tab_content
 
-'''Callback to display options in Attack page'''
+'''C003 - Callback to display options in Attack page'''
 @app.callback(Output(component_id = "technique-options-div", component_property = "children"), Input(component_id = "attack-surface-tabs", component_property = "active_tab"), Input(component_id = "tactic-dropdown", component_property = "value"))
 def DisplayAttackTechniqueOptions(tab, tactic):
     return TechniqueOptionsGenerator(tab, tactic)
 
-'''Callback to display technique config'''
+'''C004 - Callback to display technique config'''
 @app.callback(Output(component_id = "attack-config-div", component_property = "children"), Input(component_id = "attack-options-radio", component_property = "value"))
 def DisplayAttackTechniqueConfig(t_id):
     technique_config = TechniqueInputs(t_id)
@@ -166,7 +166,7 @@ def DisplayAttackTechniqueConfig(t_id):
     
     return config_div_display
 
-'''Attack Execution Callback - Execute Technique'''
+'''C005 - Attack Execution Callback - Execute Technique'''
 @app.callback(Output(component_id = "execution-output-div", component_property = "children"), Output(component_id = "app-notification", component_property = "is_open"), Output(component_id = "app-notification", component_property = "children"), Input(component_id= "technique-execute-button", component_property= "n_clicks"), State(component_id = "attack-options-radio", component_property = "value"), State({"type": "technique-config-display", "index": ALL}, "value"), State({"type": "technique-config-display-file-upload", "index": ALL}, "contents"), prevent_initial_call = True)
 def ExecuteTechnique(n_clicks, t_id, values, file_content):
     if n_clicks == 0:
@@ -177,14 +177,14 @@ def ExecuteTechnique(n_clicks, t_id, values, file_content):
     else:
         return TechniqueOutput(t_id, values), True, "Technique Executed"
 
-'''Entity Map - Generate Map'''
+'''C006 - Entity Map - Generate Map'''
 @app.callback(Output(component_id = "entity-map-display-div", component_property = "children"), Input(component_id = "generate-entity-map-button", component_property = "n_clicks"), prevent_initial_call=True)
 def GenerateEntityMap(n_clicks):
     if n_clicks:
         return GenerateEntityMappingGraph()
 
 
-'''Callback to display available techniques in radio list'''
+'''C007 - Callback to display available techniques in radio list'''
 @app.callback(Output(component_id = "technique-info-offcanvas", component_property = "is_open"), Input(component_id = "attack-options-radio", component_property = "value"), Input(component_id= "technique-info-display-button", component_property= "n_clicks"),[State("technique-info-offcanvas", "is_open")], prevent_initial_call=True)
 def DisplayAttackTechniqueConfig(t_id, n_clicks, is_open):
     if n_clicks == 0:
@@ -193,7 +193,7 @@ def DisplayAttackTechniqueConfig(t_id, n_clicks, is_open):
     return not is_open
 
 
-'''Callback to log executed technique'''
+'''C008 - Callback to log executed technique'''
 @app.callback(
     Output(component_id = "attack-technique-sink-hidden-div", component_property = "children"), 
     Input(component_id= "technique-execute-button", component_property= "n_clicks"),  
@@ -206,7 +206,7 @@ def LogEventOnTriggerCallback(n_clicks, tactic, technique):
 
     return LogEventOnTrigger(tactic, technique)
 
-'''Callback to download trace logs'''
+'''C009 - Callback to download trace logs'''
 @app.callback(
     Output("download-trace-logs", "data"),
     Input("download-trace-logs-button", "n_clicks"),
@@ -217,7 +217,7 @@ def DownloadTraceLogs(n_clicks):
         raise PreventUpdate
     return dcc.send_file("./Local/Trace_Log.csv")
 
-'''Callback to populate AWS access info'''
+'''C010 - Callback to populate AWS access info'''
 @app.callback(Output(component_id = "aws-access-info-div", component_property = "children"), Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"))
 def GenerateAccessInfoDivCallBack(n_intervals):
     info_output_div = []
@@ -249,7 +249,7 @@ def GenerateAccessInfoDivCallBack(n_intervals):
         info_output_div.append(html.Div("No Valid Session", className="text-danger"))
         return info_output_div
 
-'''Callback to populate EntraID access info'''
+'''C011 - Callback to populate EntraID access info'''
 @app.callback(Output(component_id = "access-info-div", component_property = "children"), Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"))
 def GenerateAccessInfoDivCallBack(n_intervals):
     access_token = FetchSelectedToken()
@@ -285,7 +285,7 @@ def GenerateAccessInfoDivCallBack(n_intervals):
     else:
         return "Failed to decode access token"
 
-'''Callback to select Entra ID access token'''
+'''C012 - Callback to select Entra ID access token'''
 @app.callback(Output(component_id = "access-info-div", component_property = "children",  allow_duplicate=True), Input(component_id = "token-selector-dropdown", component_property = "value"), prevent_initial_call=True)
 def UpdateInfoOnTokenSelectCallBack(value):
 
@@ -305,7 +305,6 @@ def UpdateInfoOnTokenSelectCallBack(value):
     SetSelectedToken(access_token)
 
     access_info = ExtractTokenInfo(access_token)
-    #access_info = TokenValidation()
     if access_info != None:
         info_output_div = []
         for info in access_info:
@@ -340,7 +339,7 @@ def UpdateInfoOnTokenSelectCallBack(value):
         return "Failed to decode access token"
 
 
-'''Callback to generate Entra ID token options in Access dropdown'''
+'''C013 - Callback to generate Entra ID token options in Access dropdown'''
 @app.callback(Output(component_id = "token-selector-dropdown", component_property = "options"), Input(component_id = "token-selector-dropdown", component_property = "title"))
 def GenerateDropdownOptionsCallBack(title):
     if title == None:
@@ -357,12 +356,84 @@ def GenerateDropdownOptionsCallBack(title):
 
         return all_tokens
 
+'''C014 - Recon page tab switcher'''
+@app.callback(Output("recon-content-div", "children"), Input("recon-target-tabs", "active_tab"))
+def TabSwitcher(tab):
+    if tab == "tab-recon-entity-map":
+        from pages.dashboard.entity_map import page_layout
+        return page_layout
+    if tab == "tab-recon-roles":
+        from pages.dashboard.recon_roles import page_layout
+        return page_layout
+    if tab == "tab-recon-users":
+        from pages.dashboard.recon_users import page_layout
+        return page_layout
+    else:
+        from pages.dashboard.entity_map import page_layout
+        return page_layout
+
+'''C015 - Callback to generate data in role recon dashboard'''
+@app.callback(Output(component_id = "role-name-recon-div", component_property = "children"), Output(component_id = "role-template-id-recon-div", component_property = "children"), Output(component_id = "role-id-recon-div", component_property = "children"), Output(component_id = "role-member-count-recon-div", component_property = "children"), Output(component_id = "role-member-recon-div", component_property = "children"), Output(component_id = "role-description-recon-div", component_property = "children"), Input(component_id= "role-recon-start-button", component_property= "n_clicks"),Input(component_id = "role-recon-input", component_property = "value"))
+def ExecuteRecon(n_clicks, role_name):
+    if n_clicks == 0:
+        raise PreventUpdate
+    
+    # input validation
+    if role_name in ["",None]:
+        response = "N/A"
+        return response, response, response, response, response, response
+    
+    # import recon functions
+    from pages.dashboard.recon_roles import FindRole, ReconRoleMembers
+    
+    # execute recon
+    role_name, role_id, role_template_id, role_description = FindRole(role_name)
+    member_count, role_members = ReconRoleMembers(role_template_id)
+
+    return role_name, role_template_id, role_id, member_count, role_members, role_description
+
+'''C016 - Callback to generate data in user recon dashboard'''
+@app.callback(Output(
+    component_id = "user-displayname-recon-div", component_property = "children"), 
+    Output(component_id = "user-id-recon-div", component_property = "children"), 
+    Output(component_id = "user-upn-recon-div", component_property = "children"), 
+    Output(component_id = "user-mail-recon-div", component_property = "children"), 
+    Output(component_id = "user-job-title-recon-div", component_property = "children"), 
+    Output(component_id = "user-location-recon-div", component_property = "children"), 
+    Output(component_id = "user-phone-recon-div", component_property = "children"), 
+    Output(component_id = "user-group-count-recon-div", component_property = "children"), 
+    Output(component_id = "user-role-count-recon-div", component_property = "children"), 
+    Output(component_id = "user-groups-recon-div", component_property = "children"), 
+    Output(component_id = "user-roles-recon-div", component_property = "children"), 
+    Output(component_id = "user-app-count-recon-div", component_property = "children"), 
+    Output(component_id = "user-app-recon-div", component_property = "children"), 
+    Input(component_id= "user-recon-start-button", component_property= "n_clicks"),
+    Input(component_id = "user-recon-input", component_property = "value"))
+def ExecuteRecon(n_clicks, user_string):
+    if n_clicks == 0:
+        raise PreventUpdate
+    
+    # input validation
+    if user_string in ["",None]:
+        response = "N/A"
+        return response, response, response, response, response, response, response, response, response, response, response, response, response
+    
+    # import recon functions
+    from pages.dashboard.recon_users import FindUser, ReconUserMemberships, ReconUserAssignedApps
+
+    # execute recon
+    user_id, user_upn, user_display_name, user_mail, user_job_title, user_off_location, user_phone = FindUser(user_string)
+    groups_count, role_count, group_membership, role_assigned = ReconUserMemberships(user_id)
+    app_assigned_count, user_app_assignments = ReconUserAssignedApps(user_id)
+
+    return user_display_name, user_id, user_upn, user_mail, user_job_title, user_off_location, user_phone, groups_count, role_count, group_membership, role_assigned, app_assigned_count, user_app_assignments
+
 
 if __name__ == '__main__':
-    '''Initializing primary app files'''
+    # initialize primary app files
     InitializationCheck()
     TacticMapGenerator()
     TechniqueMapGenerator()
 
-    '''Starting application'''
+    # start application
     app.run_server(debug = True)
