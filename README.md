@@ -10,6 +10,11 @@ Leveraging Halberd, security teams can execute attack techniques such as cloud r
 
 Evaluate defenses across multiple attack surfaces, including [Entra ID](https://learn.microsoft.com/en-us/entra/identity/), [M365](https://learn.microsoft.com/en-us/microsoft-365/?view=o365-worldwide), [Azure](https://learn.microsoft.com/en-us/azure/?product=popular) and [AWS](https://docs.aws.amazon.com).
 
+<h1 align="center">    
+    <img src="img/Halberd_Attack_View.png" height="600" width="1200">
+</h1>
+<p align="center">
+
 ## Setup
 
 Halberd works on Linux, macOS & Windows and can be setup easily in just a few minutes.
@@ -19,6 +24,8 @@ Halberd works on Linux, macOS & Windows and can be setup easily in just a few mi
 ```
 $ git clone https://github.com/vectra-ai-research/Halberd.git
 $ cd Halberd
+$ python3 -m venv venv
+$ source venv/bin/activate
 $ pip install -r requirements.txt
 $ python3 Halberd.py
 ```
@@ -45,21 +52,27 @@ Visit: http://127.0.0.1:8050/
 
 ## Getting Started
 
-Once Halberd is deployed, start testing by visiting http://127.0.0.1:8050/ in your browser. 
+Once Halberd is deployed & running, start testing by visiting http://127.0.0.1:8050/ in your browser. 
 
-`Access` allows users to manage access tokens / clients and review current access information for various targets.
+`Access`
 
-`Attack` allows users to view and execute attack techniques. Select an attack surface from the attack tab to view available tactics & attack modules. 
+Allows users to manage access tokens / clients and review current access information for various targets.
 
-> Example : To start testing EntraID, navigate to `Attack` -> `EntraID` -> `Initial Access` -> `EntraID Delegated Access`. Enter the required details and hit `Execute Technique`. Navigate back to `Access` to view details of your established access.
+`Attack`
 
-`Recon` provides numerous advanced reconnaissance dashboards enabling fast and easy information gathering by automatically executing sequence of reconnaissance in the environment. 
+Allows users to view and execute attack techniques. From the `Attack` view, select an `Attack Surface > Tactic > Technique > Execute`.  
 
-> Example: Navigate to `Recon` -> `Entity Map` and click on `Generate Entity Map` to access an interactive graph of access & privileges in the cloud environment.
+`Recon`
 
-`Trace` displays trace of all executed attack techniques and allows users to download a report.
+Provides numerous advanced reconnaissance dashboards enabling fast and easy information gathering by automatically executing sequence of reconnaissance in the environment.
 
-Note: Attack modules require varying access & privileges for successful execution. Start by establishing relevant access using `Initial Access` under each attack surface to continue testing with other attack modules. 
+Example: Navigate to `Recon` > `Entity Map` > `Generate Entity Map` to generate an interactive graph of access & privileges in the cloud environment.
+
+`Trace`
+
+Displays log of all executed techniques and allows users to download a report.
+
+Note: Different techniques require varying access & privileges for successful execution. Start by establishing relevant access using `Initial Access` tactic under each attack surface. 
 
 Checkout [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) for more information on testing with Halberd. 
 
@@ -70,5 +83,6 @@ Checkout [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) for m
 If you are interested in contributing to Halberd, checkout [development focus areas](https://github.com/vectra-ai-research/Halberd/wiki/Contributions#areas-of-focus) & guidance on [contributions](https://github.com/vectra-ai-research/Halberd/wiki/Contributions).
 
 ## Contact
-If you found this tool useful, want to share an interesting use-case or idea - reach out & share them
+If you found this tool useful, want to share interesting use-cases or ideas - reach out & share them!
+ - Author : [Arpan Sarkar](https://www.linkedin.com/in/arpan-sarkar/)
  - Maintainer : [Arpan Sarkar](https://www.linkedin.com/in/arpan-sarkar/)
