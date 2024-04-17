@@ -43,6 +43,24 @@ page_layout = html.Div(
                 ),
             html.Br(),
         ]),
+
+        html.Br(),
+        html.Br(),
+        html.H2("Azure - Access Info", style ={"textAlign": "center", "padding": "5px"}),
+        html.Div([
+            html.H4("Set Default Subscription"),
+            dcc.Dropdown(id="azure-subscription-selector-dropdown"),
+            html.Br(), 
+        ]),
+        html.Div([
+            html.H2("Access Info"),
+            dcc.Loading(
+                    id="azure-access-info-loading",
+                    type="default",
+                    children=html.Div(id="azure-access-info-div", style={"border":"1px solid #ccc", "padding-right": "10px", "padding-left": "10px"})
+                ),
+            html.Br(),
+        ]),
     ],
     className="bg-dark",style={ "height": "100vh", "padding-right": "20px", "padding-left": "20px"}
 )

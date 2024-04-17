@@ -10,7 +10,7 @@ import dash_daq as daq
 import os
 
 # folder list
-folders = ['EntraID','M365','AWS']
+folders = ['EntraID','M365','AWS', 'Azure']
 
 # initiate counter for modules
 module_count = 0
@@ -48,7 +48,7 @@ page_layout = html.Div([
                 html.H3("Surface"),
                 daq.LEDDisplay(
                     id='surfaces-LED-display-1',
-                    value="03",
+                    value="04",
                     size=80,
                     color = "Black"
                 ),
@@ -58,7 +58,7 @@ page_layout = html.Div([
                 html.H3("Tactics"),
                 daq.LEDDisplay(
                     id='tactics-LED-display-1',
-                    value="08",
+                    value="09",
                     size=80,
                     color = "Black"
                 ),

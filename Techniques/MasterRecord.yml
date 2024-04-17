@@ -12,6 +12,7 @@
 #         Technique : Valid Accounts
 #         SubTechnique: "Cloud Accounts"
 #         TechniqueID : T1078.004
+#         URL : https://attack.mitre.org/techniques/T1078/004/
 #     AzureThreatResearchMatrix:
 #       - ~
 #   Resources:
@@ -32,10 +33,11 @@ EntraID-001 :
         Technique : Valid Accounts
         SubTechnique: "Cloud Accounts"
         TechniqueID : T1078.004
+        URL : https://attack.mitre.org/techniques/T1078/004/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1078/004/
+    - ~
   Notes:
     - N/A
 
@@ -50,10 +52,11 @@ EntraID-002 :
         Technique : Valid Accounts
         SubTechnique: Cloud Accounts
         TechniqueID : T1078.004
+        URL : https://attack.mitre.org/techniques/T1078/004/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1078/004/
+    - ~
   Notes:
     - N/A
 
@@ -68,10 +71,17 @@ EntraID-003 :
         Technique : Valid Accounts
         SubTechnique: Cloud Accounts
         TechniqueID : T1078.004
+        URL : https://attack.mitre.org/techniques/T1078/004/
+      T1550.001 :
+        Tactic : [Defense Evasion, Lateral Movement]
+        Technique : Use Alternate Authentication Material
+        SubTechnique: Application Access Token
+        TechniqueID : T1550.001
+        URL : https://attack.mitre.org/techniques/T1550/001/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1078/004/
+    - ~
   Notes:
     - "Token is saved in tool. Select token on 'Access' page to use it"
 
@@ -86,10 +96,11 @@ EntraID-004 :
         Technique : Create Account
         SubTechnique: Cloud Account
         TechniqueID : T1136.003
+        URL : https://attack.mitre.org/techniques/T1136/003/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1136/003/
+    - ~
   Notes:
     - Requires authenticated session
 
@@ -104,10 +115,11 @@ EntraID-005 :
         Technique : Domain Policy Modification
         SubTechnique: Cloud Account
         TechniqueID : T1136.003
+        URL : https://attack.mitre.org/techniques/T1484/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1484/
+    - ~
     - https://learn.microsoft.com/en-us/graph/api/conditionalaccessroot-post-namedlocations?view=graph-rest-1.0&tabs=http
   Notes:
     - "IP with subnet format : 10.0.0.1/24"
@@ -123,10 +135,11 @@ EntraID-006 :
         Technique : Account Access Removal
         SubTechnique: ~
         TechniqueID : T1531
+        URL : https://attack.mitre.org/techniques/T1531/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1531/
+    - ~
   Notes:
     - N/A
 
@@ -136,11 +149,12 @@ EntraID-007 :
   ExecutionPath: EntraID/Recon_Tenant_Info.py
   References:
     MITRE:
-      T1531 :
+      N/A :
         Tactic : [Discovery]
         Technique : ~
         SubTechnique: ~
-        TechniqueID : T1531
+        TechniqueID : ~
+        URL : ~
     AzureThreatResearchMatrix:
       - ~
   Resources:
@@ -159,10 +173,11 @@ EntraID-008 :
         Technique : Account Discovery
         SubTechnique: Cloud Account
         TechniqueID : T1531
+        URL : https://attack.mitre.org/techniques/T1087/004/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1087/004/
+    - ~
   Notes:
     - N/A
 
@@ -177,10 +192,11 @@ EntraID-009 :
         Technique : Permission Groups Discovery
         SubTechnique: ~
         TechniqueID : T1069.003
+        URL : https://attack.mitre.org/techniques/T1069/003/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1069/003/
+    - ~
   Notes:
     - N/A
 
@@ -195,10 +211,11 @@ EntraID-010 :
         Technique : Account Discovery
         SubTechnique: Cloud Account
         TechniqueID : T1087.004
+        URL : https://attack.mitre.org/techniques/T1087/004/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1087/004/
+    - ~
   Notes:
     - N/A
 
@@ -213,10 +230,11 @@ EntraID-011 :
         Technique : Software Discovery
         SubTechnique: ~
         TechniqueID : T1518.001
+        URL : https://attack.mitre.org/techniques/T1518/001/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1518/001/
+    - ~
   Notes:
     - N/A
 
@@ -231,10 +249,11 @@ EntraID-012 :
         Technique : Cloud Service Discovery
         SubTechnique: ~
         TechniqueID : T1526
+        URL : https://attack.mitre.org/techniques/T1526/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1526/
+    - ~
   Notes:
     - N/A
 
@@ -249,10 +268,11 @@ EntraID-013 :
         Technique : Cloud Service Discovery
         SubTechnique: ~
         TechniqueID : T1526
+        URL : https://attack.mitre.org/techniques/T1526/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1526/
+    - ~
   Notes:
     - N/A
 
@@ -267,10 +287,11 @@ EntraID-014 :
         Technique : Valid Accounts
         SubTechnique: Cloud Accounts
         TechniqueID : T1078.004
+        URL : https://attack.mitre.org/techniques/T1526/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1526/
+    - ~
   Notes:
     - N/A
 
@@ -285,10 +306,11 @@ EntraID-015 :
         Technique : Create Account
         SubTechnique: Cloud Account
         TechniqueID : T1136.003
+        URL : https://attack.mitre.org/techniques/T1136/003/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1136/003/
+    - ~
   Notes:
     - N/A
 
@@ -296,6 +318,7 @@ EntraID-016 :
   Name: "EntraID Device Code Flow Access"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Device_Code_Flow_Access.py
+  Description: "This technique initiates a device code flow authentication. Authentication URI and User Code is generated by the technique which can be shared with a target to capture their access token. The technique continues to run in the background to check for successful authentication from the target using the details generated. Once a user successfully authenticates the technique the access token is stored and available for use in the 'Access' page."
   References:
     MITRE:
       T1078.004 :
@@ -303,12 +326,13 @@ EntraID-016 :
         Technique : Valid Accounts
         SubTechnique: "Cloud Accounts"
         TechniqueID : T1078.004
+        URL : https://attack.mitre.org/techniques/T1078/004/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1078/004/
+    - ~
   Notes:
-    - Check terminal for device code flow link and code
+    - N/A
 
 EntraID-017 :
   Name: "Bruteforce Password"
@@ -316,15 +340,15 @@ EntraID-017 :
   ExecutionPath: EntraID/Bruteforce_Password_Access.py
   References:
     MITRE:
-      T1078.004 :
-        Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
-        Technique : Valid Accounts
-        SubTechnique: "Cloud Accounts"
-        TechniqueID : T1078.004
+      T1110.001 :
+        Tactic : [Credential Access, Initial Access]
+        Technique : Brute Force
+        SubTechnique: "Password Guessing"
+        TechniqueID : T1110.001
+        URL : https://attack.mitre.org/techniques/T1110/001/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1078/004/
     - https://learn.microsoft.com/en-us/entra/identity-platform/reference-error-codes#aadsts-error-codes
   Notes:
     - N/A
@@ -340,10 +364,11 @@ EntraID-018 :
         Technique : Account Manipulation
         SubTechnique: Additional Cloud Roles
         TechniqueID : T1098.003
+        URL : https://attack.mitre.org/techniques/T1098/003/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1098/003/
+    - ~
   Notes:
     - N/A
 
@@ -358,10 +383,11 @@ EntraID-019 :
         Technique : Account Manipulation
         SubTechnique: Additional Cloud Roles
         TechniqueID : T1098.003
+        URL : https://attack.mitre.org/techniques/T1098/003/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1098/003/
+    - ~
   Notes:
     - N/A
 
@@ -371,15 +397,15 @@ EntraID-020 :
   ExecutionPath: EntraID/Password_Spray.py
   References:
     MITRE:
-      T1078.004 :
-        Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
-        Technique : Valid Accounts
-        SubTechnique: "Cloud Accounts"
-        TechniqueID : T1078.004
+      T1110.003 :
+        Tactic : [Credential Access, Initial Access]
+        Technique : Brute Force
+        SubTechnique: "Password Spraying"
+        TechniqueID : T1110.003
+        URL : https://attack.mitre.org/techniques/T1110/003/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1078/004/
     - https://github.com/dafthack/MSOLSpray
   Notes:
     - The response contains access tokens for usernames with successful authentication.
@@ -396,15 +422,15 @@ EntraID-021 :
         Technique : Account Manipulation
         SubTechnique: Additional Cloud Credentials
         TechniqueID : T1098.001
+        URL : https://attack.mitre.org/techniques/T1098/001/
     AzureThreatResearchMatrix:
       - AZT405.3 :
           Tactic : [Privilege Escalation]
           Technique : Azure AD Application
           SubTechnique : Application Registration Owner
           TechniqueID : AZT405.3
+          URL : https://microsoft.github.io/Azure-Threat-Research-Matrix/PrivilegeEscalation/AZT405/AZT405-3/
   Resources:
-    - https://attack.mitre.org/techniques/T1098/001/
-    - https://microsoft.github.io/Azure-Threat-Research-Matrix/PrivilegeEscalation/AZT405/AZT405-3/
     - https://learn.microsoft.com/en-us/graph/api/application-addpassword?view=graph-rest-1.0&tabs=http
   Notes:
     - N/A
@@ -420,10 +446,10 @@ EntraID-022 :
         Technique : Account Manipulation
         SubTechnique: Additional Cloud Credentials
         TechniqueID : T1098.001
+        URL : https://attack.mitre.org/techniques/T1098/001/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - hhttps://attack.mitre.org/techniques/T1098/001/
     - https://learn.microsoft.com/en-us/graph/api/application-post-applications?view=graph-rest-1.0&tabs=http
   Notes:
     - N/A
@@ -439,10 +465,11 @@ EntraID-023 :
         Technique : Permission Groups Discovery
         SubTechnique: Cloud Groups
         TechniqueID : T1069.003
+        URL : https://attack.mitre.org/techniques/T1069/003/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1069/003/
+    - ~
   Notes:
     - N/A
 
@@ -458,10 +485,10 @@ AWS-001 :
         Technique : Valid Accounts
         SubTechnique: "Cloud Accounts"
         TechniqueID : T1078.004
+        URL : https://attack.mitre.org/techniques/T1078/004/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1526/
     - https://docs.aws.amazon.com/general/latest/gr/rande.html#regional-endpoints
   Notes:
     - N/A
@@ -477,10 +504,10 @@ AWS-002 :
         Technique : Cloud Storage Object Discovery
         SubTechnique: ~
         TechniqueID : T1619
+        URL : https://attack.mitre.org/techniques/T1619/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1619/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/list_buckets.html
   Notes:
     - N/A
@@ -496,10 +523,11 @@ AWS-003 :
         Technique : Cloud Infrastructure Discovery
         SubTechnique: ~
         TechniqueID : T1580
+        URL : https://attack.mitre.org/techniques/T1580/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1580/
+    - ~
   Notes:
     - N/A
 
@@ -514,10 +542,11 @@ AWS-004 :
         Technique : Cloud Storage Object Discovery
         SubTechnique: ~
         TechniqueID : T1619
+        URL : https://attack.mitre.org/techniques/T1619/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1619/
+    - ~
   Notes:
     - N/A
 
@@ -532,10 +561,10 @@ AWS-005 :
         Technique : Data from Cloud Storage
         SubTechnique: ~
         TechniqueID : T1530
+        URL : https://attack.mitre.org/techniques/T1530/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1530/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/download_file.html
   Notes:
     - No object Name in config will attempt to download all objects in bucket
@@ -551,10 +580,10 @@ AWS-006 :
         Technique : Cloud Infrastructure Discovery
         SubTechnique: ~
         TechniqueID : T1580
+        URL : https://attack.mitre.org/techniques/T1580/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1580/
     - https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_InstanceState.html
     - https://docs.aws.amazon.com/general/latest/gr/rande.html#regional-endpoints
   Notes:
@@ -571,10 +600,11 @@ AWS-007 :
         Technique : Cloud Infrastructure Discovery
         SubTechnique: ~
         TechniqueID : T1580
+        URL : https://attack.mitre.org/techniques/T1580/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1580/
+    - ~
   Notes:
     - N/A
 
@@ -589,10 +619,10 @@ AWS-008 :
         Technique : Account Manipulation
         SubTechnique: Additional Cloud Roles
         TechniqueID : T1098.003
+        URL : https://attack.mitre.org/techniques/T1098/003/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1098/003/
     - https://docs.aws.amazon.com/STS/latest/APIReference/API_AssumeRole.html
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/sts/client/assume_role.html#
   Notes:
@@ -609,10 +639,10 @@ AWS-009 :
         Technique : Permission Groups Discovery
         SubTechnique: Cloud Groups
         TechniqueID : T1069.003
+        URL : https://attack.mitre.org/techniques/T1069/003/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1069/003/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/list_roles.html
   Notes:
     - N/A
@@ -628,10 +658,10 @@ AWS-010 :
         Technique : Data Destruction
         SubTechnique: ~
         TechniqueID : T1485
+        URL : https://attack.mitre.org/techniques/T1485/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1485/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/delete_object.html
   Notes:
     - N/A
@@ -647,10 +677,10 @@ AWS-011 :
         Technique : Data Destruction
         SubTechnique: ~
         TechniqueID : T1485
+        URL : https://attack.mitre.org/techniques/T1485/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1485/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/delete_bucket.html
   Notes:
     - N/A
@@ -666,10 +696,10 @@ AWS-012 :
         Technique : Cloud Storage Object Discovery
         SubTechnique: ~
         TechniqueID : T1619
+        URL : https://attack.mitre.org/techniques/T1619/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1619/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/list_tables.html
     - https://docs.aws.amazon.com/general/latest/gr/rande.html#regional-endpoints
   Notes:
@@ -686,10 +716,10 @@ AWS-013 :
         Technique : Data Destruction
         SubTechnique: ~
         TechniqueID : T1485
+        URL : https://attack.mitre.org/techniques/T1485/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1485/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/dynamodb/client/delete_table.html
   Notes:
     - N/A
@@ -705,10 +735,10 @@ AWS-014 :
         Technique : Account Discovery
         SubTechnique: Cloud Account
         TechniqueID : T1087.004
+        URL : https://attack.mitre.org/techniques/T1087/004/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1087/004/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/list_users.html
   Notes:
     - N/A
@@ -724,10 +754,10 @@ AWS-015 :
         Technique : Account Discovery
         SubTechnique: Cloud Account
         TechniqueID : T1087.004
+        URL : https://attack.mitre.org/techniques/T1087/004/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1087/004/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/list_policies.html
   Notes:
     - "Acceptable policy scope values : All | AWS | Local"
@@ -743,10 +773,10 @@ AWS-016 :
         Technique : Account Discovery
         SubTechnique: Cloud Account
         TechniqueID : T1087.004
+        URL : https://attack.mitre.org/techniques/T1087/004/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1087/004/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/get_account_authorization_details.html
   Notes:
     - N/A
@@ -762,10 +792,10 @@ AWS-017 :
         Technique : Account Discovery
         SubTechnique: Cloud Account
         TechniqueID : T1087.004
+        URL : https://attack.mitre.org/techniques/T1087/004/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1087/004/
     - https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/iam/client/get_user.html
   Notes:
     - N/A
@@ -782,10 +812,11 @@ M365-001 :
         Technique : Email Collection
         SubTechnique: Email Forwarding Rule
         TechniqueID : T1114.003
+        URL : https://attack.mitre.org/techniques/T1114/003/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1114/003/
+    - ~
   Notes:
     - N/A
 
@@ -800,10 +831,11 @@ M365-002 :
         Technique : Hide Artifacts
         SubTechnique: Email Hiding Rules
         TechniqueID : T1564.008
+        URL : https://attack.mitre.org/techniques/T1564/008/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1564/008/
+    - ~
   Notes:
     - N/A
 
@@ -818,10 +850,11 @@ M365-003 :
         Technique : Data from Cloud Storage
         SubTechnique: ~
         TechniqueID : T1530
+        URL : https://attack.mitre.org/techniques/T1530/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1530/
+    - ~
   Notes:
     - N/A
 
@@ -836,10 +869,11 @@ M365-004 :
         Technique : Data from Information Repositories
         SubTechnique: ~
         TechniqueID : T1213
+        URL : https://attack.mitre.org/techniques/T1213/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1213/
+    - ~
   Notes:
     - N/A
 
@@ -854,10 +888,11 @@ M365-005 :
         Technique : Data from Information Repositories
         SubTechnique: Sharepoint
         TechniqueID : T1213.002
+        URL : https://attack.mitre.org/techniques/T1213/002/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1213/002/
+    - ~
   Notes:
     - N/A
 
@@ -872,10 +907,11 @@ M365-006 :
         Technique : Data from Information Repositories
         SubTechnique: ~
         TechniqueID : T1213
+        URL : https://attack.mitre.org/techniques/T1213/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1213/
+    - ~
   Notes:
     - N/A
 
@@ -890,10 +926,11 @@ M365-007 :
         Technique : Internal Spearphishing
         SubTechnique: ~
         TechniqueID : T1534
+        URL : https://attack.mitre.org/techniques/T1534/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1534/
+    - ~
   Notes:
     - N/A
 
@@ -908,9 +945,227 @@ M365-008 :
         Technique : Email Collection
         SubTechnique: Remote Email Collection
         TechniqueID : T1114.002
+        URL : https://attack.mitre.org/techniques/T1114/002/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/techniques/T1114/002/
+    - ~
+  Notes:
+    - N/A
+  
+###Azure Techniques###
+Azure-001 :
+  Name: "User Credentials - Azure CLI"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Azure_CLI_Credential_Access.py
+  References:
+    MITRE:
+      T1078.004 :
+        Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
+        Technique : Valid Accounts
+        SubTechnique: "Cloud Accounts"
+        TechniqueID : T1078.004
+        URL : https://attack.mitre.org/techniques/T1078/004/
+    AzureThreatResearchMatrix:
+      - AZT201.1 :
+          Tactic : [Initial Access]
+          Technique : Valid Credentials
+          SubTechnique : User Account
+          TechniqueID : AZT201.1
+          URL : https://microsoft.github.io/Azure-Threat-Research-Matrix/InitialAccess/AZT201/AZT201-1/
+  Resources:
+    - https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli-interactively#sign-in-with-credentials-on-the-command-line
+  Notes:
+    - N/A
+
+Azure-002 :
+  Name: "Delete Azure Virtual Machine"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Delete_VM.py
+  References:
+    MITRE:
+      ~ :
+        Tactic : [Impact]
+        Technique : ~
+        SubTechnique: ~
+        TechniqueID : ~
+        URL : ~
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-003 :
+  Name: "List VMs"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/List_VMs.py
+  References:
+    MITRE:
+      T1580 :
+        Tactic : [Discovery]
+        Technique : Cloud Infrastructure Discovery
+        SubTechnique: ~
+        TechniqueID : T1580
+        URL : https://attack.mitre.org/techniques/T1580/
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-004 :
+  Name: "List Resources"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/List_Resources.py
+  References:
+    MITRE:
+      T1526 :
+        Tactic : [Discovery]
+        Technique : Cloud Service Discovery
+        SubTechnique: ~
+        TechniqueID : T1526
+        URL : https://attack.mitre.org/techniques/T1526/
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-005 :
+  Name: "Service Principal - Azure CLI"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Service_Principal_Access.py
+  References:
+    MITRE:
+      T1078.004 :
+        Tactic : [Defense Evasion, Persistence, Privilege Escalation, Initial Access]
+        Technique : Valid Accounts
+        SubTechnique: "Cloud Accounts"
+        TechniqueID : T1078.004
+        URL : https://attack.mitre.org/techniques/T1078/004/
+    AzureThreatResearchMatrix:
+      - AZT201.2 :
+          Tactic : [Initial Access]
+          Technique : Valid Credentials
+          SubTechnique : Service Principal
+          TechniqueID : AZT201.2
+          URL : https://microsoft.github.io/Azure-Threat-Research-Matrix/InitialAccess/AZT201/AZT201-2/
+  Resources:
+    - https://learn.microsoft.com/en-us/cli/azure/authenticate-azure-cli-service-principal
+  Notes:
+    - N/A
+
+Azure-006 :
+  Name: "Password Spray"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Password_Spray.py
+  References:
+    MITRE:
+      T1110.003 :
+        Tactic : [Credential Access, Initial Access]
+        Technique : Brute Force
+        SubTechnique: "Password Spraying"
+        TechniqueID : T1110.003
+        URL : https://attack.mitre.org/techniques/T1110/003/
+    AzureThreatResearchMatrix:
+      - AZT202 :
+          Tactic : [Initial Access]
+          Technique : Password Spraying
+          SubTechnique : ~
+          TechniqueID : AZT202
+          URL : https://microsoft.github.io/Azure-Threat-Research-Matrix/InitialAccess/AZT202/AZT202/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-007 :
+  Name: "Create Resource Group"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Create_Resource_Group.py
+  References:
+    MITRE:
+      T1578.005 :
+        Tactic : [Defense Evasion]
+        Technique : Modify Cloud Compute Infrastructure
+        SubTechnique: "Modify Cloud Compute Configurations"
+        TechniqueID : T1578.005
+        URL : https://attack.mitre.org/techniques/T1578/005/
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-008 :
+  Name: "Recon Assigned Roles"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Recon_Assigned_Roles.py
+  References:
+    MITRE:
+      TT1069 :
+        Tactic : [Discovery]
+        Technique : Permission Groups Discovery
+        SubTechnique: ~
+        TechniqueID : T1069
+        URL : https://attack.mitre.org/techniques/T1069/
+    AzureThreatResearchMatrix:
+      - AZT106.3 :
+          Tactic : [Reconnaissance]
+          Technique : Gather Role Information
+          SubTechnique : Gather Azure Resources Role Assignments
+          TechniqueID : AZT106.3
+          URL : https://microsoft.github.io/Azure-Threat-Research-Matrix/Reconnaissance/AZT106/AZT106-3/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-009 :
+  Name: "Assign Azure Role"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Assign_Azure_Role.py
+  References:
+    MITRE:
+      T1098.003 :
+        Tactic : [Persistence, Privilege Escalation]
+        Technique : Account Manipulation
+        SubTechnique: Additional Cloud Roles
+        TechniqueID : T1098.003
+        URL : https://attack.mitre.org/techniques/T1098/003/
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles
+  Notes:
+    - N/A
+  
+Azure-010 :
+  Name: "Azure Elevate Access for Global Admin"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Elevate_Access_From_EntraID.py
+  Description: "This technique leverages a configuration in Azure Entra ID that allows Global Administrator in Entra ID to assume 'User Access Administrator' role in Azure at root scope. Being 'User Access Administrator' allows management of user access to Azure resources. Using this assumed role, further Azure roles can be assigned to the user to perform privilege escalation and carry out other activities."
+  References:
+    MITRE:
+      T1098.003 :
+        Tactic : [Persistence, Privilege Escalation]
+        Technique : Account Manipulation
+        SubTechnique: Additional Cloud Roles
+        TechniqueID : T1098.003
+        URL : https://attack.mitre.org/techniques/T1098/003/
+    AzureThreatResearchMatrix:
+      - AZT402 :
+          Tactic : [Privilege Escalation]
+          Technique : Elevated Access Toggle
+          SubTechnique : ~
+          TechniqueID : AZT202
+          URL : https://microsoft.github.io/Azure-Threat-Research-Matrix/PrivilegeEscalation/AZT402/AZT402/
+  Resources:
+    - https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#contributor
   Notes:
     - N/A
