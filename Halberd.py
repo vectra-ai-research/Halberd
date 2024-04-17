@@ -7,6 +7,7 @@ from dash import dcc, html, Patch, ALL
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from core.EntraAuthFunctions import FetchSelectedToken, ExtractTokenInfo, SetSelectedToken, FetchAllTokens
+from core.AzureFunctions import GetCurrentSubscriptionAccessInfo, GetAccountSubscriptionList, SetDefaultSubscription
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
 from core.Local import InitializationCheck
 from core.TabContentGenerator import *
@@ -428,6 +429,85 @@ def ExecuteRecon(n_clicks, user_string):
 
     return user_display_name, user_id, user_upn, user_mail, user_job_title, user_off_location, user_phone, groups_count, role_count, group_membership, role_assigned, app_assigned_count, user_app_assignments
 
+'''C017 - Callback to populate Azure access info dynamically based on selected subscription'''
+@app.callback(Output(component_id = "azure-access-info-div", component_property = "children"), Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"), Input(component_id = "azure-subscription-selector-dropdown", component_property = "value"))
+def GenerateAccessInfoDivCallBack(n_intervals, value):
+    # n_intervals will refresh the access info periodically
+
+    info_output_div = []
+    info_output_div.append(html.Br())
+    info_output_div.append(html.H5("Access : "))
+    
+    
+    if value == None:
+        # if no subscription has been selected, proceed with default subscription
+        pass
+    else:
+        selected_subscription = value
+        SetDefaultSubscription(selected_subscription)
+
+    # get set subscription info
+    current_access = GetCurrentSubscriptionAccessInfo()
+    
+    try:
+        if current_access != None:
+            # construct session info to display
+            info_output_div.append(html.H5("Active Session", className="text-success"))
+            info_output_div.append(html.Br())
+            info_output_div.append(html.Br())
+            info_output_div.append(html.H5("Environment Name :"))
+            info_output_div.append(html.Div(current_access.get("environmentName", "N/A")))
+            info_output_div.append(html.Br())
+            info_output_div.append(html.Br())
+            info_output_div.append(html.H5("Name : "))
+            info_output_div.append(html.Div(current_access.get("name", "N/A")))
+            info_output_div.append(html.Br())
+            info_output_div.append(html.Br())
+            info_output_div.append(html.H5("Subscription ID : "))
+            info_output_div.append(html.Div(current_access.get("id", "N/A")))
+            info_output_div.append(html.Br())
+            info_output_div.append(html.Br())
+            info_output_div.append(html.H5("Is Default : "))
+            info_output_div.append(html.Div(str(current_access.get("isDefault", "N/A"))))
+            info_output_div.append(html.Br())
+            info_output_div.append(html.Br())
+            info_output_div.append(html.H5("State : "))
+            info_output_div.append(html.Div(current_access.get("state", "N/A")))
+            info_output_div.append(html.Br())
+            info_output_div.append(html.Br())
+            info_output_div.append(html.H5("User : "))
+            info_output_div.append(html.Div(current_access.get("user", "N/A").get("name","N/A")))
+            info_output_div.append(html.Br())
+            info_output_div.append(html.Br())
+            info_output_div.append(html.H5("Tenant ID : "))
+            info_output_div.append(html.Div(current_access.get("tenantId", "N/A")))
+            info_output_div.append(html.Br())
+            info_output_div.append(html.Br())
+            info_output_div.append(html.H5("Home Tenant ID :"))
+            info_output_div.append(html.Div(current_access.get("homeTenantId", "N/A")))
+            
+            return info_output_div
+        else:
+            info_output_div.append(html.Div("No Active Session", className="text-danger"))
+            return info_output_div
+    except:
+        info_output_div.append(html.Div("No Active Session", className="text-danger"))
+        return info_output_div
+
+'''C018 - Callback to generate Azure subscription options in Access dropdown'''
+@app.callback(Output(component_id = "azure-subscription-selector-dropdown", component_property = "options"), Input(component_id = "azure-subscription-selector-dropdown", component_property = "title"))
+def GenerateDropdownOptionsCallBack(title):
+    if title == None:
+        all_subscriptions = []
+        for subs in GetAccountSubscriptionList():
+            selected_value = subs.get("id")
+            all_subscriptions.append(
+                {
+                    'label': html.Div(subs.get("name"), className="text-dark"), 'value': selected_value
+                }
+            )
+
+        return all_subscriptions
 
 if __name__ == '__main__':
     # initialize primary app files
