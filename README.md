@@ -3,10 +3,9 @@
     Halberd
 </h1>
 <p align="center">
-Halberd is an open-source security testing tool to proactively assess cloud security by executing a comprehensive array of attack techniques across multiple surfaces.
+Halberd is an open-source security testing tool to proactively assess cloud threat detection by executing a comprehensive array of attack techniques across multiple surfaces.
 </p>
-
-Leveraging Halberd, security teams can execute attack techniques such as cloud resource discovery, priv esc by tenant config modification, persistence through backdoor creation, deleting / modifying cloud resources and several others via a simple interactive web interface. This means no need to find or learn commmands to execute techniques.
+Leveraging Halberd, security teams can very quickly & easily execute attack techniques to generate telemetry and validate their detection & response capabilities via a simple intuitive web application.
 
 Evaluate defenses across multiple attack surfaces, including [Entra ID](https://learn.microsoft.com/en-us/entra/identity/), [M365](https://learn.microsoft.com/en-us/microsoft-365/?view=o365-worldwide), [Azure](https://learn.microsoft.com/en-us/azure/?product=popular) and [AWS](https://docs.aws.amazon.com).
 
@@ -17,7 +16,7 @@ Evaluate defenses across multiple attack surfaces, including [Entra ID](https://
 
 ## Setup
 
-Halberd works on Linux, macOS & Windows and can be setup easily in just a few minutes.
+Halberd works on Linux, macOS & Windows and can be setup easily in just a few steps.
 
 ### Install
 
@@ -33,44 +32,48 @@ $ python3 Halberd.py
 Checkout detailed instructions in [deployment guide](https://github.com/vectra-ai-research/Halberd/wiki/Deployment-Guide). 
 
 ### Usage
-Once setup start testing by accessing the Halberd web interface in your browser. 
+Once setup start testing by accessing the Halberd web app in your browser. 
 ```
 Visit: http://127.0.0.1:8050/
 ```
 
 ## Overview
-[Module details](https://github.com/vectra-ai-research/Halberd/wiki/Module-Details) & [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) elaborates on specific executable techniques and interesting capabalities of Halberd. 
+[Module details](https://github.com/vectra-ai-research/Halberd/wiki/Module-Details) & [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) elaborates on specific executable techniques and interesting capabalities of Halberd.
 
-- Entra ID Testing Modules
-- M365 Testing Modules
-- Azure Testing Modules
-- AWS Testing Modules
-- Reconnaissance Graphs
+Checkout [Testing Use Cases](https://github.com/vectra-ai-research/Halberd/wiki/Testing-Use-Cases) for examples. 
+
+- Entra ID Techniques
+- M365 Techniques
+- Azure Techniques
+- AWS Techniques
+- Advanced Recon Widgets
 - Access Manager
 - Reporting
-- Technique Execution via Web-Interface
+- Technique Execution via Intutive Web-App
+
+Note: Halberd is continuously evolving and getting better with more testing techniques, new capabilities & fixes. Try to use the latest version available whenever possible. 
 
 ## Getting Started
 
-Once Halberd is deployed & running, start testing by visiting http://127.0.0.1:8050/ in your browser. 
+Once Halberd is deployed & running, start testing by accessing http://127.0.0.1:8050/ in your browser. 
 
-`Access`
+### Access
 
-Allows users to manage access tokens / clients and review current access information for various targets.
+Allows management of access-tokens/clients/sessions and review of current access information for various targets.
 
-`Attack`
+### Attack
 
-Allows users to view and execute attack techniques. From the `Attack` view, select an `Attack Surface > Tactic > Technique > Execute`.  
+Allows selection and execution of attack techniques. From the `Attack` view, select `Attack Surface > Tactic > Technique > Execute`.  
 
-`Recon`
+### Recon
 
 Provides numerous advanced reconnaissance dashboards enabling fast and easy information gathering by automatically executing sequence of reconnaissance in the environment.
 
 Example: Navigate to `Recon` > `Entity Map` > `Generate Entity Map` to generate an interactive graph of access & privileges in the cloud environment.
 
-`Trace`
+### Trace
 
-Displays log of all executed techniques and allows users to download a report.
+Displays log of all executed techniques and allows downloading report.
 
 Note: Different techniques require varying access & privileges for successful execution. Start by establishing relevant access using `Initial Access` tactic under each attack surface. 
 
@@ -86,3 +89,6 @@ If you are interested in contributing to Halberd, checkout [development focus ar
 If you found this tool useful, want to share interesting use-cases or ideas - reach out & share them!
  - Author : [Arpan Sarkar](https://www.linkedin.com/in/arpan-sarkar/)
  - Maintainer : [Arpan Sarkar](https://www.linkedin.com/in/arpan-sarkar/)
+
+## Inspiration
+Halberd is inspired from many amazing ideas and work produced by several talented members/groups of the security community. Checkout some of them [here](https://github.com/vectra-ai-research/Halberd/wiki/Additional-(Amazing)-Resources).
