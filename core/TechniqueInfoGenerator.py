@@ -2,7 +2,7 @@
 Description : Generates Technique information from the MasterRecord.yml and displays it in the offcanvas on the attack page. The offcanvas is triggered by the About Technique button
 '''
 import yaml
-from dash import dcc, html
+from dash import html
 
 master_record_file = "./Techniques/MasterRecord.yml"
 with open(master_record_file, "r") as master_record_data:
@@ -32,7 +32,11 @@ def TechniqueRecordInfo(t_id):
         # display technique ID
         technique_info_div.append(html.H3("Technique ID :", className="text-success"))
         if mitre_technique_id:
-            technique_info_div.append(html.H4(mitre_technique_id))
+            if t_mitre_info[mitre_technique_id]['URL']:
+                # embed technique url if available
+                technique_info_div.append(html.H4(html.A(mitre_technique_id, href=t_mitre_info[mitre_technique_id]['URL'], target='_blank')))
+            else:
+                technique_info_div.append(html.H4(mitre_technique_id))
         else:
             technique_info_div.append(html.H4("N/A"))
         technique_info_div.append(html.Br())
@@ -64,8 +68,13 @@ def TechniqueRecordInfo(t_id):
     # display resources linked
     technique_resources = techniques_info[t_id]['Resources']
     technique_info_div.append(html.H2("Resources :", className="text-success"))
+    resource_counter = 0
     for resource in technique_resources:
-        technique_info_div.append(html.Li(dcc.Link(href = resource, target = "_blank")))
+        resource_counter += 1
+        if resource:
+            technique_info_div.append(html.Li(html.A(f"Resource {resource_counter}", href = resource, target = "_blank")))
+        else:
+            technique_info_div.append(html.Li("N/A"))
     
     technique_info_div.append(html.Br())
 
@@ -74,7 +83,7 @@ def TechniqueRecordInfo(t_id):
         technique_notes = techniques_info[t_id]['Notes']
         technique_info_div.append(html.H2("Notes :", className="text-success"))
         for note in technique_notes:
-            technique_info_div.append(html.H4(html.Li(note)))
+            technique_info_div.append(html.Li(note))
         
         technique_info_div.append(html.Br())
 
