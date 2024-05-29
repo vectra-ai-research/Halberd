@@ -1169,3 +1169,79 @@ Azure-010 :
     - https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#contributor
   Notes:
     - N/A
+
+Azure-011:
+  Name: "Key Vault Modify Access Policies and Roles"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Modify_Access_KeyVault.py
+  Description: "This technique involves looping through Key Vaults to check permissions and assigning necessary permissions to access the Key Vault. By modifying role assignments or access policies, the attacker can gain necessary access to Key Vaults."
+  References:
+    MITRE:
+      T1098.003:
+        Tactic: [Persistence, Privilege Escalation]
+        Technique: Account Manipulation
+        SubTechnique: Additional Cloud Roles
+        TechniqueID: T1098.003
+        URL: https://attack.mitre.org/techniques/T1098/003/
+    AzureThreatResearchMatrix:
+      - AZT405:
+        Tactic: [Privilege Escalation]
+        Technique: Azure AD Application
+        SubTechnique: ~
+        TechniqueID: AZT405
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/PrivilegeEscalation/AZT405/AZT405-2/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-012:
+  Name: "Dump KeyVault"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Dump_KeyVault.py
+  Description: "This technique involves accessing and extracting secrets, keys or certificates from Azure Key Vaults after gaining the necessary permissions."
+  References:
+    MITRE:
+      T1552.006:
+        Tactic: [Credential Access]
+        Technique: Credentials from Password Stores
+        SubTechnique: Credentials from Password Stores Cloud Secrets Management Stores
+        TechniqueID: T1552.006
+        URL: https://attack.mitre.org/techniques/T1555/006/
+    AzureThreatResearchMatrix:
+      - AZT604:
+        Tactic: [Credential Access]
+        Technique: Azure KeyVault Dumping
+        SubTechnique: ~
+        TechniqueID: AZT604
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/CredentialAccess/AZT604/AZT604/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-014:
+  Name: "Storage Account Access Key Dumping"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Dump_StorageAccount.py
+  Description: "This technique involves extracting keys from Azure Storage Accounts. By accessing and listing storage account keys, an attacker can gain access to sensitive information and potentially manipulate data stored within these accounts. The technique leverages Azure's API to retrieve storage keys and generate connection strings for further exploitation."
+  References:
+    MITRE:
+      T1212:
+        Tactic: [Credential Access]
+        Technique: Exploitation for Credential Access
+        SubTechnique: ~
+        TechniqueID: T1212
+        URL: https://attack.mitre.org/techniques/T1212/
+    AzureThreatResearchMatrix:
+      - AZT605.2:
+        Tactic: [Credential Access]
+        Technique: Resource Secret Reveal
+        SubTechnique: Storage Account Access Key Dumping
+        TechniqueID: AZT605.1
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/CredentialAccess/AZT605/AZT605-1/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
