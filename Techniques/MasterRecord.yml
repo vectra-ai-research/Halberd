@@ -1171,7 +1171,7 @@ Azure-010 :
     - N/A
 
 Azure-011:
-  Name: "Key Vault Modify Access Policies and Roles"
+  Name: "Modify Access Key Vault"
   AttackSurface: "Azure"
   ExecutionPath: Azure/Modify_Access_KeyVault.py
   Description: "This technique involves looping through Key Vaults to check permissions and assigning necessary permissions to access the Key Vault. By modifying role assignments or access policies, the attacker can gain necessary access to Key Vaults."
@@ -1189,14 +1189,14 @@ Azure-011:
         Technique: Azure AD Application
         SubTechnique: ~
         TechniqueID: AZT405
-        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/PrivilegeEscalation/AZT405/AZT405-2/
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/PrivilegeEscalation/AZT405/AZT405/
   Resources:
     - ~
   Notes:
     - N/A
 
 Azure-012:
-  Name: "Dump KeyVault"
+  Name: "Dump Key Vault"
   AttackSurface: "Azure"
   ExecutionPath: Azure/Dump_KeyVault.py
   Description: "This technique involves accessing and extracting secrets, keys or certificates from Azure Key Vaults after gaining the necessary permissions."
@@ -1221,7 +1221,7 @@ Azure-012:
     - N/A
 
 Azure-014:
-  Name: "Storage Account Access Key Dumping"
+  Name: "Dump Storage Account"
   AttackSurface: "Azure"
   ExecutionPath: Azure/Dump_StorageAccount.py
   Description: "This technique involves extracting keys from Azure Storage Accounts. By accessing and listing storage account keys, an attacker can gain access to sensitive information and potentially manipulate data stored within these accounts. The technique leverages Azure's API to retrieve storage keys and generate connection strings for further exploitation."
@@ -1234,7 +1234,7 @@ Azure-014:
         TechniqueID: T1212
         URL: https://attack.mitre.org/techniques/T1212/
     AzureThreatResearchMatrix:
-      - AZT605.2:
+      - AZT605.1:
         Tactic: [Credential Access]
         Technique: Resource Secret Reveal
         SubTechnique: Storage Account Access Key Dumping
@@ -1245,3 +1245,22 @@ Azure-014:
   Notes:
     - N/A
 
+Azure-017:
+  Name: "Expose Storage Account"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Share_StorageAccount.py
+  Description: "This technique involves modifying the network rule set of an Azure Storage Account to change its default action to 'Allow,' effectively making the storage account publicly accessible. By updating the network rule set, an attacker can exploit the granted permissions to expose the storage account to the public, enabling access to potentially sensitive data."
+  References:
+    MITRE:
+      T1650:
+        Tactic: [Defense Evasion]
+        Technique: Impair Defenses
+        SubTechnique: Disable or Modify Cloud Firewall
+        TechniqueID: T1562/007/
+        URL: https://attack.mitre.org/techniques/T1562/007/
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - ~
+  Notes:
+    - N/A

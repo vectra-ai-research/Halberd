@@ -2,10 +2,13 @@ from azure.identity import DefaultAzureCredential
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
 
-import json
-
 def TechniqueMain(subscription_id):
     """Function to get Storage Account Keys"""
+    
+    # input validation
+    if subscription_id in ["", None]:
+        return False, {"Error" : "Invalid input : Subscription ID required"}, None
+        
     try:
         # Initialize Azure credentials and clients
         credential = DefaultAzureCredential()
@@ -40,22 +43,24 @@ def TechniqueMain(subscription_id):
                                 "key_name": key.key_name,
                                 "key_value": key.value,
                                 "connection_string": connection_string
-
                             })
 
             except Exception as e:
-                print(f"error: {e}")
+                return False, {"Error" : e}, None
                     
-        # Convert storage keys to JSON format
-        storage_keys_json = json.dumps(storage_keys, indent=4)
-        return storage_keys_json
+        raw_response = {}
+        pretty_response = {}                
+        pretty_response["Success"] = storage_keys
+        
+        return True, raw_response, pretty_response
     
     except Exception as e:
-        print(f"error: {e}")
+        return False, {"Error" : e}, None
     
 
+# Function to define the input fields required for the technique execution
 def TechniqueInputSrc() -> list:
     '''Returns the input fields required as parameters for the technique execution'''
     return [
-        {"title" : "subscription_id", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"}
+        {"title" : "Subscription ID", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"}
     ]

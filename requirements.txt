@@ -157,3 +157,4 @@ yarl==1.9.4
 zipp==3.17.0
 azure-keyvault-secrets==4.8.0
 azure-keyvault-keys==4.9.0
+azure-storage-blob==12.20.0

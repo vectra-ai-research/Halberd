@@ -3,7 +3,6 @@ from azure.keyvault.secrets import SecretClient
 from azure.keyvault.keys import KeyClient
 from azure.mgmt.keyvault import KeyVaultManagementClient
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from base64 import urlsafe_b64encode, urlsafe_b64decode
 
@@ -11,21 +10,18 @@ import jwt
 import base64
 import os
 
-
-
 def TechniqueMain(subscription_id):
     '''Function to retrieve Key Vault data'''
     
-    # Initialize Azure credentials
+    # input validation
+    if subscription_id in ["", None]:
+        return False, {"Error" : "Invalid input : Subscription ID required"}, None
+    
+    # Initialize Azure credentials and KeyVaultManagementClient
     credential = DefaultAzureCredential()
-    
-    # Initialize a dictionary to store Key Vault data
-    key_vault_data = {}
-    
-    
-        
-    # Initialize KeyVaultManagementClient to manage Key Vaults
     client = KeyVaultManagementClient(credential, subscription_id)
+    
+    key_vault_data = {}
     
     try:
         for vault in client.vaults.list():
@@ -33,24 +29,19 @@ def TechniqueMain(subscription_id):
             resource_group_name = vault.id.split("/")[4]
             print(f"Dumping {vault_name}")
             
-            # Initialize lists to store secrets, keys, and certificates for this vault
             secrets_list = []
             keys_list = []
             certificates_list = []
             message = []
                
             try:
-                # Initialize SecretClient to access secrets in the Key Vault
+                # Initialize SecretClient and retrieve secrets
                 secret_client = SecretClient(vault_url=f"https://{vault_name}.vault.azure.net/", credential=credential)
-
-                # Retrieve the list of secrets in the Key Vault
                 secrets = secret_client.list_properties_of_secrets()
-                # Iterate through each secret in the Key Vault
+                
                 for secret in secrets:
                     secret_name = secret.name
                     print(f"Getting Secret value for the {secret_name} Secret")
-
-                    # Retrieve the secret value
                     secret_value = secret_client.get_secret(secret_name)
                     secret_type = secret_value.properties.content_type
                     secret_value_text = secret_value.value
@@ -71,41 +62,27 @@ def TechniqueMain(subscription_id):
                             except Exception as e:
                                 print(f"Failed to decode and write the secret: {e}")
 
-                    # Append secret data to the list
                     if secret_type == "application/x-pkcs12":
-                        certificates_list.append({
-                            "certificate_name": secret_name,
-                            "certificate_value": secret_value_text
-                        })
+                        certificates_list.append({"certificate_name": secret_name, "certificate_value": secret_value_text})
                     else:
-                        secrets_list.append({
-                            "secret_name": secret_name,
-                            "secret_value": secret_value_text
-                        })
+                        secrets_list.append({"secret_name": secret_name, "secret_value": secret_value_text})
 
             except Exception as e:
                 if "ForbiddenByPolicy" in str(e):
-                    message.append("Error access secrets: : Access Policy required for Secrets")
+                    message.append("Error accessing secrets: Access Policy required for Secrets")
                 elif "ForbiddenByRbac" in str(e):
                     message.append("You do not have access to this Key Vault: RBAC required")
                 elif "AccessDenied" in str(e):
                     message.append("You do not have access to this Key Vault: Access Policy required")
                     
-                    
-
             try:
-                # Initialize KeyClient to access keys in the Key Vault
+                # Initialize KeyClient and retrieve keys
                 key_client = KeyClient(vault_url=f"https://{vault_name}.vault.azure.net/", credential=credential)
-
-                # Retrieve the list of keys in the Key Vault
                 keys = key_client.list_properties_of_keys()
 
-                # Iterate through each key in the Key Vault
                 for key in keys:
                     key_name = key.name
                     print(f"Getting Key value for the {key_name} Key")
-
-                    # Retrieve the key data
                     key_data = key_client.get_key(key_name)
                     key_type = key_data.key_type
                     key_value = key_data.key.n
@@ -113,98 +90,52 @@ def TechniqueMain(subscription_id):
 
                     # Convert RSA public key to PEM format
                     if key_type == "RSA":
-                        usable_jwk = {}
-                        for k in vars(key_data.key):
-                            value = vars(key_data.key)[k]
-                            if value:
-                                usable_jwk[k] = urlsafe_b64encode(value) if isinstance(value, bytes) else value
-
+                        usable_jwk = {k: urlsafe_b64encode(vars(key_data.key)[k]) if isinstance(vars(key_data.key)[k], bytes) else vars(key_data.key)[k] for k in vars(key_data.key) if vars(key_data.key)[k]}
                         public_key = jwt.algorithms.RSAAlgorithm.from_jwk(usable_jwk)
-                        public_pem = public_key.public_bytes(
-                            encoding=serialization.Encoding.PEM,
-                            format=serialization.PublicFormat.SubjectPublicKeyInfo
-                        )
+                        public_pem = public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
                         key_data_text = public_pem
-                    
+
                     # Convert EC public key to PEM format
                     if key_type == "EC":
-                        usable_jwk = {}
-                        for k in vars(key_data.key):
-                            value = vars(key_data.key)[k]
-                            if value:
-                                usable_jwk[k] = urlsafe_b64encode(value).decode('utf-8') if isinstance(value, bytes) else value
-
+                        usable_jwk = {k: urlsafe_b64encode(vars(key_data.key)[k]).decode('utf-8') if isinstance(vars(key_data.key)[k], bytes) else vars(key_data.key)[k] for k in vars(key_data.key) if vars(key_data.key)[k]}
                         x = usable_jwk.get('x')
                         y = usable_jwk.get('y')
                         curve = usable_jwk.get('crv')
-                        
-                        if not (x and y and curve):
-                            raise ValueError("Invalid JWK data for EC key")
 
-                        try:
+                        if x and y and curve:
                             x_bytes = urlsafe_b64decode(x + '==')
                             y_bytes = urlsafe_b64decode(y + '==')
+                            curve = {'P-256': ec.SECP256R1(), 'P-384': ec.SECP384R1(), 'P-521': ec.SECP521R1()}.get(curve, None)
+                            if curve:
+                                public_key = ec.EllipticCurvePublicNumbers(int.from_bytes(x_bytes, 'big'), int.from_bytes(y_bytes, 'big'), curve).public_key()
+                                public_pem = public_key.public_bytes(encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo)
+                                key_data_text = public_pem.decode('utf-8')
 
-                            if curve == 'P-256':
-                                curve = ec.SECP256R1()
-                            elif curve == 'P-384':
-                                curve = ec.SECP384R1()
-                            elif curve == 'P-521':
-                                curve = ec.SECP521R1()
-                            else:
-                                raise ValueError("Unsupported curve: {}".format(curve))
-
-                            public_key = ec.EllipticCurvePublicNumbers(
-                                int.from_bytes(x_bytes, 'big'),
-                                int.from_bytes(y_bytes, 'big'),
-                                curve
-                            ).public_key()
-
-                            public_pem = public_key.public_bytes(
-                                encoding=serialization.Encoding.PEM,
-                                format=serialization.PublicFormat.SubjectPublicKeyInfo
-                            )
-
-                            key_data_text = public_pem.decode('utf-8')
-                        except Exception as e:
-                            print(f"Error processing EC key: {e}")
-                            key_data_text = None
-
-                    # Append key data to the list
-                    keys_list.append({
-                        "key_name": key_name,
-                        "key_value": f'{key_data_text}'
-                    })
+                    keys_list.append({"key_name": key_name, "key_value": f'{key_data_text}'})
 
             except Exception as e:
                 if "ForbiddenByPolicy" in str(e):
-                    message.append("Error access keys: : Access Policy required for Keys and Certificates")
+                    message.append("Error accessing keys: Access Policy required for Keys and Certificates")
                 elif "ForbiddenByRbac" in str(e):
                     pass
                     
-        
-            # Add certificates, keys, and secrets lists to the vault data dictionary
-            key_vault_data[vault_name] = {
-                "secrets": secrets_list,
-                "keys": keys_list,
-                "certificates": certificates_list,
-                "message": message
-            }
+            key_vault_data[vault_name] = {"secrets": secrets_list, "keys": keys_list, "certificates": certificates_list, "message": message}
 
 
-        return key_vault_data
+        raw_response = {}
+        pretty_response = {}                
+        pretty_response["Success"] = key_vault_data
+    
+        return True, raw_response, pretty_response
     
     except Exception as e:
-        return {"error": str(e)}
-        
+        return False, {"Error" : e}, None
 
 # Function to define the input fields required for the technique execution
-
 def TechniqueInputSrc() -> list:
     '''Returns the input fields required as parameters for the technique execution'''
-
     return [
-        {"title" : "subscription_id", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "12345678-1234-1234-1234-123456789012", "element_type" : "dcc.Input"},
+        {"title" : "Subscription ID", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"},
     ]
 
 
