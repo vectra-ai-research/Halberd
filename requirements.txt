@@ -17,7 +17,7 @@ azure-mgmt-billing==0.2.0
 azure-mgmt-cdn==3.1.0
 azure-mgmt-cognitiveservices==3.0.0
 azure-mgmt-commerce==1.0.1
-azure-mgmt-compute==30.6.0
+azure-mgmt-compute==31.0.0
 azure-mgmt-consumption==2.0.0
 azure-mgmt-containerinstance==1.5.0
 azure-mgmt-containerregistry==2.8.0
@@ -38,7 +38,7 @@ azure-mgmt-hanaonazure==0.1.1
 azure-mgmt-iotcentral==0.1.0
 azure-mgmt-iothub==0.5.0
 azure-mgmt-iothubprovisioningservices==0.2.0
-azure-mgmt-keyvault==1.1.0
+azure-mgmt-keyvault==10.3.0
 azure-mgmt-loganalytics==0.2.0
 azure-mgmt-logic==3.0.0
 azure-mgmt-machinelearningcompute==0.4.1
@@ -67,7 +67,7 @@ azure-mgmt-servicebus==0.5.3
 azure-mgmt-servicefabric==0.2.0
 azure-mgmt-signalr==0.1.1
 azure-mgmt-sql==0.9.1
-azure-mgmt-storage==2.0.0
+azure-mgmt-storage==21.1.0
 azure-mgmt-subscription==0.2.0
 azure-mgmt-trafficmanager==0.50.0
 azure-mgmt-web==0.35.0
@@ -158,3 +158,4 @@ zipp==3.17.0
 azure-keyvault-secrets==4.8.0
 azure-keyvault-keys==4.9.0
 azure-storage-blob==12.20.0
+azure-mgmt-automation==1.0.0

@@ -1245,10 +1245,60 @@ Azure-014:
   Notes:
     - N/A
 
+Azure-015:
+  Name: "Share VM Disk"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Share_VM_Disk.py
+  Description: "This technique generates Shared Access Signatures (SAS) URIs specifically for disks of virtual machines in Azure. An attacker can extract the contents by generating a SAS URI for a virtual machine disk without requiring further authentication. This technique leverages Azure's API to create SAS tokens and gain access to potentially sensitive data."
+  References:
+   MITRE:
+      T1212:
+        Tactic: [Credential Access]
+        Technique: Exploitation for Credential Access
+        SubTechnique: ~
+        TechniqueID: T1212
+        URL: https://attack.mitre.org/techniques/T1212/
+    AzureThreatResearchMatrix:
+      - AZT701.1:
+        Tactic: [Impact]
+        Technique: SAS URI Generation
+        SubTechnique: VM Disk SAS URI
+        TechniqueID: AZT701.1
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/Impact/AZT701/AZT701-1/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-016:
+  Name: "Share Storage Account Container"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Share_Storage_Account_Container.py
+  Description: "This technique generates Shared Access Signatures (SAS) URIs specifically for containers in Azure Storage Accounts. By generating an SAS URI for a storage container, an attacker can extract the contents of the container without requiring further authentication at any time. This technique leverages Azure's API to create SAS tokens and gain access to potentially sensitive data."
+  References:
+    MITRE:
+      T1528:
+        Tactic: [Exfiltration]
+        Technique: Exfiltration Over Web Service
+        SubTechnique: ~
+        TechniqueID: T1567
+        URL: https://attack.mitre.org/techniques/T1567/
+    AzureThreatResearchMatrix:
+      - AZT701.2:
+        Tactic: [Impact]
+        Technique: SAS URI Generation
+        SubTechnique: Storage Account File Share SAS
+        TechniqueID: AZT701.2
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/Impact/AZT701/AZT701-2/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
 Azure-017:
   Name: "Expose Storage Account"
   AttackSurface: "Azure"
-  ExecutionPath: Azure/Share_StorageAccount.py
+  ExecutionPath: Azure/Expose_Storage_Account.py
   Description: "This technique involves modifying the network rule set of an Azure Storage Account to change its default action to 'Allow,' effectively making the storage account publicly accessible. By updating the network rule set, an attacker can exploit the granted permissions to expose the storage account to the public, enabling access to potentially sensitive data."
   References:
     MITRE:
@@ -1261,6 +1311,6 @@ Azure-017:
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - ~
+    - https://techcrunch.com/2024/04/09/microsoft-employees-exposed-internal-passwords-security-lapse/
   Notes:
     - N/A
