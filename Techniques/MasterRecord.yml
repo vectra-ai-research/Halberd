@@ -1220,6 +1220,31 @@ Azure-012:
   Notes:
     - N/A
 
+Azure-013:
+  Name: "Dump Automation Account"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Dump_Automation_Account.py
+  Description: "This technique involves creating multiple runbooks within Azure Automation Accounts to execute scripts that extract credentials and tokens. By leveraging automation capabilities, the attacker can automate the process of extracting sensitive information."
+  References:
+    MITRE:
+      T1528:
+        Tactic: [Credential Access]
+        Technique: Steal Application Access Token
+        SubTechnique: ~
+        TechniqueID: T1528
+        URL: https://attack.mitre.org/techniques/T1528/
+    AzureThreatResearchMatrix:
+      - AZT605.2:
+        Tactic: [Credential Access]
+        Technique: Resource Secret Reveal
+        SubTechnique: Automation Account Credential Secret Dump
+        TechniqueID: AZT605.2
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/CredentialAccess/AZT605/AZT605-2/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
 Azure-014:
   Name: "Dump Storage Account"
   AttackSurface: "Azure"
