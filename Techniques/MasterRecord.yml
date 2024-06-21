@@ -1276,7 +1276,7 @@ Azure-015:
   ExecutionPath: Azure/Share_VM_Disk.py
   Description: "This technique generates Shared Access Signatures (SAS) URIs specifically for disks of virtual machines in Azure. An attacker can extract the contents by generating a SAS URI for a virtual machine disk without requiring further authentication. This technique leverages Azure's API to create SAS tokens and gain access to potentially sensitive data."
   References:
-   MITRE:
+    MITRE:
       T1212:
         Tactic: [Credential Access]
         Technique: Exploitation for Credential Access
