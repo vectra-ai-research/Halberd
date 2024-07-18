@@ -676,3 +676,6 @@ local/
 tests.py
 Techniques/TacticsMap.yml
 Techniques/TechniquesMap.yml
+automator/Outputs/
+automator/Playbooks/
+automator/Schedules.yml
