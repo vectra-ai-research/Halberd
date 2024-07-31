@@ -74,3 +74,22 @@ def InitializationCheck():
 
         with open(tokens_file, 'w') as file:
             yaml.dump(all_tokens_data, file)
+
+    # Check for automator folder
+    if Path("./automator").exists():
+        # check for automtor/Playbooks folder
+        if Path("./automator/Playbooks").exists():
+            pass
+        else:
+            os.makedirs("./automator/Playbooks")
+        
+        # check for automator/Outputs folder
+        if Path("./automator/Outputs").exists():
+            pass
+        else:
+            os.makedirs("./automator/Outputs")
+            
+    else:
+        os.makedirs("./automator")
+        os.makedirs("./automator/Playbooks")
+        os.makedirs("./automator/Outputs")
