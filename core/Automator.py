@@ -7,7 +7,6 @@ import csv
 from pathlib import Path
 import time
 import base64
-import schedule
 
 playbooks_dir = "./automator/Playbooks"
 
@@ -57,8 +56,6 @@ def ExecutePlaybook(playbook_name):
     # execute attack sequence
     for step in playbook_attack_config:
         module_tid = playbook_attack_config[step]["Module"]
-        print(module_tid)
-        print(playbook_attack_config[step])
         '''technique input'''
         technique_input = playbook_attack_config[step]["Params"]
 
@@ -139,13 +136,6 @@ def GetAllPlaybooks(playbooks_dir = "./automator/Playbooks"):
     except:
         return "Error"
 
-def ReadPlaybookConfig(pb_file_name):
-    # parse playbook configuration
-    pb_config_file = "./automator/Playbooks/" + pb_file_name
-    with open(pb_config_file, "r") as pb_config_data:
-        pb_config = yaml.safe_load(pb_config_data)
-    print(pb_config)
-
 class Playbook:
     def __init__(self, pb_file_name):
         pb_config_file = "./automator/Playbooks/" + pb_file_name
@@ -164,8 +154,14 @@ class Playbook:
         # adds a new step to playbook. New step is added as the last step of the sequence
         pb_sequence = self.sequence
 
-        pb_steps_count = max(list(pb_sequence.keys()))
-
+        if list(pb_sequence.keys()) == []:
+            # for a newly created playbook, step count will be zero / an empty list
+            pb_steps_count = 0
+        else:
+            # get step count for an existing playbook
+            pb_steps_count = max(list(pb_sequence.keys()))
+            
+        # add new step to playbook
         pb_sequence[pb_steps_count+1] = {"Module": module, "Params": params, "Wait": wait}
     
     def SavePlaybook(self):
@@ -211,14 +207,3 @@ def CreateNewPlaybook(name, description = "N/A", author = "N/A", references = "N
     # update playbook file
     with open(pb_file, "w") as file:
         yaml.dump(playbook_config, file)
-
-
-def run_schedule(pb, time):
-    # run schedules config
-    schedules_file = "./automator/Schedules.yml"
-    with open(schedules_file, "r") as schedule_data:
-        schedules = yaml.safe_load(schedule_data)
-
-    for schedule in schedules:
-        pb = schedule['Playbook_Id']
-        schedule.every(10).seconds.do(pb)
