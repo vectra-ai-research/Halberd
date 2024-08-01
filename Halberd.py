@@ -630,12 +630,20 @@ def toggle_modal(open_trigger, close_trigger, is_open):
     return is_open
 
 '''C022 - Callback to create new automator schedule'''
-@app.callback(Output(component_id = "hidden-div", component_property = "children", allow_duplicate=True), Output(component_id = "scheduler-modal", component_property = "is_open", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "set-time-input", component_property = "value"), Input(component_id = "automator-date-range-picker", component_property = "start_date"), Input(component_id = "automator-date-range-picker", component_property = "end_date"), Input(component_id = "schedule-repeat-boolean", component_property = "on"), Input(component_id = "repeat-options-dropdown", component_property = "value"), Input(component_id = "schedule-name-input", component_property = "value"), Input(component_id = "schedule-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
-def CreateNewAutomatorSchedule(automation_id, execution_time, start_date, end_date, repeat_flag, repeat_frequency, schedule_name, n_clicks):
+@app.callback(Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Output(component_id = "scheduler-modal", component_property = "is_open", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "set-time-input", component_property = "value"), Input(component_id = "automator-date-range-picker", component_property = "start_date"), Input(component_id = "automator-date-range-picker", component_property = "end_date"), Input(component_id = "schedule-repeat-boolean", component_property = "on"), Input(component_id = "repeat-options-dropdown", component_property = "value"), Input(component_id = "schedule-name-input", component_property = "value"), Input(component_id = "schedule-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
+def CreateNewAutomatorSchedule(playbook_id, execution_time, start_date, end_date, repeat_flag, repeat_frequency, schedule_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     
-    return AddNewSchedule(schedule_name, automation_id, start_date, end_date, execution_time, repeat_flag, repeat_frequency), False
+    # send notification if no playbook selected from dropdown
+    if playbook_id == None:
+        return True, "No Playbook Selected to Schedule", False
+    
+    # create new schedule
+    AddNewSchedule(schedule_name, playbook_id, start_date, end_date, execution_time, repeat_flag, repeat_frequency)
+
+    # send notification after new schedule is created
+    return True, "No Playbook Selected to Execute", False
 
 '''C023 - Callback to export playbook'''
 @app.callback(Output(component_id = "download-pb-config-file", component_property = "data"), Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "export-pb-button", component_property = "n_clicks"), prevent_initial_call=True)
