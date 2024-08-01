@@ -75,7 +75,7 @@ def InitializationCheck():
         with open(tokens_file, 'w') as file:
             yaml.dump(all_tokens_data, file)
 
-    # Check for automator folder
+    # check for automator folder
     if Path("./automator").exists():
         # check for automtor/Playbooks folder
         if Path("./automator/Playbooks").exists():
@@ -88,8 +88,19 @@ def InitializationCheck():
             pass
         else:
             os.makedirs("./automator/Outputs")
+
+        # check for automator/Schedules.yml file
+        if Path("./automator/Schedules.yml").exists():
+            pass
+        else:
+            # create Schedules.yml config file
+            with open("./automator/Schedules.yml", 'w') as file:
+                pass
             
     else:
+        # create all automator dirs and files
         os.makedirs("./automator")
         os.makedirs("./automator/Playbooks")
         os.makedirs("./automator/Outputs")
+        with open("./automator/Schedules.yml", 'w') as file:
+            pass
