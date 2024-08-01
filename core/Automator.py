@@ -5,7 +5,6 @@ from datetime import datetime
 import os
 import csv
 from pathlib import Path
-import time
 import base64
 
 playbooks_dir = "./automator/Playbooks"
@@ -107,9 +106,14 @@ def AddNewSchedule(schedule_name, automation_id, start_date, end_date, execution
     with open(schedules_file, "r") as schedule_data:
         schedules = yaml.safe_load(schedule_data)
 
+    # if no schedule present, initialize dictionary
+    if schedules == None:
+        schedules = {}
+
     # input handling
     if schedule_name in [None, ""]:
-        schedule_name = time()
+        sched_create_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        schedule_name = f"schedule-{sched_create_time}"
 
     schedules[schedule_name] = {"Playbook_Id" : automation_id, "Start_Date" : start_date, "End_Date" : end_date, "Execution_Time" : execution_time, "Repeat" : str(repeat), "Repeat_Frequency" : repeat_frequency}
     # update schedules file
