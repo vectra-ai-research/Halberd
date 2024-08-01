@@ -16,6 +16,8 @@ from core.TacticMapGenerator import *
 from core.TechniqueInfoGenerator import *
 from core.TechniqueMapGenerator import *
 from core.TechniqueExecutor import *
+from core.AttackPlaybookVisualizer import AttackSequenceVizGenerator, EnrichNodeInfo
+from core.Automator import ExecutePlaybook, AddNewSchedule, Playbook, GetAllPlaybooks, ImportPlaybook, CreateNewPlaybook
 import datetime
 import boto3
 
@@ -29,6 +31,7 @@ navbar = dbc.NavbarSimple(
         dbc.NavItem(dbc.NavLink("Attack", href="/attack")),
         dbc.NavItem(dbc.NavLink("Recon", href="/recon")),
         dbc.NavItem(dbc.NavLink("Trace", href="/attack-trace")),
+        dbc.NavItem(dbc.NavLink("Automator", href="/automator")),
     ],
     brand= html.Div([
         dbc.Row(
@@ -91,6 +94,12 @@ def display_page(pathname):
     elif pathname == '/attack-trace':
         from pages.attack_trace import GenerateAttackTraceView
         return GenerateAttackTraceView()
+    elif pathname == '/automator':
+        from pages.automator import page_layout
+        return page_layout
+    elif pathname == '/schedules':
+        from pages.schedules import GenerateAutomatorSchedulesView
+        return GenerateAutomatorSchedulesView()
     else:
         from pages.home import page_layout
         return page_layout
@@ -145,11 +154,18 @@ def DisplayAttackTechniqueConfig(t_id):
         config_div_display.append(html.B("No config required! Hit 'Execute'"))
 
     config_div_display.append(html.Br())
-    config_div_display.append(html.Div([
+    config_div_display.append(
+        (html.Div([
             dbc.Button("Execute Technique", id="technique-execute-button", n_clicks=0, color="danger"),
             html.Br(),
-            dbc.Button("About Technique", id="technique-info-display-button", n_clicks=0, color="danger")
         ], className="d-grid col-6 mx-auto"))
+    )
+    config_div_display.append(html.Div([
+            dbc.Button("About Technique", id="technique-info-display-button", n_clicks=0, color="danger"),
+            html.Br(),
+            dbc.Button("Add to Playbook", id="open-add-to-playbook-modal-button", n_clicks=0, color="danger")
+        ], style={'display': 'flex', 'justify-content': 'center', 'gap': '10px'})
+    )
     
     config_div_display.append(
         html.Div(id='attack-technique-sink-hidden-div', style={'display':'none'}),
@@ -164,11 +180,45 @@ def DisplayAttackTechniqueConfig(t_id):
             is_open=False,
         )
     )
-    
+
+    # create plabook dropdown content
+    playbook_dropdown_options = []    
+    for pb in GetAllPlaybooks():
+        playbook_dropdown_options.append(
+            {
+                "label": html.Div([Playbook(pb).name], style={'font-size': 20}, className="text-dark"),
+                "value": Playbook(pb).name,
+            }
+        )
+
+    config_div_display.append(
+        # create add to playbook modal
+        dbc.Modal(
+            [
+                dbc.ModalHeader("Add Technique to Playbook"),
+                dbc.ModalBody([
+                    html.H6("Choose playbook to add current attack technique and its configuration"),
+                    dcc.Dropdown(
+                        options = playbook_dropdown_options, 
+                        value = None, 
+                        id='att-pb-selector-dropdown',
+                        placeholder="Select Playbook"),
+                    html.Br(),
+                ]),
+                dbc.ModalFooter([
+                    dbc.Button("Cancel", id="close-add-to-playbook-modal-button", className="ml-auto", color="danger", n_clicks=0),
+                    dbc.Button("Add to Playbook", id="confirm-add-to-playbook-modal-button", className="ml-2", color="danger", n_clicks=0)
+                ])
+            ],
+            id="add-to-playbook-modal",
+            is_open=False,
+        )
+    )
+
     return config_div_display
 
 '''C005 - Attack Execution Callback - Execute Technique'''
-@app.callback(Output(component_id = "execution-output-div", component_property = "children"), Output(component_id = "app-notification", component_property = "is_open"), Output(component_id = "app-notification", component_property = "children"), Input(component_id= "technique-execute-button", component_property= "n_clicks"), State(component_id = "attack-options-radio", component_property = "value"), State({"type": "technique-config-display", "index": ALL}, "value"), State({"type": "technique-config-display-file-upload", "index": ALL}, "contents"), prevent_initial_call = True)
+@app.callback(Output(component_id = "execution-output-div", component_property = "children"), Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id= "technique-execute-button", component_property= "n_clicks"), State(component_id = "attack-options-radio", component_property = "value"), State({"type": "technique-config-display", "index": ALL}, "value"), State({"type": "technique-config-display-file-upload", "index": ALL}, "contents"), prevent_initial_call = True)
 def ExecuteTechnique(n_clicks, t_id, values, file_content):
     if n_clicks == 0:
         raise PreventUpdate
@@ -185,9 +235,9 @@ def GenerateEntityMap(n_clicks):
         return GenerateEntityMappingGraph()
 
 
-'''C007 - Callback to display available techniques in radio list'''
-@app.callback(Output(component_id = "technique-info-offcanvas", component_property = "is_open"), Input(component_id = "attack-options-radio", component_property = "value"), Input(component_id= "technique-info-display-button", component_property= "n_clicks"),[State("technique-info-offcanvas", "is_open")], prevent_initial_call=True)
-def DisplayAttackTechniqueConfig(t_id, n_clicks, is_open):
+'''C007 - Callback to open/close Technique Info off canvas'''
+@app.callback(Output(component_id = "technique-info-offcanvas", component_property = "is_open"), Input(component_id= "technique-info-display-button", component_property= "n_clicks"),[State("technique-info-offcanvas", "is_open")], prevent_initial_call=True)
+def DisplayAttackTechniqueConfig(n_clicks, is_open):
     if n_clicks == 0:
         raise PreventUpdate
     
@@ -508,6 +558,309 @@ def GenerateDropdownOptionsCallBack(title):
             )
 
         return all_subscriptions
+
+'''C019 - Callback to generate automated attack sequence visualization'''
+@app.callback(Output(component_id = "attack-automator-path-display-div", component_property = "children"), Output(component_id = "playbook-node-data-div", component_property = "children", allow_duplicate= True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), prevent_initial_call=True)
+def DisplayAttackSequenceViz(selected_pb):
+    if selected_pb:
+        for pb in GetAllPlaybooks():
+            pb_config = Playbook(pb)
+            if  pb_config.name == selected_pb:
+                break
+        display_elements = []
+
+        # display playbook name
+        display_elements.append(html.B("Plabook Name : "))
+        display_elements.append(html.A(pb_config.name))
+        display_elements.append(html.Br())
+
+        # display playbook description
+        display_elements.append(html.B("Plabook Description : "))
+        display_elements.append(html.A(pb_config.description))
+        display_elements.append(html.Br())
+
+        # display playbook author
+        display_elements.append(html.B("Plabook Author : "))
+        display_elements.append(html.A(pb_config.author))
+        display_elements.append(html.Br())
+
+        # display playbook creation date
+        display_elements.append(html.B("Plabook Creation Date : "))
+        display_elements.append(html.A(pb_config.creation_date))
+        display_elements.append(html.Br())
+
+        # display playbook references
+        display_elements.append(html.B("Plabook References : "))
+        if pb_config.references: 
+            if type(pb_config.references) == list:
+                for ref in pb_config.references:
+                    display_elements.append(html.Br())
+                    display_elements.append(html.A(ref, href=ref, target='_blank'))
+                    
+            else:
+                display_elements.append(html.A(pb_config.references))
+        else:
+            display_elements.append(html.A("N/A"))
+
+        display_elements.append(html.Br())
+
+        return AttackSequenceVizGenerator(selected_pb), display_elements 
+    else:
+        raise PreventUpdate
+
+'''C020 - Callback to execute attack sequence in automator view'''
+@app.callback(Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "execute-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
+def ExecuteAttackSequence(playbook_id, n_clicks):
+    if n_clicks == 0:
+        raise PreventUpdate
+    
+    if playbook_id == None:
+        return True, "No Playbook Selected to Execute"
+    
+    # execute playbook
+    ExecutePlaybook(playbook_id)
+    
+    return True, "Playbook Execution Completed"
+
+'''C021 - Callback to open attack scheduler modal'''
+@app.callback(Output(component_id = "scheduler-modal", component_property = "is_open"), [Input("toggle-scheduler-modal-open-button", "n_clicks"), Input("toggle-scheduler-modal-close-button", "n_clicks")], [State("scheduler-modal", "is_open")])
+def toggle_modal(open_trigger, close_trigger, is_open):
+    if open_trigger or close_trigger:
+        return not is_open
+    return is_open
+
+'''C022 - Callback to create new automator schedule'''
+@app.callback(Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Output(component_id = "scheduler-modal", component_property = "is_open", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "set-time-input", component_property = "value"), Input(component_id = "automator-date-range-picker", component_property = "start_date"), Input(component_id = "automator-date-range-picker", component_property = "end_date"), Input(component_id = "schedule-repeat-boolean", component_property = "on"), Input(component_id = "repeat-options-dropdown", component_property = "value"), Input(component_id = "schedule-name-input", component_property = "value"), Input(component_id = "schedule-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
+def CreateNewAutomatorSchedule(playbook_id, execution_time, start_date, end_date, repeat_flag, repeat_frequency, schedule_name, n_clicks):
+    if n_clicks == 0:
+        raise PreventUpdate
+    
+    # send notification if no playbook selected from dropdown
+    if playbook_id == None:
+        return True, "No Playbook Selected to Schedule", False
+    
+    # create new schedule
+    AddNewSchedule(schedule_name, playbook_id, start_date, end_date, execution_time, repeat_flag, repeat_frequency)
+
+    # send notification after new schedule is created
+    return True, "No Playbook Selected to Execute", False
+
+'''C023 - Callback to export playbook'''
+@app.callback(Output(component_id = "download-pb-config-file", component_property = "data"), Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "export-pb-button", component_property = "n_clicks"), prevent_initial_call=True)
+def ExportAttackPlaybook(playbook_name, n_clicks):
+    if n_clicks == 0:
+        raise PreventUpdate
+        
+    # if no playbook is selected, send notification
+    if playbook_name == None:
+        return None, True, "No Playbook Selected to Export"
+    
+    # get the selected playbook file location
+    for pb in GetAllPlaybooks():
+        pb_config = Playbook(pb)
+        if  pb_config.name == playbook_name:
+            playbook_file = pb_config.file
+
+    # download playbook and send app notification
+    return dcc.send_file(playbook_file), True, "Playbook Exported"
+
+'''C024 - Callback to import playbook'''
+@app.callback(Output(component_id = "hidden-div", component_property = "children"), Input(component_id = 'upload-playbook', component_property = 'contents'), State(component_id = 'upload-playbook', component_property = 'filename'))
+def UploadHalberdPlaybook(contents, filename):
+    ImportPlaybook(contents, filename)
+    return None
+
+'''C025 - Callback to add technique to playbook'''
+@app.callback(
+        Output(component_id = "app-notification", component_property = "is_open"), 
+        Output(component_id = "app-notification", component_property = "children"), 
+        Input(component_id = "confirm-add-to-playbook-modal-button", component_property = "n_clicks"), 
+        Input(component_id = "att-pb-selector-dropdown", component_property = "value"), 
+        State(component_id = "attack-options-radio", component_property = "value"),
+        State(component_id = {"type": "technique-config-display", "index": ALL}, component_property = "value"), 
+        State(component_id = {"type": "technique-config-display-file-upload", "index": ALL}, component_property = "contents")
+    )
+def AddTechniqueToPlaybook(n_clicks, selected_pb, t_id, technique_input, file_content):
+    if n_clicks == 0:
+        raise PreventUpdate
+    
+    # if config has file as input
+    if file_content:
+        if selected_pb:
+            for pb in GetAllPlaybooks():
+                pb_config = Playbook(pb)
+                if  pb_config.name == selected_pb:
+                    break
+
+        technique_input.append(file_content)
+    
+    else:
+        if selected_pb:
+            for pb in GetAllPlaybooks():
+                pb_config = Playbook(pb)
+                if  pb_config.name == selected_pb:
+                    break
+        
+    # add technique to playbook
+    pb_config.AddPlaybookStep(t_id, technique_input)
+    # save and update new playbook config
+    pb_config.SavePlaybook()
+
+    return True, "Added to Playbook"
+
+'''C026 - Callback to open playbook creator modal'''
+@app.callback(Output(component_id = "playbook-creator-modal", component_property = "is_open"), [Input("pb-creator-modal-open-button", "n_clicks"), Input("pb-creator-modal-close-button", "n_clicks")], [State("playbook-creator-modal", "is_open")])
+def toggle_modal(open_trigger, close_trigger, is_open):
+    if open_trigger or close_trigger:
+        return not is_open
+    return is_open
+
+'''C027 - Callback to create new playbook'''
+@app.callback(
+        Output(component_id = "hidden-div", component_property = "children", allow_duplicate=True), 
+        Output(component_id = "playbook-creator-modal", component_property = "is_open", allow_duplicate=True), 
+        Input(component_id = "pb-name-input", component_property = "value"), 
+        Input(component_id = "pb-desc-input", component_property = "value"), 
+        Input(component_id = "pb-author-input", component_property = "value"), 
+        Input(component_id = "pb-refs-input", component_property = "value"), 
+        Input(component_id = "create-playbook-button", component_property = "n_clicks"), prevent_initial_call=True
+    )
+def CreateNewPlaybookCallback(pb_name, pb_desc, pb_author, pb_references, n_clicks):
+    if n_clicks == 0:
+        raise PreventUpdate
+    
+    return CreateNewPlaybook(pb_name, pb_desc, pb_author, pb_references), False
+
+'''C028 - Callback to display playbook node data'''
+@app.callback(
+        Output(component_id = "pb-technique-info-offcanvas", component_property = "children"),
+        Output(component_id = "pb-technique-info-offcanvas", component_property = "is_open"),
+        Input(component_id = "auto-attack-sequence-cytoscape-nodes", component_property = "tapNodeData"),
+        [State(component_id = "pb-technique-info-offcanvas", component_property = "is_open")], 
+        prevent_initial_call=True
+    )
+def DisplayPlaybookNodeData(data, is_open):
+    if data:
+        # extract module_id from node label
+        if data['label'] != "None":
+            module_id = data['label'].split(":")[0]
+        else:
+            raise PreventUpdate
+
+        # extract module information
+        try:
+            # if module id is number - return time gap
+            int(module_id)
+            return [html.B(f"Time Gap : {module_id} seconds")], True
+        except:
+            return TechniqueRecordInfo(module_id), not is_open
+    else:
+        raise PreventUpdate
+        
+'''C029 - Callback to display playbook node data on hover'''
+@app.callback(
+        Output(component_id = "playbook-node-data-div", component_property = "children", allow_duplicate= True),
+        Input(component_id = "auto-attack-sequence-cytoscape-nodes", component_property = "mouseoverNodeData"), 
+        prevent_initial_call=True
+    )
+def DisplayPlaybookNodeData(data):
+    display_elements = []
+    if data:
+        # extract module_id from node label
+        if data['label'] != "None":
+            module_id = data['label'].split(":")[0]
+        else:
+            raise PreventUpdate
+
+        # extract module information
+        try:
+            # if module id is number - return time gap
+            int(module_id)
+            display_elements.append(html.B(f"Time Gap : {module_id} seconds"))
+            return display_elements
+        except:
+            # if halberd module_if - return the module info
+            module_info = EnrichNodeInfo(module_id)
+
+            # display module name
+            module_name = module_info['Name']
+            display_elements.append(html.B("Module Name : "))
+            display_elements.append(html.A(module_name))
+            display_elements.append(html.Br())
+            
+            # display module description
+            # if module_info['Description']:
+            #     module_desc = module_info['Description']
+            #     display_elements.append(html.B("Module Description : "))
+            #     display_elements.append(html.A(module_desc))
+            #     display_elements.append(html.Br())
+            
+            module_attack_surface = module_info['AttackSurface']
+            display_elements.append(html.B("Attack Surface : "))
+            display_elements.append(html.A(module_attack_surface))
+            display_elements.append(html.Br())
+
+            # display module mitre info
+            if module_info['References']['MITRE']:
+                module_mitre_technique_id = module_info['References']['MITRE']
+
+                for mitre_technique in module_mitre_technique_id:
+                    tactics = module_mitre_technique_id[mitre_technique]['Tactic']
+                    technique_name = module_mitre_technique_id[mitre_technique]['Technique']
+                    sub_technique_name = module_mitre_technique_id[mitre_technique]['SubTechnique']
+                    
+                    display_elements.append(html.B("Tactics : "))
+                    display_elements.append(html.A(tactics))
+                    display_elements.append(html.Br())
+
+                    display_elements.append(html.B("Technique : "))
+                    if sub_technique_name:
+                        display_elements.append(html.A(f"{technique_name} : {sub_technique_name}"))
+                        
+                    else:
+                        display_elements.append(html.A(technique_name))
+                    display_elements.append(html.Br())
+
+            # display azure threat research matrix info
+            if module_info['References']['AzureThreatResearchMatrix'][0]:
+                module_azure_trm = module_info['References']['AzureThreatResearchMatrix']
+                display_elements.append(html.B("Module Azure TRM Info : "))
+                display_elements.append(html.A(str(module_azure_trm)))
+                display_elements.append(html.Br())
+            return display_elements
+    else:
+        raise PreventUpdate
+
+'''C030 - Callback to open/close add to playbook modal on Attack page'''
+@app.callback(
+    Output(component_id = "add-to-playbook-modal", component_property = "is_open"),
+    [
+        Input(component_id = "open-add-to-playbook-modal-button", component_property = "n_clicks"), 
+        Input(component_id = "close-add-to-playbook-modal-button", component_property = "n_clicks"), 
+        Input(component_id = "confirm-add-to-playbook-modal-button", component_property = "n_clicks")
+    ],
+    [State(component_id = "add-to-playbook-modal", component_property = "is_open")],
+    prevent_initial_call=True
+)
+def toggle_modal(n1, n2, n3, is_open):
+    if n1 or n2 or n3:
+        return not is_open
+    return is_open
+
+'''C031 - Callback to generate playbook options in Automator - Attack Playbook dropdown'''
+@app.callback(Output(component_id = "automator-pb-selector-dropdown", component_property = "options"), Input(component_id = "automator-pb-selector-dropdown", component_property = "title"))
+def GenerateDropdownOptionsCallBack(title):
+    if title == None:
+        playbook_dropdown_option = []    
+        for pb in GetAllPlaybooks():
+            
+            playbook_dropdown_option.append(
+                {
+                    "label": html.Div([Playbook(pb).name], style={'font-size': 20}, className="text-dark"),
+                    "value": Playbook(pb).name,
+                }
+            )
+        return playbook_dropdown_option
 
 if __name__ == '__main__':
     # initialize primary app files
