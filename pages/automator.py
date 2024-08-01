@@ -31,7 +31,8 @@ page_layout = html.Div([
     html.H4("Attack Playbook", style ={ "padding": "5px"}),
     
     # playbook selector dropdown
-    dcc.Dropdown(options = PlaybooksDropdownListGen(), value = None, id='automator-pb-selector-dropdown', placeholder="Select Playbook"),
+    # dcc.Dropdown(options = PlaybooksDropdownListGen(), value = None, id='automator-pb-selector-dropdown', placeholder="Select Playbook"),
+    dcc.Dropdown(value = None, id='automator-pb-selector-dropdown', placeholder="Select Playbook"),
     html.Br(),
 
     # div to display node information
