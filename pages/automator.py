@@ -31,7 +31,6 @@ page_layout = html.Div([
     html.H4("Attack Playbook", style ={ "padding": "5px"}),
     
     # playbook selector dropdown
-    # dcc.Dropdown(options = PlaybooksDropdownListGen(), value = None, id='automator-pb-selector-dropdown', placeholder="Select Playbook"),
     dcc.Dropdown(value = None, id='automator-pb-selector-dropdown', placeholder="Select Playbook"),
     html.Br(),
 
@@ -85,9 +84,6 @@ page_layout = html.Div([
             dbc.ModalBody(
                 html.Div(
                     [
-                        html.H6("Attack Playbook ID", style ={ "padding": "5px"}),
-                        dcc.Dropdown(options = PlaybooksDropdownListGen(), value = None, id='att-seq-selector-2-dropdown'),
-                        html.Br(),
                         html.H6("Time"),
                         dcc.Input(id ='set-time-input', debounce=True, placeholder="00:00", required = True),
                         html.Br(),
