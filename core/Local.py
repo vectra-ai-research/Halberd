@@ -49,7 +49,7 @@ def InitializationCheck():
 
         write_log = csv.DictWriter(f, fieldnames= fields)
         write_log.writerow(log_input)
-        print("Application log file created")
+        print("[*] Application log file created")
 
     # Check for trace log file
     if Path("./local/Trace_Log.csv").exists():
@@ -63,7 +63,7 @@ def InitializationCheck():
 
         write_log = csv.DictWriter(f, fieldnames= fields)
         write_log.writerow(log_input)
-        print("Trace log file created")
+        print("[*] Trace log file created")
 
     # check for msft tokens file
     if Path("./local/MSFT_Graph_Tokens.yml").exists():
@@ -82,12 +82,14 @@ def InitializationCheck():
             pass
         else:
             os.makedirs("./automator/Playbooks")
+            print("[*] Automator dir created")
         
         # check for automator/Outputs folder
         if Path("./automator/Outputs").exists():
             pass
         else:
             os.makedirs("./automator/Outputs")
+            print("[*] Automator outputs dir created")
 
         # check for automator/Schedules.yml file
         if Path("./automator/Schedules.yml").exists():
@@ -96,6 +98,7 @@ def InitializationCheck():
             # create Schedules.yml config file
             with open("./automator/Schedules.yml", 'w') as file:
                 pass
+            print("[*] Schedules config file created")
             
     else:
         # create all automator dirs and files
@@ -104,3 +107,4 @@ def InitializationCheck():
         os.makedirs("./automator/Outputs")
         with open("./automator/Schedules.yml", 'w') as file:
             pass
+        print("[*] Automator files created")
