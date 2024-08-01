@@ -609,12 +609,18 @@ def DisplayAttackSequenceViz(selected_pb):
         raise PreventUpdate
 
 '''C020 - Callback to execute attack sequence in automator view'''
-@app.callback(Output(component_id = "hidden-div", component_property = "children", allow_duplicate=True), Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "execute-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
+@app.callback(Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "execute-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
 def ExecuteAttackSequence(playbook_id, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     
-    return ExecutePlaybook(playbook_id), True, "Attack Sequence Completed"
+    if playbook_id == None:
+        return True, "No Playbook Selected to Execute"
+    
+    # execute playbook
+    ExecutePlaybook(playbook_id)
+    
+    return True, "Playbook Execution Completed"
 
 '''C021 - Callback to open attack scheduler modal'''
 @app.callback(Output(component_id = "scheduler-modal", component_property = "is_open"), [Input("toggle-scheduler-modal-open-button", "n_clicks"), Input("toggle-scheduler-modal-close-button", "n_clicks")], [State("scheduler-modal", "is_open")])
@@ -624,7 +630,7 @@ def toggle_modal(open_trigger, close_trigger, is_open):
     return is_open
 
 '''C022 - Callback to create new automator schedule'''
-@app.callback(Output(component_id = "hidden-div", component_property = "children", allow_duplicate=True), Output(component_id = "scheduler-modal", component_property = "is_open", allow_duplicate=True), Input(component_id = "att-seq-selector-2-dropdown", component_property = "value"), Input(component_id = "set-time-input", component_property = "value"), Input(component_id = "automator-date-range-picker", component_property = "start_date"), Input(component_id = "automator-date-range-picker", component_property = "end_date"), Input(component_id = "schedule-repeat-boolean", component_property = "on"), Input(component_id = "repeat-options-dropdown", component_property = "value"), Input(component_id = "schedule-name-input", component_property = "value"), Input(component_id = "schedule-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
+@app.callback(Output(component_id = "hidden-div", component_property = "children", allow_duplicate=True), Output(component_id = "scheduler-modal", component_property = "is_open", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "set-time-input", component_property = "value"), Input(component_id = "automator-date-range-picker", component_property = "start_date"), Input(component_id = "automator-date-range-picker", component_property = "end_date"), Input(component_id = "schedule-repeat-boolean", component_property = "on"), Input(component_id = "repeat-options-dropdown", component_property = "value"), Input(component_id = "schedule-name-input", component_property = "value"), Input(component_id = "schedule-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
 def CreateNewAutomatorSchedule(automation_id, execution_time, start_date, end_date, repeat_flag, repeat_frequency, schedule_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
@@ -835,21 +841,6 @@ def toggle_modal(n1, n2, n3, is_open):
 
 '''C031 - Callback to generate playbook options in Automator - Attack Playbook dropdown'''
 @app.callback(Output(component_id = "automator-pb-selector-dropdown", component_property = "options"), Input(component_id = "automator-pb-selector-dropdown", component_property = "title"))
-def GenerateDropdownOptionsCallBack(title):
-    if title == None:
-        playbook_dropdown_option = []    
-        for pb in GetAllPlaybooks():
-            
-            playbook_dropdown_option.append(
-                {
-                    "label": html.Div([Playbook(pb).name], style={'font-size': 20}, className="text-dark"),
-                    "value": Playbook(pb).name,
-                }
-            )
-        return playbook_dropdown_option
-    
-'''C032 - Callback to generate playbook options in Scheduler - Attack Playbook dropdown'''
-@app.callback(Output(component_id = "att-seq-selector-2-dropdown", component_property = "options"), Input(component_id = "att-seq-selector-2-dropdown", component_property = "title"))
 def GenerateDropdownOptionsCallBack(title):
     if title == None:
         playbook_dropdown_option = []    
