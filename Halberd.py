@@ -637,6 +637,11 @@ def ExportAttackPlaybook(playbook_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
         
+    # if no playbook is selected, send notification
+    if playbook_name == None:
+        return None, True, "No Playbook Selected to Export"
+    
+    # get the selected playbook file location
     for pb in GetAllPlaybooks():
         pb_config = Playbook(pb)
         if  pb_config.name == playbook_name:
@@ -827,6 +832,36 @@ def toggle_modal(n1, n2, n3, is_open):
     if n1 or n2 or n3:
         return not is_open
     return is_open
+
+'''C031 - Callback to generate playbook options in Automator - Attack Playbook dropdown'''
+@app.callback(Output(component_id = "automator-pb-selector-dropdown", component_property = "options"), Input(component_id = "automator-pb-selector-dropdown", component_property = "title"))
+def GenerateDropdownOptionsCallBack(title):
+    if title == None:
+        playbook_dropdown_option = []    
+        for pb in GetAllPlaybooks():
+            
+            playbook_dropdown_option.append(
+                {
+                    "label": html.Div([Playbook(pb).name], style={'font-size': 20}, className="text-dark"),
+                    "value": Playbook(pb).name,
+                }
+            )
+        return playbook_dropdown_option
+    
+'''C032 - Callback to generate playbook options in Scheduler - Attack Playbook dropdown'''
+@app.callback(Output(component_id = "att-seq-selector-2-dropdown", component_property = "options"), Input(component_id = "att-seq-selector-2-dropdown", component_property = "title"))
+def GenerateDropdownOptionsCallBack(title):
+    if title == None:
+        playbook_dropdown_option = []    
+        for pb in GetAllPlaybooks():
+            
+            playbook_dropdown_option.append(
+                {
+                    "label": html.Div([Playbook(pb).name], style={'font-size': 20}, className="text-dark"),
+                    "value": Playbook(pb).name,
+                }
+            )
+        return playbook_dropdown_option
 
 if __name__ == '__main__':
     # initialize primary app files
