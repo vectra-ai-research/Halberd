@@ -1,3 +1,8 @@
+'''
+Module Name : Dump_Storage_Account
+Module Description : Extract keys from Azure Storage Accounts. 
+'''
+
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.resource import ResourceManagementClient
 from azure.mgmt.storage import StorageManagementClient
@@ -49,8 +54,8 @@ def TechniqueMain(subscription_id):
                 return False, {"Error" : e}, None
                     
         raw_response = {}
-        pretty_response = {}                
-        pretty_response["Success"] = storage_keys
+        pretty_response = {}
+        pretty_response = storage_keys
         
         return True, raw_response, pretty_response
     
