@@ -1,3 +1,7 @@
+'''
+Module Name : Modify_Access_KeyVault
+Module Description : Loops through Key Vaults to check permissions and assigning necessary permissions to access the Key Vault. 
+'''
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from azure.keyvault.keys import KeyClient
@@ -24,9 +28,11 @@ def TechniqueMain(subscription_id):
     user_response = requests.get('https://graph.microsoft.com/v1.0/me', headers=headers)
     tenant_response = requests.get('https://graph.microsoft.com/v1.0/organization', headers=headers)
     
+    # get user id
     user = user_response.json()
     user_object_id = user['id']
     
+    # get tenant id
     tenant = tenant_response.json()
     tenant_id = tenant['value'][0]['id']
     
@@ -98,4 +104,3 @@ def TechniqueInputSrc() -> list:
     return [
         {"title" : "Subscription ID", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"}
     ]
-    

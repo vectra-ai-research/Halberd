@@ -1,3 +1,8 @@
+'''
+Module Name : Share_Storage_Account_Container
+Module Description : Generate Shared Access Signatures (SAS) URIs specifically for containers in Azure Storage Accounts.
+'''
+
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, generate_container_sas, ContainerSasPermissions
 from azure.mgmt.storage import StorageManagementClient

@@ -1,3 +1,7 @@
+'''
+Module Name : Dump_KeyVault
+Module Description : Access and extract secrets, keys or certificates from Azure Key Vaults after gaining the necessary permissions. 
+'''
 from azure.identity import DefaultAzureCredential
 from azure.keyvault.secrets import SecretClient
 from azure.keyvault.keys import KeyClient
@@ -61,6 +65,7 @@ def TechniqueMain(subscription_id):
                                     file.write(decoded_secret)
                             except Exception as e:
                                 print(f"Failed to decode and write the secret: {e}")
+                                pass
 
                     if secret_type == "application/x-pkcs12":
                         certificates_list.append({"certificate_name": secret_name, "certificate_value": secret_value_text})
@@ -123,8 +128,8 @@ def TechniqueMain(subscription_id):
 
 
         raw_response = {}
-        pretty_response = {}                
-        pretty_response["Success"] = key_vault_data
+        pretty_response = {}
+        pretty_response = key_vault_data
     
         return True, raw_response, pretty_response
     
