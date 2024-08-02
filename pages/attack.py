@@ -19,5 +19,5 @@ page_layout = html.Div([
         active_tab="tab-attack-EntraID",
         class_name="bg-dark"
     ),
-    html.Div(id="tabs-content-div",className="bg-dark", style={"height": "90vh", "justify-content": "center", "align-items": "center"}),
+    html.Div(id="tabs-content-div",className="bg-dark", style={"height": "90vh", "justify-content": "center", "align-items": "center"})
 ], className="bg-dark", style={"height": "100vh", 'overflow': 'auto'})
