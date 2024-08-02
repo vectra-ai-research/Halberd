@@ -1169,3 +1169,173 @@ Azure-010 :
     - https://learn.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#contributor
   Notes:
     - N/A
+
+Azure-011:
+  Name: "Modify Access Key Vault"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Modify_Access_KeyVault.py
+  Description: "This technique involves looping through Key Vaults to check permissions and assigning necessary permissions to access the Key Vault. By modifying role assignments or access policies, the attacker can gain necessary access to Key Vaults."
+  References:
+    MITRE:
+      T1098.003:
+        Tactic: [Persistence, Privilege Escalation]
+        Technique: Account Manipulation
+        SubTechnique: Additional Cloud Roles
+        TechniqueID: T1098.003
+        URL: https://attack.mitre.org/techniques/T1098/003/
+    AzureThreatResearchMatrix:
+      - AZT405:
+        Tactic: [Privilege Escalation]
+        Technique: Azure AD Application
+        SubTechnique: ~
+        TechniqueID: AZT405
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/PrivilegeEscalation/AZT405/AZT405/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-012:
+  Name: "Dump Key Vault"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Dump_KeyVault.py
+  Description: "This technique involves accessing and extracting secrets, keys or certificates from Azure Key Vaults after gaining the necessary permissions."
+  References:
+    MITRE:
+      T1552.006:
+        Tactic: [Credential Access]
+        Technique: Credentials from Password Stores
+        SubTechnique: Credentials from Password Stores Cloud Secrets Management Stores
+        TechniqueID: T1552.006
+        URL: https://attack.mitre.org/techniques/T1555/006/
+    AzureThreatResearchMatrix:
+      - AZT604:
+        Tactic: [Credential Access]
+        Technique: Azure KeyVault Dumping
+        SubTechnique: ~
+        TechniqueID: AZT604
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/CredentialAccess/AZT604/AZT604/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-013:
+  Name: "Dump Automation Account"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Dump_Automation_Account.py
+  Description: "This technique involves creating multiple runbooks within Azure Automation Accounts to execute scripts that extract credentials and tokens. By leveraging automation capabilities, the attacker can automate the process of extracting sensitive information."
+  References:
+    MITRE:
+      T1528:
+        Tactic: [Credential Access]
+        Technique: Steal Application Access Token
+        SubTechnique: ~
+        TechniqueID: T1528
+        URL: https://attack.mitre.org/techniques/T1528/
+    AzureThreatResearchMatrix:
+      - AZT605.2:
+        Tactic: [Credential Access]
+        Technique: Resource Secret Reveal
+        SubTechnique: Automation Account Credential Secret Dump
+        TechniqueID: AZT605.2
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/CredentialAccess/AZT605/AZT605-2/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-014:
+  Name: "Dump Storage Account"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Dump_StorageAccount.py
+  Description: "This technique involves extracting keys from Azure Storage Accounts. By accessing and listing storage account keys, an attacker can gain access to sensitive information and potentially manipulate data stored within these accounts. The technique leverages Azure's API to retrieve storage keys and generate connection strings for further exploitation."
+  References:
+    MITRE:
+      T1212:
+        Tactic: [Credential Access]
+        Technique: Exploitation for Credential Access
+        SubTechnique: ~
+        TechniqueID: T1212
+        URL: https://attack.mitre.org/techniques/T1212/
+    AzureThreatResearchMatrix:
+      - AZT605.1:
+        Tactic: [Credential Access]
+        Technique: Resource Secret Reveal
+        SubTechnique: Storage Account Access Key Dumping
+        TechniqueID: AZT605.1
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/CredentialAccess/AZT605/AZT605-1/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-015:
+  Name: "Share VM Disk"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Share_VM_Disk.py
+  Description: "This technique generates Shared Access Signatures (SAS) URIs specifically for disks of virtual machines in Azure. An attacker can extract the contents by generating a SAS URI for a virtual machine disk without requiring further authentication. This technique leverages Azure's API to create SAS tokens and gain access to potentially sensitive data."
+  References:
+    MITRE:
+      T1212:
+        Tactic: [Credential Access]
+        Technique: Exploitation for Credential Access
+        SubTechnique: ~
+        TechniqueID: T1212
+        URL: https://attack.mitre.org/techniques/T1212/
+    AzureThreatResearchMatrix:
+      - AZT701.1:
+        Tactic: [Impact]
+        Technique: SAS URI Generation
+        SubTechnique: VM Disk SAS URI
+        TechniqueID: AZT701.1
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/Impact/AZT701/AZT701-1/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-016:
+  Name: "Share Storage Account Container"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Share_Storage_Account_Container.py
+  Description: "This technique generates Shared Access Signatures (SAS) URIs specifically for containers in Azure Storage Accounts. By generating an SAS URI for a storage container, an attacker can extract the contents of the container without requiring further authentication at any time. This technique leverages Azure's API to create SAS tokens and gain access to potentially sensitive data."
+  References:
+    MITRE:
+      T1528:
+        Tactic: [Exfiltration]
+        Technique: Exfiltration Over Web Service
+        SubTechnique: ~
+        TechniqueID: T1567
+        URL: https://attack.mitre.org/techniques/T1567/
+    AzureThreatResearchMatrix:
+      - AZT701.2:
+        Tactic: [Impact]
+        Technique: SAS URI Generation
+        SubTechnique: Storage Account File Share SAS
+        TechniqueID: AZT701.2
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/Impact/AZT701/AZT701-2/
+  Resources:
+    - ~
+  Notes:
+    - N/A
+
+Azure-017:
+  Name: "Expose Storage Account"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Expose_Storage_Account.py
+  Description: "This technique involves modifying the network rule set of an Azure Storage Account to change its default action to 'Allow,' effectively making the storage account publicly accessible. By updating the network rule set, an attacker can exploit the granted permissions to expose the storage account to the public, enabling access to potentially sensitive data."
+  References:
+    MITRE:
+      T1650:
+        Tactic: [Defense Evasion]
+        Technique: Impair Defenses
+        SubTechnique: Disable or Modify Cloud Firewall
+        TechniqueID: T1562/007/
+        URL: https://attack.mitre.org/techniques/T1562/007/
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://techcrunch.com/2024/04/09/microsoft-employees-exposed-internal-passwords-security-lapse/
+  Notes:
+    - N/A
