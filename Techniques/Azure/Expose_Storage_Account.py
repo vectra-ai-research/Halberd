@@ -1,3 +1,8 @@
+'''
+Module Name : Share_Storage_Account_Container
+Module Description : Modify the network rule set of an Azure Storage Account to change its default action to 'Allow', effectively making the storage account publicly accessible.
+'''
+
 from azure.identity import DefaultAzureCredential
 from azure.mgmt.storage import StorageManagementClient
 from azure.mgmt.storage.models import StorageAccountUpdateParameters, NetworkRuleSet, DefaultAction
