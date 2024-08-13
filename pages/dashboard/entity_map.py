@@ -9,7 +9,7 @@ from core.EntraAuthFunctions import FetchSelectedToken, ExtractTokenInfo
 import dash_cytoscape as cyto
 
 # generate entity map
-def GenerateEntityMappingGraph():
+def GenerateEntityMappingGraph(map_layout = 'cose', filter_category = None):
     active_token = FetchSelectedToken()
     active_token_info = ExtractTokenInfo(active_token)
     access_type = active_token_info['Entity Type']
@@ -25,6 +25,8 @@ def GenerateEntityMappingGraph():
         
         #Dynamically create nodes for each detection on the entity
         for category in categories:
+            if filter_category and category != filter_category:
+                continue
             #create a node for each category on the entity
             elements.append({'data': {'id': str(n), 'label': category}, 'classes': 'category'})
             #create an edge between entity and each detection
@@ -74,7 +76,7 @@ def GenerateEntityMappingGraph():
         return cyto.Cytoscape(
             id='entity-detection-cytoscape-nodes',
             # layout={'name': 'circle', 'radius':250},
-            layout={'name': 'cose'},
+            layout={'name': map_layout},
             style={'width': '100vw', 'height': '100vh'},
             elements= elements,
             stylesheet=[
@@ -108,42 +110,12 @@ def GenerateEntityMappingGraph():
                     }
                 },
                 {
-                    'selector': '.detection',
-                    'style': {
-                        'label': 'data(label)',
-                        'background-color': '#ff0000',
-                        'color': '#fff',
-                        'width': '40px',
-                        'height': '40px',
-                        'text-halign': 'center',
-                        'text-valign': 'center',
-                        'text-wrap': 'wrap',
-                        'text-max-width': '30px',
-                        'shape': 'square',
-                    }
-                },
-                {
-                    'selector': '.techniques',
-                    'style': {
-                        'label': 'data(label)',
-                        'background-color': '#005000',
-                        'color': '#fff',
-                        'width': '40px',
-                        'height': '40px',
-                        'text-halign': 'center',
-                        'text-valign': 'center',
-                        'text-wrap': 'wrap',
-                        'text-max-width': '30px',
-                        'shape': 'square',
-                    }
-                },
-                {
                     'selector': 'edge',
                     'style': {
                         'curve-style': 'bezier',
                         'target-arrow-shape': 'triangle',
-                        'line-color': '#000000',
-                        'target-arrow-color': '#000000',
+                        'line-color': '#AAAAAA',
+                        'target-arrow-color': '#AAAAAA',
                     }
                 },
                 {
@@ -161,6 +133,13 @@ def GenerateEntityMappingGraph():
                         'shape': 'square',
                     }
                 },
+                {
+                    'selector': ':selected',
+                    'style': {
+                        'border-width': '3px',
+                        'border-color': '#AAAAAA',
+                    }
+                }
             ]
             )
     else:
@@ -174,10 +153,64 @@ def GenerateEntityMappingGraph():
 
 # create page layout
 page_layout = html.Div([
-    dbc.Button("Generate Entity Map", id="generate-entity-map-button", n_clicks=0, color="danger", style={'float': 'right', 'margin-left': '10px'}),
-    dcc.Loading(
-        id="attack-output-loading",
-        type="default",
-        children = html.Div(id = "entity-map-display-div", style= {"height": "100vh"})
-    ),
-    ],className = "bg-dark")
+    dbc.Row([
+        # input fields for map type
+        dbc.Col([
+            dbc.Select(
+                id='map-layout-select',
+                options=[
+                    {'label': 'Circular', 'value': 'circle'},
+                    {'label': 'Hierarchical', 'value': 'breadthfirst'},
+                    {'label': 'Force-directed', 'value': 'cose'},
+                ],
+                value='cose',
+                className="mb-3"
+            ),
+        ],width=3),
+        # input fields for filter
+        dbc.Col([
+            dbc.Select(
+                id='filter-select',
+                options=[
+                    {'label': 'All', 'value': 'all'},
+                    {'label': 'Groups', 'value': 'Groups'},
+                    {'label': 'Roles', 'value': 'Roles'},
+                    {'label': 'Applications', 'value': 'Applications'},
+                    {'label': 'Data Repos', 'value': 'Data Repos'},
+                ],
+                value='all',
+                className="mb-3"
+            ),
+        ],width=3),
+        # generate map button
+        dbc.Col([
+            dbc.Button("Generate Entity Map", id="generate-entity-map-button", color="danger", className="mb-3"),
+        ], width=3),
+        # export result button
+        dbc.Col(
+            dbc.Button("Export Results", color="primary", className="mb-3", id="export-button"),
+            width=3
+        )
+    ]),
+    
+    dbc.Col([
+        dbc.Card([
+            dbc.CardHeader("Entity Map", className="bg-dark text-light"),
+            dbc.CardBody([
+                dcc.Loading(
+                    id="entity-map-loading",
+                    type="default",
+                    children=html.Div(id="entity-map-display-div", style={"height": "60vh", "overflow": "auto"})
+                )
+            ], className="bg-dark")
+        ], className="mb-4 border-secondary"),
+
+        # display node info
+        dbc.Card([
+            dbc.CardHeader("Node Info", className="bg-dark text-light"),
+            dbc.CardBody([
+                html.Div(id="entity-map-node-info-div", className="mt-3 text-light"),
+            ], className="bg-dark")
+        ], className="mb-4 border-secondary")
+    ]),
+], className="bg-dark p-4")
