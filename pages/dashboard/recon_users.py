@@ -114,12 +114,18 @@ page_layout = html.Div([
                 placeholder = "John Doe",
                 debounce = True,
                 id = "user-recon-input",
-                class_name="text-dark",
+                class_name="text-dark mb-3",
             ),
+            width=6
         ),
         dbc.Col(
-            dbc.Button("Recon", id="user-recon-start-button", n_clicks=0, color="danger"),
+            dbc.Button("Recon", id="user-recon-start-button", n_clicks=0, color="danger", className="mb-3"),
+            width=3
         ),
+        dbc.Col(
+            dbc.Button("Export Results", color="primary", className="mb-3", id="export-button"),
+            width=3
+        )
     ]),
     html.Br(),
     html.H2("Name"),
@@ -229,4 +235,3 @@ page_layout = html.Div([
 ],
 style={ "height": "100vh", "padding-top": "20px", "padding-bottom": "20px", "padding-right": "20px", "padding-left": "20px"}
 )
-

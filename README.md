@@ -59,17 +59,21 @@ Once Halberd is deployed & running, start testing by accessing http://127.0.0.1:
 
 ### Access
 
-Allows management of access-tokens/clients/sessions and review of current access information for various targets.
+Manage access-tokens/clients/sessions and review current access information for various targets.
 
 ### Attack
 
-Allows selection and execution of attack techniques. From the `Attack` view, select `Attack Surface > Tactic > Technique > Execute`.  
+Configure and execute techniques for testing. From the `Attack` view, select `Attack Surface > Tactic > Technique > Execute`.  
 
 ### Recon
 
 Provides numerous advanced reconnaissance dashboards enabling fast and easy information gathering by automatically executing sequence of reconnaissance in the environment.
 
 Example: Navigate to `Recon` > `Entity Map` > `Generate Entity Map` to generate an interactive graph of access & privileges in the cloud environment.
+
+### Automator
+
+Manage & execute attack playbooks. Also, setup automation with scheduler. 
 
 ### Trace
 

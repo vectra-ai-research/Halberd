@@ -9,8 +9,9 @@ import json
 import yaml
 import base64
 import datetime
-from core.Local import WriteAppLog
 import time
+from core.Functions import WriteAppLog
+from core.Constants import *
 
 
 def PasswordAccess(user_name, password, client_id = "d3590ed6-52b3-4102-aeff-aad2292ab01c",save_token = True ):
@@ -77,22 +78,21 @@ def AzureAppAccess(client_id, client_secret,tenant_id, save_token = True):
 def SaveTokens(new_token):
 
     '''Add new access tokens to tokens yaml file'''
-    tokens_file = "./local/MSFT_Graph_Tokens.yml"
 
     '''If read fails because file does not exist - create file and initialize tokens array'''
     try:
-        with open(tokens_file, "r") as tokens_data:
+        with open(MSFT_TOKENS_FILE, "r") as tokens_data:
             all_tokens_data = yaml.safe_load(tokens_data)
     except:
         WriteAppLog("SaveTokens: Tokens file not found")
-        with open(tokens_file, "w") as file:
+        with open(MSFT_TOKENS_FILE, "w") as file:
             all_tokens_data = {'AllTokens':[]}
             WriteAppLog("SaveTokens: Tokens file created")
 
     if new_token not in all_tokens_data['AllTokens']:
         all_tokens_data['AllTokens'].append(new_token)
 
-        with open(tokens_file, 'w') as file:
+        with open(MSFT_TOKENS_FILE, 'w') as file:
             yaml.dump(all_tokens_data, file)
 
         WriteAppLog("New token added")
@@ -105,10 +105,9 @@ def SaveTokens(new_token):
 def FetchAllTokens():
 
     '''Fetch access tokens from the tokens yaml file'''
-    tokens_file = "./local/MSFT_Graph_Tokens.yml"
 
-    if tokens_file != None:
-        with open(tokens_file, "r") as tokens_data:
+    if MSFT_TOKENS_FILE != None:
+        with open(MSFT_TOKENS_FILE, "r") as tokens_data:
             all_tokens_data = yaml.safe_load(tokens_data)
 
         '''Returns a list of all stored tokens'''
@@ -120,15 +119,14 @@ def FetchAllTokens():
 def SetSelectedToken(access_token):
 
     '''Set a token as selected for use all across by the user'''
-    tokens_file = "./local/MSFT_Graph_Tokens.yml"
 
-    if tokens_file != None:
-        with open(tokens_file, "r") as tokens_data:
+    if MSFT_TOKENS_FILE != None:
+        with open(MSFT_TOKENS_FILE, "r") as tokens_data:
             all_tokens_data = yaml.safe_load(tokens_data)
 
     all_tokens_data.update({'Current': access_token})
 
-    with open(tokens_file, 'w') as file:
+    with open(MSFT_TOKENS_FILE, 'w') as file:
         yaml.dump(all_tokens_data, file)
     
     WriteAppLog("New token selection updated")
@@ -137,10 +135,9 @@ def SetSelectedToken(access_token):
 def FetchSelectedToken():
 
     '''Fetch token selected by user for use'''
-    tokens_file = "./local/MSFT_Graph_Tokens.yml"
 
-    if tokens_file != None:
-        with open(tokens_file, "r") as tokens_data:
+    if MSFT_TOKENS_FILE != None:
+        with open(MSFT_TOKENS_FILE, "r") as tokens_data:
             all_tokens_data = yaml.safe_load(tokens_data)
     
     return all_tokens_data.get('Current')
@@ -187,7 +184,8 @@ def ExtractTokenInfo(access_token):
             token_app_name = token_info['app_displayname']
             token_target_tenant = token_info['tid']
             token_entity_type = token_info['idtyp']
-            token_expiration = datetime.datetime.utcfromtimestamp(token_info['exp']).strftime('%Y-%m-%dT%H:%M:%SZ')
+            # convert token expiration from epoch to utc time stamp
+            token_expiration = datetime.datetime.fromtimestamp(token_info['exp'], tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
             
             '''Extract inforamtion depending on delegated or app-only access '''
             if token_entity_type == "user":

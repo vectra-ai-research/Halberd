@@ -35,8 +35,13 @@ def GenerateAttackTraceView():
 
     # Generate attack trace page layout
     return html.Div([
-        html.H3("Attack Trace - Event Timeline", style ={"textAlign": "center", "padding": "5px"}),
-        dbc.Button("Download Trace", id="download-trace-logs-button", n_clicks=0, color="danger",style={'float': 'right', 'margin-left': '10px'}),
-        dcc.Download(id="download-trace-logs"),
+        dbc.Row([
+            dbc.Col(
+                html.H2("Attack Trace - Event Timeline", className="text-success mb-3")
+            ),
+            dbc.Col(
+                dbc.Button("Download Trace", id="download-trace-logs-button", n_clicks=0, color="danger",style={'float': 'right', 'margin-left': '10px'})
+            )
+        ]),
         dbc.Table(table_content, bordered=True, dark=True, hover=True),
-        ], className="bg-dark", style= {"width": "100vw" , "height": "92vh", 'overflow': 'auto'})
+        ], className="bg-dark", style= {"width": "100vw" , "height": "92vh", 'overflow': 'auto', "padding-right": "20px", "padding-left": "20px"})

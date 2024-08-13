@@ -5,6 +5,7 @@
 #   Name: "EntraID Password Access"
 #   AttackSurface: "EntraID"
 #   ExecutionPath: EntraID/Access.py
+#   Description: "Explain what the technique execution is doing in simple words."
 #   References:
 #     MITRE:
 #       T1078.004 :
@@ -26,6 +27,7 @@ EntraID-001 :
   Name: "EntraID Delegated Access"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Delegated_Access.py
+  Description: ~
   References:
     MITRE:
       T1078.004 :
@@ -45,6 +47,7 @@ EntraID-002 :
   Name: "Entra ID App Only Access"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/App_Only_Access.py
+  Description: ~
   References:
     MITRE:
       T1078.004 :
@@ -64,6 +67,7 @@ EntraID-003 :
   Name: "Entra ID Direct Access Token"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Direct_Token_Access.py
+  Description: ~
   References:
     MITRE:
       T1078.004 :
@@ -89,6 +93,7 @@ EntraID-004 :
   Name: "Create Backdoor Account in Tenant"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Create_Backdoor_Account.py
+  Description: ~
   References:
     MITRE:
       T1136.003 :
@@ -108,6 +113,7 @@ EntraID-005 :
   Name: "Modify Trusted IP"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Modify_Trusted_IP.py
+  Description: ~
   References:
     MITRE:
       T1136.003 :
@@ -119,7 +125,6 @@ EntraID-005 :
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - ~
     - https://learn.microsoft.com/en-us/graph/api/conditionalaccessroot-post-namedlocations?view=graph-rest-1.0&tabs=http
   Notes:
     - "IP with subnet format : 10.0.0.1/24"
@@ -128,6 +133,7 @@ EntraID-006 :
   Name: "Remove User Account"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Remove_Account.py
+  Description: ~
   References:
     MITRE:
       T1531 :
@@ -147,6 +153,7 @@ EntraID-007 :
   Name: "Recon Tenant Info"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Recon_Tenant_Info.py
+  Description: ~
   References:
     MITRE:
       N/A :
@@ -166,6 +173,7 @@ EntraID-008 :
   Name: "Recon Applications"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_Applications.py
+  Description: ~
   References:
     MITRE:
       T1531 :
@@ -185,6 +193,7 @@ EntraID-009 :
   Name: "Recon Groups"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_Groups.py
+  Description: ~
   References:
     MITRE:
       T1069.003 :
@@ -204,6 +213,7 @@ EntraID-010 :
   Name: "Recon User Accounts"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_User_Accounts.py
+  Description: ~
   References:
     MITRE:
       T1087.004 :
@@ -223,6 +233,7 @@ EntraID-011 :
   Name: "Recon Conditional Access Policies"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_Conditional_Access_Policies.py
+  Description: ~
   References:
     MITRE:
       T1518.001 :
@@ -242,6 +253,7 @@ EntraID-012 :
   Name: "Recon User One Drive"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_One_Drive.py
+  Description: ~
   References:
     MITRE:
       T1526 :
@@ -261,6 +273,7 @@ EntraID-013 :
   Name: "Recon SharePoint Sites"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_SP_Sites.py
+  Description: ~
   References:
     MITRE:
       T1526 :
@@ -280,6 +293,7 @@ EntraID-014 :
   Name: "Bruteforce Graph Access Token - Delegated Access"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Bruteforce_Graph_API_Tokens.py
+  Description: ~
   References:
     MITRE:
       T1078.004 :
@@ -299,6 +313,7 @@ EntraID-015 :
   Name: "Invite Enternal User to Tenant"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Invite_External_User.py
+  Description: ~
   References:
     MITRE:
       T1136.003 :
@@ -338,6 +353,7 @@ EntraID-017 :
   Name: "Bruteforce Password"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Bruteforce_Password_Access.py
+  Description: ~
   References:
     MITRE:
       T1110.001 :
@@ -357,6 +373,7 @@ EntraID-018 :
   Name: "Add User to Group"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Add_User_To_Group.py
+  Description: ~
   References:
     MITRE:
       T1098.003 :
@@ -376,6 +393,7 @@ EntraID-019 :
   Name: "Assign Directory Role to User"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Assign_Directory_Role_To_User.py
+  Description: ~
   References:
     MITRE:
       T1098.003 :
@@ -395,6 +413,7 @@ EntraID-020 :
   Name: "Password Spray"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Password_Spray.py
+  Description: ~
   References:
     MITRE:
       T1110.003 :
@@ -415,6 +434,7 @@ EntraID-021 :
   Name: "Generate Application Credentials"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Generate_App_Password.py
+  Description: ~
   References:
     MITRE:
       T1098.001 :
@@ -439,6 +459,7 @@ EntraID-022 :
   Name: "Create New Application"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Create_New_App.py
+  Description: ~
   References:
     MITRE:
       T1098.001 :
@@ -458,6 +479,7 @@ EntraID-023 :
   Name: "Recon Directory Roles"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_Directory_Roles.py
+  Description: ~
   References:
     MITRE:
       T1069.003 :
@@ -478,6 +500,7 @@ AWS-001 :
   Name: "AWS Access"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/Access.py
+  Description: ~
   References:
     MITRE:
       T1078.004 :
@@ -497,6 +520,7 @@ AWS-002 :
   Name: "List S3 Buckets"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/List_S3_Buckets.py
+  Description: ~
   References:
     MITRE:
       T1619 :
@@ -516,6 +540,7 @@ AWS-003 :
   Name: "Get Bucket ACL"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/Get_Bucket_ACL.py
+  Description: ~
   References:
     MITRE:
       T1580 :
@@ -535,6 +560,7 @@ AWS-004 :
   Name: "List Bucket Objects"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/List_Bucket_Objects.py
+  Description: ~
   References:
     MITRE:
       T1619 :
@@ -554,6 +580,7 @@ AWS-005 :
   Name: "Exfil S3 Bucket"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/Exfil_S3_Bucket.py
+  Description: ~
   References:
     MITRE:
       T1530 :
@@ -573,6 +600,7 @@ AWS-006 :
   Name: "Enumerate EC2 Instances"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/EC2_Enum.py
+  Description: ~
   References:
     MITRE:
       T1580 :
@@ -593,6 +621,7 @@ AWS-007 :
   Name: "Recon Available Services"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/List_Available_Services.py
+  Description: ~
   References:
     MITRE:
       T1580 :
@@ -612,6 +641,7 @@ AWS-008 :
   Name: "Assume Role"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/Assume_Role.py
+  Description: ~
   References:
     MITRE:
       T1098.003 :
@@ -632,6 +662,7 @@ AWS-009 :
   Name: "List IAM Roles"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/List_IAM_Roles.py
+  Description: ~
   References:
     MITRE:
       T1069.003 :
@@ -651,6 +682,7 @@ AWS-010 :
   Name: "Delete Bucket Object"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/Delete_Bucket_Objects.py
+  Description: ~
   References:
     MITRE:
       T1485 :
@@ -670,6 +702,7 @@ AWS-011 :
   Name: "Delete S3 Bucket"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/Delete_S3_Bucket.py
+  Description: ~
   References:
     MITRE:
       T1485 :
@@ -689,6 +722,7 @@ AWS-012 :
   Name: "List DynamoDB Tables"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/List_DynamoDB_Tables.py
+  Description: ~
   References:
     MITRE:
       T1619 :
@@ -709,6 +743,7 @@ AWS-013 :
   Name: "Delete DynamoDB Table"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/Delete_DynamoDB_Table.py
+  Description: ~
   References:
     MITRE:
       T1485 :
@@ -728,6 +763,7 @@ AWS-014 :
   Name: "Recon IAM Users"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/List_IAM_Users.py
+  Description: ~
   References:
     MITRE:
       T1087.004 :
@@ -747,6 +783,7 @@ AWS-015 :
   Name: "Recon IAM Policies"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/List_IAM_Policies.py
+  Description: ~
   References:
     MITRE:
       T1087.004 :
@@ -766,6 +803,7 @@ AWS-016 :
   Name: "Recon Connected Account Auth Details"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/Recon_Acc_Authorization_Details.py
+  Description: ~
   References:
     MITRE:
       T1087.004 :
@@ -785,6 +823,7 @@ AWS-017 :
   Name: "Recon User Details"
   AttackSurface: "AWS"
   ExecutionPath: /AWS/Recon_User_Details.py
+  Description: ~
   References:
     MITRE:
       T1087.004 :
@@ -805,6 +844,7 @@ M365-001 :
   Name: "Setup Email Forwarding Rule"
   AttackSurface: "M365"
   ExecutionPath: /M365/Email_Forwarding_Rule.py
+  Description: ~
   References:
     MITRE:
       T1114.003 :
@@ -824,6 +864,7 @@ M365-002 :
   Name: "Setup Email Deletion Rule"
   AttackSurface: "M365"
   ExecutionPath: /M365/Email_Deletion_Rule.py
+  Description: ~
   References:
     MITRE:
       T1564.008 :
@@ -843,6 +884,7 @@ M365-003 :
   Name: "Search User Teams Chat"
   AttackSurface: "M365"
   ExecutionPath: /M365/Search_Teams_Chat.py
+  Description: ~
   References:
     MITRE:
       T1530 :
@@ -862,6 +904,7 @@ M365-004 :
   Name: "Search Teams Messages"
   AttackSurface: "M365"
   ExecutionPath: /M365/Search_Teams_Messages.py
+  Description: ~
   References:
     MITRE:
       T1213 :
@@ -881,6 +924,7 @@ M365-005 :
   Name: "Search User SP One Drive"
   AttackSurface: "M365"
   ExecutionPath: /M365/Search_User_SP_One_Drive.py
+  Description: ~
   References:
     MITRE:
       T1213.002 :
@@ -900,6 +944,7 @@ M365-006 :
   Name: "Search User Outlook Messages"
   AttackSurface: "M365"
   ExecutionPath: /M365/Search_Outlook_Messages.py
+  Description: ~
   References:
     MITRE:
       T1213 :
@@ -919,6 +964,7 @@ M365-007 :
   Name: "Send Email (Spear-Phishing)"
   AttackSurface: "M365"
   ExecutionPath: /M365/Send_Outlook_Email.py
+  Description: ~
   References:
     MITRE:
       T1534 :
@@ -938,6 +984,7 @@ M365-008 :
   Name: "Exfil User Mailbox"
   AttackSurface: "M365"
   ExecutionPath: /M365/Exfil_User_Mailbox.py
+  Description: ~
   References:
     MITRE:
       T1114.002 :
@@ -958,6 +1005,7 @@ Azure-001 :
   Name: "User Credentials - Azure CLI"
   AttackSurface: "Azure"
   ExecutionPath: Azure/Azure_CLI_Credential_Access.py
+  Description: ~
   References:
     MITRE:
       T1078.004 :
@@ -982,6 +1030,7 @@ Azure-002 :
   Name: "Delete Azure Virtual Machine"
   AttackSurface: "Azure"
   ExecutionPath: Azure/Delete_VM.py
+  Description: ~
   References:
     MITRE:
       ~ :
@@ -1001,6 +1050,7 @@ Azure-003 :
   Name: "List VMs"
   AttackSurface: "Azure"
   ExecutionPath: Azure/List_VMs.py
+  Description: ~
   References:
     MITRE:
       T1580 :
@@ -1020,6 +1070,7 @@ Azure-004 :
   Name: "List Resources"
   AttackSurface: "Azure"
   ExecutionPath: Azure/List_Resources.py
+  Description: ~
   References:
     MITRE:
       T1526 :
@@ -1039,6 +1090,7 @@ Azure-005 :
   Name: "Service Principal - Azure CLI"
   AttackSurface: "Azure"
   ExecutionPath: Azure/Service_Principal_Access.py
+  Description: ~
   References:
     MITRE:
       T1078.004 :
@@ -1063,6 +1115,7 @@ Azure-006 :
   Name: "Password Spray"
   AttackSurface: "Azure"
   ExecutionPath: Azure/Password_Spray.py
+  Description: ~
   References:
     MITRE:
       T1110.003 :
@@ -1087,6 +1140,7 @@ Azure-007 :
   Name: "Create Resource Group"
   AttackSurface: "Azure"
   ExecutionPath: Azure/Create_Resource_Group.py
+  Description: ~
   References:
     MITRE:
       T1578.005 :
@@ -1106,6 +1160,7 @@ Azure-008 :
   Name: "Recon Assigned Roles"
   AttackSurface: "Azure"
   ExecutionPath: Azure/Recon_Assigned_Roles.py
+  Description: ~
   References:
     MITRE:
       TT1069 :
@@ -1130,6 +1185,7 @@ Azure-009 :
   Name: "Assign Azure Role"
   AttackSurface: "Azure"
   ExecutionPath: Azure/Assign_Azure_Role.py
+  Description: ~
   References:
     MITRE:
       T1098.003 :

@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 import json
 import dash
+import datetime
+import time
+import boto3
+import os
 import dash_daq as daq
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Patch, ALL
@@ -9,20 +13,14 @@ from dash.exceptions import PreventUpdate
 from core.EntraAuthFunctions import FetchSelectedToken, ExtractTokenInfo, SetSelectedToken, FetchAllTokens
 from core.AzureFunctions import GetCurrentSubscriptionAccessInfo, GetAccountSubscriptionList, SetDefaultSubscription
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.Local import InitializationCheck
-from core.TabContentGenerator import *
-from core.TechniqueOptionsGenerator import *
-from core.TacticMapGenerator import *
-from core.TechniqueInfoGenerator import *
-from core.TechniqueMapGenerator import *
-from core.TechniqueExecutor import *
+from core.TechniqueExecutor import TechniqueInputs, TechniqueOutput, LogEventOnTrigger
 from core.AttackPlaybookVisualizer import AttackSequenceVizGenerator, EnrichNodeInfo
 from core.Automator import ExecutePlaybook, AddNewSchedule, Playbook, GetAllPlaybooks, ImportPlaybook, CreateNewPlaybook
-import datetime
-import boto3
+from core.Functions import DisplayTechniqueInfo, TacticMapGenerator, TechniqueMapGenerator, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo
+from core.Constants import *
 
 # Create Application
-app = dash.Dash(__name__,  external_stylesheets=[dbc.themes.LUX],title='Halberd', update_title='Loading...', suppress_callback_exceptions=True)
+app = dash.Dash(__name__,  external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP],title='Halberd', update_title='Loading...', suppress_callback_exceptions=True)
 
 # Navigation bar layout
 navbar = dbc.NavbarSimple(
@@ -30,8 +28,8 @@ navbar = dbc.NavbarSimple(
         dbc.NavItem(dbc.NavLink("Access", href="/access")),
         dbc.NavItem(dbc.NavLink("Attack", href="/attack")),
         dbc.NavItem(dbc.NavLink("Recon", href="/recon")),
-        dbc.NavItem(dbc.NavLink("Trace", href="/attack-trace")),
         dbc.NavItem(dbc.NavLink("Automator", href="/automator")),
+        dbc.NavItem(dbc.NavLink("Trace", href="/attack-trace")),
     ],
     brand= html.Div([
         dbc.Row(
@@ -72,6 +70,19 @@ app.layout = html.Div([
         duration=5000,
         color="primary",
         style={"position": "fixed", "top": 66, "right": 10, "width": 350},
+    ),
+    dcc.Download(id="app-download-sink"),
+    dbc.Modal(
+        [
+            dbc.ModalHeader(dbc.ModalTitle("Technique Details")),
+            dbc.ModalBody(id = "app-technique-info-display-modal-body"),
+            dbc.ModalFooter(
+                dbc.Button("Close", id="close-app-technique-info-display-modal", className="ml-auto")
+            ),
+        ],
+        id="app-technique-info-display-modal",
+        size="lg",
+        scrollable=True,
     ),
 ])
 
@@ -114,6 +125,7 @@ def TabSwitcher(tab):
 @app.callback(Output(component_id = "technique-options-div", component_property = "children"), Input(component_id = "attack-surface-tabs", component_property = "active_tab"), Input(component_id = "tactic-dropdown", component_property = "value"))
 def DisplayAttackTechniqueOptions(tab, tactic):
     return TechniqueOptionsGenerator(tab, tactic)
+
 
 '''C004 - Callback to display technique config'''
 @app.callback(Output(component_id = "attack-config-div", component_property = "children"), Input(component_id = "attack-options-radio", component_property = "value"))
@@ -161,24 +173,15 @@ def DisplayAttackTechniqueConfig(t_id):
         ], className="d-grid col-6 mx-auto"))
     )
     config_div_display.append(html.Div([
-            dbc.Button("About Technique", id="technique-info-display-button", n_clicks=0, color="danger"),
+            # opens modal and displays technique info in {app-technique-info-display-modal}
+            dbc.Button("About Technique", id="technique-info-display-button", n_clicks=0, color="primary"), 
             html.Br(),
-            dbc.Button("Add to Playbook", id="open-add-to-playbook-modal-button", n_clicks=0, color="danger")
+            dbc.Button("Add to Playbook", id="open-add-to-playbook-modal-button", n_clicks=0, color="secondary")
         ], style={'display': 'flex', 'justify-content': 'center', 'gap': '10px'})
     )
     
     config_div_display.append(
         html.Div(id='attack-technique-sink-hidden-div', style={'display':'none'}),
-    )
-    
-    config_div_display.append(
-        dbc.Offcanvas(
-            TechniqueRecordInfo(t_id),
-            id="technique-info-offcanvas",
-            title="Attack Technique Info",
-            placement = "end",
-            is_open=False,
-        )
     )
 
     # create plabook dropdown content
@@ -229,20 +232,37 @@ def ExecuteTechnique(n_clicks, t_id, values, file_content):
         return TechniqueOutput(t_id, values), True, "Technique Executed"
 
 '''C006 - Entity Map - Generate Map'''
-@app.callback(Output(component_id = "entity-map-display-div", component_property = "children"), Input(component_id = "generate-entity-map-button", component_property = "n_clicks"), prevent_initial_call=True)
-def GenerateEntityMap(n_clicks):
-    if n_clicks:
-        return GenerateEntityMappingGraph()
+@app.callback(
+    Output(component_id = "entity-map-display-div", component_property = "children", allow_duplicate=True),
+    Input(component_id = "generate-entity-map-button", component_property = "n_clicks"),
+    Input(component_id = "map-layout-select", component_property = "value"),
+    Input(component_id = "filter-select", component_property = "value"),
+    prevent_initial_call=True
+)
+def update_entity_map(n_clicks, map_layout, filter_category):
+    if not n_clicks:
+        return html.Div("Click 'Generate Entity Map' to view the map.")
+    
+    if filter_category == 'all':
+        filter_category = None 
 
+    return GenerateEntityMappingGraph(map_layout, filter_category)
 
-'''C007 - Callback to open/close Technique Info off canvas'''
-@app.callback(Output(component_id = "technique-info-offcanvas", component_property = "is_open"), Input(component_id= "technique-info-display-button", component_property= "n_clicks"),[State("technique-info-offcanvas", "is_open")], prevent_initial_call=True)
-def DisplayAttackTechniqueConfig(n_clicks, is_open):
+'''C007 - Callback to open/close Technique Info modal'''
+@app.callback(Output(component_id = "app-technique-info-display-modal", component_property = "is_open", allow_duplicate=True),
+              Output("app-technique-info-display-modal-body", "children", allow_duplicate = True), 
+              Input(component_id= "technique-info-display-button", component_property= "n_clicks"),
+              State(component_id = "attack-options-radio", component_property = "value"), 
+              [State("app-technique-info-display-modal", "is_open")], prevent_initial_call=True
+)
+def DisplayAttackTechniqueConfig(n_clicks, t_id, is_open):
     if n_clicks == 0:
         raise PreventUpdate
     
-    return not is_open
-
+    # get technique details
+    technique_details = DisplayTechniqueInfo(t_id)
+    
+    return not is_open, technique_details
 
 '''C008 - Callback to log executed technique'''
 @app.callback(
@@ -259,14 +279,14 @@ def LogEventOnTriggerCallback(n_clicks, tactic, technique):
 
 '''C009 - Callback to download trace logs'''
 @app.callback(
-    Output("download-trace-logs", "data"),
+    Output("app-download-sink", "data"),
     Input("download-trace-logs-button", "n_clicks"),
     prevent_initial_call=True,
 )
 def DownloadTraceLogs(n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
-    return dcc.send_file("./Local/Trace_Log.csv")
+    return dcc.send_file(TRACE_LOG_FILE)
 
 '''C010 - Callback to populate AWS access info'''
 @app.callback(Output(component_id = "aws-access-info-div", component_property = "children"), Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"))
@@ -310,7 +330,7 @@ def GenerateAccessInfoDivCallBack(n_intervals):
         info_output_div.append(html.Br())
         for info in access_info:
             if info == 'Access Exp':
-                if datetime.datetime.strptime(access_info['Access Exp'], '%Y-%m-%dT%H:%M:%SZ') < datetime.datetime.utcnow():
+                if access_info['Access Exp'] < datetime.datetime.fromtimestamp(int(time.time()), tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'):
                     info_output_div += [
                         html.H5(f"{info} : "),
                         html.Div(f"{access_info[info]} UTC [Expired]", className="text-danger"),
@@ -363,7 +383,7 @@ def UpdateInfoOnTokenSelectCallBack(value):
         info_output_div.append(html.Br())
         for info in access_info:
             if info == 'Access Exp':
-                if datetime.datetime.strptime(access_info['Access Exp'], '%Y-%m-%dT%H:%M:%SZ') < datetime.datetime.utcnow():
+                if access_info['Access Exp'] < datetime.datetime.fromtimestamp(int(time.time()), tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'):
                     info_output_div += [
                         html.H5(f"{info} : "),
                         html.Div(f"{access_info[info]} UTC [Expired]", className="text-danger"),
@@ -563,48 +583,7 @@ def GenerateDropdownOptionsCallBack(title):
 @app.callback(Output(component_id = "attack-automator-path-display-div", component_property = "children"), Output(component_id = "playbook-node-data-div", component_property = "children", allow_duplicate= True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), prevent_initial_call=True)
 def DisplayAttackSequenceViz(selected_pb):
     if selected_pb:
-        for pb in GetAllPlaybooks():
-            pb_config = Playbook(pb)
-            if  pb_config.name == selected_pb:
-                break
-        display_elements = []
-
-        # display playbook name
-        display_elements.append(html.B("Plabook Name : "))
-        display_elements.append(html.A(pb_config.name))
-        display_elements.append(html.Br())
-
-        # display playbook description
-        display_elements.append(html.B("Plabook Description : "))
-        display_elements.append(html.A(pb_config.description))
-        display_elements.append(html.Br())
-
-        # display playbook author
-        display_elements.append(html.B("Plabook Author : "))
-        display_elements.append(html.A(pb_config.author))
-        display_elements.append(html.Br())
-
-        # display playbook creation date
-        display_elements.append(html.B("Plabook Creation Date : "))
-        display_elements.append(html.A(pb_config.creation_date))
-        display_elements.append(html.Br())
-
-        # display playbook references
-        display_elements.append(html.B("Plabook References : "))
-        if pb_config.references: 
-            if type(pb_config.references) == list:
-                for ref in pb_config.references:
-                    display_elements.append(html.Br())
-                    display_elements.append(html.A(ref, href=ref, target='_blank'))
-                    
-            else:
-                display_elements.append(html.A(pb_config.references))
-        else:
-            display_elements.append(html.A("N/A"))
-
-        display_elements.append(html.Br())
-
-        return AttackSequenceVizGenerator(selected_pb), display_elements 
+        return AttackSequenceVizGenerator(selected_pb), DisplayPlaybookInfo(selected_pb) 
     else:
         raise PreventUpdate
 
@@ -643,10 +622,16 @@ def CreateNewAutomatorSchedule(playbook_id, execution_time, start_date, end_date
     AddNewSchedule(schedule_name, playbook_id, start_date, end_date, execution_time, repeat_flag, repeat_frequency)
 
     # send notification after new schedule is created
-    return True, "No Playbook Selected to Execute", False
+    return True, "Playbook Scheduled", False
 
 '''C023 - Callback to export playbook'''
-@app.callback(Output(component_id = "download-pb-config-file", component_property = "data"), Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "export-pb-button", component_property = "n_clicks"), prevent_initial_call=True)
+@app.callback(
+        Output(component_id = "app-download-sink", component_property = "data", allow_duplicate = True), 
+        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
+        State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
+        Input(component_id = "export-pb-button", component_property = "n_clicks"), 
+        prevent_initial_call=True)
 def ExportAttackPlaybook(playbook_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
@@ -718,11 +703,11 @@ def toggle_modal(open_trigger, close_trigger, is_open):
 '''C027 - Callback to create new playbook'''
 @app.callback(
         Output(component_id = "hidden-div", component_property = "children", allow_duplicate=True), 
-        Output(component_id = "playbook-creator-modal", component_property = "is_open", allow_duplicate=True), 
-        Input(component_id = "pb-name-input", component_property = "value"), 
-        Input(component_id = "pb-desc-input", component_property = "value"), 
-        Input(component_id = "pb-author-input", component_property = "value"), 
-        Input(component_id = "pb-refs-input", component_property = "value"), 
+        Output(component_id = "playbook-creator-modal", component_property = "is_open", allow_duplicate=True),  
+        State(component_id = "pb-name-input", component_property = "value"), 
+        State(component_id = "pb-desc-input", component_property = "value"), 
+        State(component_id = "pb-author-input", component_property = "value"), 
+        State(component_id = "pb-refs-input", component_property = "value"), 
         Input(component_id = "create-playbook-button", component_property = "n_clicks"), prevent_initial_call=True
     )
 def CreateNewPlaybookCallback(pb_name, pb_desc, pb_author, pb_references, n_clicks):
@@ -731,12 +716,12 @@ def CreateNewPlaybookCallback(pb_name, pb_desc, pb_author, pb_references, n_clic
     
     return CreateNewPlaybook(pb_name, pb_desc, pb_author, pb_references), False
 
-'''C028 - Callback to display playbook node data'''
+'''C028 - Callback to display technique info from playbook node in modal'''
 @app.callback(
-        Output(component_id = "pb-technique-info-offcanvas", component_property = "children"),
-        Output(component_id = "pb-technique-info-offcanvas", component_property = "is_open"),
+        Output(component_id = "app-technique-info-display-modal-body", component_property = "children"),
+        Output(component_id = "app-technique-info-display-modal", component_property = "is_open"),
         Input(component_id = "auto-attack-sequence-cytoscape-nodes", component_property = "tapNodeData"),
-        [State(component_id = "pb-technique-info-offcanvas", component_property = "is_open")], 
+        [State(component_id = "app-technique-info-display-modal", component_property = "is_open")], 
         prevent_initial_call=True
     )
 def DisplayPlaybookNodeData(data, is_open):
@@ -753,7 +738,7 @@ def DisplayPlaybookNodeData(data, is_open):
             int(module_id)
             return [html.B(f"Time Gap : {module_id} seconds")], True
         except:
-            return TechniqueRecordInfo(module_id), not is_open
+            return DisplayTechniqueInfo(module_id), not is_open
     else:
         raise PreventUpdate
         
@@ -787,13 +772,6 @@ def DisplayPlaybookNodeData(data):
             display_elements.append(html.B("Module Name : "))
             display_elements.append(html.A(module_name))
             display_elements.append(html.Br())
-            
-            # display module description
-            # if module_info['Description']:
-            #     module_desc = module_info['Description']
-            #     display_elements.append(html.B("Module Description : "))
-            #     display_elements.append(html.A(module_desc))
-            #     display_elements.append(html.Br())
             
             module_attack_surface = module_info['AttackSurface']
             display_elements.append(html.B("Attack Surface : "))
@@ -861,12 +839,123 @@ def GenerateDropdownOptionsCallBack(title):
                 }
             )
         return playbook_dropdown_option
+    
+'''C032 - Callback to delete playbook'''
+@app.callback(
+        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
+        Input(component_id = "delete-pb-button", component_property = "n_clicks"), 
+        State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
+        prevent_initial_call=True)
+def ExportAttackPlaybook(n_clicks, playbook_name):
+    if n_clicks == 0:
+        raise PreventUpdate
+        
+    # if no playbook is selected, send notification
+    if playbook_name == None:
+        return True, "No Playbook Selected to Delete"
+    
+    # get the selected playbook file location
+    for pb in GetAllPlaybooks():
+        pb_config = Playbook(pb)
+        if  pb_config.name == playbook_name:
+            playbook_file = pb_config.file
+
+    try:
+        os.remove(playbook_file)
+        return True, "Playbook Deleted"
+    except Exception as e:
+        print(e)
+        return True, "Failed to Delete Playbook"
+
+'''C033 - Callback to open modal and display technique information from home techniques matrix'''
+@app.callback(
+    Output("app-technique-info-display-modal", "is_open", allow_duplicate=True),
+    Output("app-technique-info-display-modal-body", "children", allow_duplicate = True),
+    Input({"type": "technique", "index": dash.ALL}, "n_clicks"),
+    State("app-technique-info-display-modal", "is_open"),
+    prevent_initial_call=True
+)
+def ToggleAppModalFromHomeMatrix(n_clicks, is_open):
+    # prevent call back on page load
+    if any(item is not None for item in n_clicks):
+        if not dash.callback_context.triggered:
+            return is_open, ""
+        
+        # extract technique id
+        triggered_id = dash.callback_context.triggered[0]["prop_id"]
+        technique_id = eval(triggered_id.split(".")[0])["index"]
+
+        # generate technique information
+        technique_details = DisplayTechniqueInfo(technique_id)
+        
+        return not is_open, technique_details
+    else:
+        raise PreventUpdate
+    
+'''C034 - Callback to close the app technique info modal'''
+@app.callback(
+    Output("app-technique-info-display-modal", "is_open", allow_duplicate=True),
+    Input("close-app-technique-info-display-modal", "n_clicks"),
+    State("app-technique-info-display-modal", "is_open"),
+    prevent_initial_call=True
+)
+def CloseAppModal(n_clicks, is_open):
+    if n_clicks:
+        return False
+    return is_open
+
+'''C035 - Callback to download report'''
+@app.callback(
+    Output("app-download-sink", "data", allow_duplicate=True),
+    Input("generate-report-button", "n_clicks"),
+    prevent_initial_call=True,
+)
+def DownloadReport(n_clicks):
+    if n_clicks == 0:
+        raise PreventUpdate
+    return dcc.send_file(TRACE_LOG_FILE)
+
+'''C036 - Callback to display entity map node information'''
+@app.callback(
+    Output("entity-map-node-info-div", "children"),
+    Input("entity-detection-cytoscape-nodes", "tapNodeData"),
+)
+def DisplayEntityMapNodeInfo(data):
+    if not data:
+        return "Click on a node to see more information."
+    return f"Selected Node: {data['label']}"
+    
+'''C037 - Callback to display playbook information in playook information modal'''
+@app.callback(Output(component_id = "automator-playbook-info-display-modal", component_property = "is_open", allow_duplicate=True),
+              Output("automator-playbook-info-display-modal-body", "children", allow_duplicate = True), 
+              Input(component_id= "pb-view-details-button", component_property= "n_clicks"),
+              State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
+              State("automator-playbook-info-display-modal", "is_open"),
+              prevent_initial_call=True
+)
+def ShowPlaybookInfo(n_clicks, selected_pb, is_open):
+    if n_clicks == 0:
+        raise PreventUpdate
+    
+    return not is_open, DisplayPlaybookInfo(selected_pb)
+
+'''C038 - Callback to close the playbook information modal'''
+@app.callback(
+    Output("automator-playbook-info-display-modal", "is_open", allow_duplicate=True),
+    Input("close-automator-playbook-info-display-modal", "n_clicks"),
+    State("automator-playbook-info-display-modal", "is_open"),
+    prevent_initial_call=True
+)
+def ClosePbInfoModal(n_clicks, is_open):
+    if n_clicks:
+        return False
+    return is_open
 
 if __name__ == '__main__':
     # initialize primary app files
     InitializationCheck()
     TacticMapGenerator()
     TechniqueMapGenerator()
-
     # start application
     app.run_server(debug = True)
