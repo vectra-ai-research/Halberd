@@ -25,7 +25,7 @@ def TechniqueInputs(t_id):
     return TechniqueExecutionFunction()
 
 # function to parse technique output and return standardized output
-def TechniqueOutput(t_id, technique_input, file_content = None):
+def TechniqueOutput(t_id, technique_input, bool_flag = None, file_content = None):
 
     # execute technique
     execution_path = techniques_info[t_id]['ExecutionPath']
@@ -35,8 +35,12 @@ def TechniqueOutput(t_id, technique_input, file_content = None):
     print(f"Executing {exec_module}")
     TechniqueMainFunction = getattr(exec_module, "TechniqueMain")
     
-    # check if the technique input is a file content
-    if file_content != None:
+    # check if the technique input contains boolean flags / file content
+    if bool_flag and file_content:
+        technique_response = TechniqueMainFunction(*technique_input, bool_flag, file_content)
+    elif bool_flag:
+        technique_response = TechniqueMainFunction(*technique_input, bool_flag)
+    elif file_content:
         technique_response = TechniqueMainFunction(*technique_input, file_content)
     else:
         technique_response = TechniqueMainFunction(*technique_input)
