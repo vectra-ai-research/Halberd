@@ -71,6 +71,6 @@ def TechniqueInputSrc() -> list:
     '''This function returns the input fields required as parameters for the technique execution'''
     return [
         {"title" : "Client ID", "id" : "text-input-app-client-id", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"},
-        {"title" : "Client Secret", "id" : "text-input-app-client-secret", "type" : "text", "placeholder" : "ssshhhhh_l0/\/g-s3c12et", "element_type" : "dcc.Input"},
+        {"title" : "Client Secret", "id" : "text-input-app-client-secret", "type" : "text", "placeholder" : "ssshhhhh_g-s3c12et", "element_type" : "dcc.Input"},
         {"title" : "Tenant ID", "id" : "text-input-tenant-id", "type" : "text", "placeholder" : "abc123-xyz456-a1b2c3-x4y5z6", "element_type" : "dcc.Input"}
     ]
