@@ -143,7 +143,7 @@ def DisplayAttackTechniqueConfig(t_id):
             config_div_elements.append(dbc.Label(config_field['title']))
 
             if config_field['element_type'] == "daq.BooleanSwitch":
-                config_div_elements.append(daq.BooleanSwitch(id = {"type": "technique-config-display", "index": "input"}, on=False))
+                config_div_elements.append(daq.BooleanSwitch(id = {"type": "technique-config-display-boolean-switch", "index": "input"}, on=False))
             
             if config_field['element_type'] == "dcc.Upload":
                 config_div_elements.append(dcc.Upload(id = {"type": "technique-config-display-file-upload", "index": "file"}, children=html.Div([html.A('Drag and Drop or Select a File')]), style={'width': '100%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px'}))
@@ -221,12 +221,20 @@ def DisplayAttackTechniqueConfig(t_id):
     return config_div_display
 
 '''C005 - Attack Execution Callback - Execute Technique'''
-@app.callback(Output(component_id = "execution-output-div", component_property = "children"), Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id= "technique-execute-button", component_property= "n_clicks"), State(component_id = "attack-options-radio", component_property = "value"), State({"type": "technique-config-display", "index": ALL}, "value"), State({"type": "technique-config-display-file-upload", "index": ALL}, "contents"), prevent_initial_call = True)
-def ExecuteTechnique(n_clicks, t_id, values, file_content):
+@app.callback(Output(component_id = "execution-output-div", component_property = "children"), Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id= "technique-execute-button", component_property= "n_clicks"), State(component_id = "attack-options-radio", component_property = "value"), State({"type": "technique-config-display", "index": ALL}, "value"), State({"type": "technique-config-display-boolean-switch", "index": ALL}, "on"), State({"type": "technique-config-display-file-upload", "index": ALL}, "contents"), prevent_initial_call = True)
+def ExecuteTechnique(n_clicks, t_id, values, bool_on, file_content):
+    '''The input callback can handle text inputs, boolean flags and file upload content'''
     if n_clicks == 0:
         raise PreventUpdate
     
-    if file_content:
+    # if inputs also contains boolean flag and uploaded file content
+    if bool_on and file_content:
+        return TechniqueOutput(t_id, values, bool_on, file_content), True, "Technique Executed"
+    # if inputs also contains boolean flag
+    elif bool_on: 
+        return TechniqueOutput(t_id, values, bool_on), True, "Technique Executed"
+    # if input also contains uploaded file content
+    elif file_content:
         return TechniqueOutput(t_id, values, file_content), True, "Technique Executed"
     else:
         return TechniqueOutput(t_id, values), True, "Technique Executed"
@@ -650,10 +658,15 @@ def ExportAttackPlaybook(playbook_name, n_clicks):
     return dcc.send_file(playbook_file), True, "Playbook Exported"
 
 '''C024 - Callback to import playbook'''
-@app.callback(Output(component_id = "hidden-div", component_property = "children"), Input(component_id = 'upload-playbook', component_property = 'contents'), State(component_id = 'upload-playbook', component_property = 'filename'))
+@app.callback(
+        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
+        Input(component_id = 'upload-playbook', component_property = 'contents'), 
+        State(component_id = 'upload-playbook', component_property = 'filename'),
+        prevent_initial_call=True)
 def UploadHalberdPlaybook(contents, filename):
     ImportPlaybook(contents, filename)
-    return None
+    return True, "Playbook Imported"
 
 '''C025 - Callback to add technique to playbook'''
 @app.callback(
@@ -865,7 +878,6 @@ def ExportAttackPlaybook(n_clicks, playbook_name):
         os.remove(playbook_file)
         return True, "Playbook Deleted"
     except Exception as e:
-        print(e)
         return True, "Failed to Delete Playbook"
 
 '''C033 - Callback to open modal and display technique information from home techniques matrix'''
