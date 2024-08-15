@@ -153,19 +153,19 @@ EntraID-007 :
   Name: "Recon Tenant Info"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Recon_Tenant_Info.py
-  Description: ~
+  Description: "Find tenant details using a tenant domain. Recon can be performed as authenticated using tenantRelationship endpoint or unauthenticated leveraging open-id configuration"
   References:
     MITRE:
-      N/A :
+      T1526 :
         Tactic : [Discovery]
-        Technique : ~
+        Technique : Cloud Service Discovery
         SubTechnique: ~
-        TechniqueID : ~
-        URL : ~
+        TechniqueID : T1526
+        URL : https://attack.mitre.org/techniques/T1526/
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - https://attack.mitre.org/tactics/TA0007/
+    - https://aadinternals.com/post/just-looking/
   Notes:
     - N/A
 
@@ -173,7 +173,7 @@ EntraID-008 :
   Name: "Recon Applications"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Discover_Applications.py
-  Description: ~
+  Description: "Recon all or specific applications in Entra ID environment. Optionally, enter a Microsoft Graph permission ID to find applications with specific permissions in the tenant."
   References:
     MITRE:
       T1531 :
@@ -185,7 +185,7 @@ EntraID-008 :
     AzureThreatResearchMatrix:
       - ~
   Resources:
-    - ~
+    - https://learn.microsoft.com/en-us/graph/permissions-reference
   Notes:
     - N/A
 
