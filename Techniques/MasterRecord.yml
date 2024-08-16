@@ -150,7 +150,7 @@ EntraID-006 :
     - N/A
 
 EntraID-007 :
-  Name: "Recon Tenant Info"
+  Name: "Recon Tenant Info (UA)"
   AttackSurface: "EntraID"
   ExecutionPath: EntraID/Recon_Tenant_Info.py
   Description: "Find tenant details using a tenant domain. Recon can be performed as authenticated using tenantRelationship endpoint or unauthenticated leveraging open-id configuration"
@@ -492,6 +492,26 @@ EntraID-023 :
       - ~
   Resources:
     - ~
+  Notes:
+    - N/A
+
+EntraID-024 :
+  Name: "Check User Validity (UA)"
+  AttackSurface: "EntraID"
+  ExecutionPath: EntraID/Check_User_Validity.py
+  Description: "Leveraging publicly available endpoints such as GetCredentialType API, check if given user account (including guest accounts) exists in a target Microsoft tenant. This can be helpful to validate a username before targeting it further or find out valid usernames from a list of them. No authentication is required for this module."
+  References:
+    MITRE:
+      T1087.004 :
+        Tactic : [Discovery]
+        Technique : Account Discovery
+        SubTechnique: Cloud Account
+        TechniqueID : T1087.004
+        URL : https://attack.mitre.org/techniques/T1526/
+    AzureThreatResearchMatrix:
+      - ~
+  Resources:
+    - https://aadinternals.com/post/just-looking/
   Notes:
     - N/A
 
