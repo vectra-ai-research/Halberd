@@ -13,10 +13,9 @@ from dash.exceptions import PreventUpdate
 from core.EntraAuthFunctions import FetchSelectedToken, ExtractTokenInfo, SetSelectedToken, FetchAllTokens
 from core.AzureFunctions import GetCurrentSubscriptionAccessInfo, GetAccountSubscriptionList, SetDefaultSubscription
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.TechniqueExecutor import TechniqueInputs, TechniqueOutput, LogEventOnTrigger
+from core.TechniqueExecutor import TechniqueInputs, ExecuteTechnique, ParseTechniqueResponse, LogEventOnTrigger
 from core.AttackPlaybookVisualizer import AttackSequenceVizGenerator, EnrichNodeInfo
-from core.Automator import ExecutePlaybook, AddNewSchedule, Playbook, GetAllPlaybooks, ImportPlaybook, CreateNewPlaybook
-from core.Functions import DisplayTechniqueInfo, TacticMapGenerator, TechniqueMapGenerator, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo
+from core.Functions import DisplayTechniqueInfo, TacticMapGenerator, TechniqueMapGenerator, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, ExecutePlaybook, AddNewSchedule, Playbook, GetAllPlaybooks, ImportPlaybook, CreateNewPlaybook
 from core.Constants import *
 
 # Create Application
@@ -221,23 +220,30 @@ def DisplayAttackTechniqueConfig(t_id):
     return config_div_display
 
 '''C005 - Attack Execution Callback - Execute Technique'''
-@app.callback(Output(component_id = "execution-output-div", component_property = "children"), Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id= "technique-execute-button", component_property= "n_clicks"), State(component_id = "attack-options-radio", component_property = "value"), State({"type": "technique-config-display", "index": ALL}, "value"), State({"type": "technique-config-display-boolean-switch", "index": ALL}, "on"), State({"type": "technique-config-display-file-upload", "index": ALL}, "contents"), prevent_initial_call = True)
-def ExecuteTechnique(n_clicks, t_id, values, bool_on, file_content):
+@app.callback(Output(component_id = "execution-output-div", component_property = "children"), Output(component_id = "technique-output-memory-store", component_property = "data"), Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id= "technique-execute-button", component_property= "n_clicks"), State(component_id = "attack-options-radio", component_property = "value"), State({"type": "technique-config-display", "index": ALL}, "value"), State({"type": "technique-config-display-boolean-switch", "index": ALL}, "on"), State({"type": "technique-config-display-file-upload", "index": ALL}, "contents"), prevent_initial_call = True)
+def ExecuteTechniqueCallback(n_clicks, t_id, values, bool_on, file_content):
     '''The input callback can handle text inputs, boolean flags and file upload content'''
     if n_clicks == 0:
         raise PreventUpdate
     
     # if inputs also contains boolean flag and uploaded file content
     if bool_on and file_content:
-        return TechniqueOutput(t_id, values, bool_on, file_content), True, "Technique Executed"
+        output = ExecuteTechnique(t_id, values, bool_on, file_content)
     # if inputs also contains boolean flag
     elif bool_on: 
-        return TechniqueOutput(t_id, values, bool_on), True, "Technique Executed"
+        output = ExecuteTechnique(t_id, values, bool_on)
     # if input also contains uploaded file content
     elif file_content:
-        return TechniqueOutput(t_id, values, file_content), True, "Technique Executed"
+        output = ExecuteTechnique(t_id, values, file_content)
     else:
-        return TechniqueOutput(t_id, values), True, "Technique Executed"
+        output = ExecuteTechnique(t_id, values)
+    
+    # check if technique output is in the expected tuple format (success, raw_response, pretty_response)
+    if isinstance(output, tuple) and len(output) == 3:
+        success, raw_response, pretty_response = output
+
+    # return -> technique output, notification_on, notification_message 
+    return ParseTechniqueResponse(output), raw_response if type(raw_response) in [str, dict, list, tuple] else {"Raw Response" : "Unavailable"}, True, "Technique Executed"
 
 '''C006 - Entity Map - Generate Map'''
 @app.callback(
@@ -661,10 +667,13 @@ def ExportAttackPlaybook(playbook_name, n_clicks):
 @app.callback(
         Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
         Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
+        Input(component_id = 'import-pb-button', component_property = 'n_clicks'), 
         Input(component_id = 'upload-playbook', component_property = 'contents'), 
         State(component_id = 'upload-playbook', component_property = 'filename'),
         prevent_initial_call=True)
-def UploadHalberdPlaybook(contents, filename):
+def UploadHalberdPlaybook(n_clicks, contents, filename):
+    if n_clicks == 0:
+        raise PreventUpdate
     ImportPlaybook(contents, filename)
     return True, "Playbook Imported"
 
@@ -963,6 +972,27 @@ def ClosePbInfoModal(n_clicks, is_open):
     if n_clicks:
         return False
     return is_open
+
+'''C039 - Callback to download technique response data'''
+@app.callback(
+    Output("app-download-sink", "data", allow_duplicate=True),
+    Input("download-technique-response-button", "n_clicks"),
+    State("technique-output-memory-store", "data"),
+    prevent_initial_call=True
+)
+def DownloadTechniqueRawResponse(n_clicks, data):
+    if n_clicks is None or data is None:
+        raise PreventUpdate
+    
+    # create a file in the outputs directory
+    execution_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    output_filepath = f"./output/Response_Export_{execution_time}.txt"
+    with open(output_filepath, "w") as f:
+        f.write(str(data))
+    
+    # download response file
+    return dcc.send_file(output_filepath)
 
 if __name__ == '__main__':
     # initialize primary app files
