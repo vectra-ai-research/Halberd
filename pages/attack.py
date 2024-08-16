@@ -5,7 +5,7 @@ Page Description : Allows interaction with Halberd attack modules. Displays atta
 '''
 
 import dash_bootstrap_components as dbc
-from dash import html
+from dash import html, dcc
                    
 page_layout = html.Div([
     html.H2("Attack Console", className="text-success mb-3"),
@@ -20,5 +20,6 @@ page_layout = html.Div([
         active_tab="tab-attack-EntraID",
         class_name="bg-dark"
     ),
-    html.Div(id="tabs-content-div",className="bg-dark", style={"height": "90vh", "justify-content": "center", "align-items": "center"})
+    html.Div(id="tabs-content-div",className="bg-dark", style={"height": "90vh", "justify-content": "center", "align-items": "center"}),
+    dcc.Store(id="technique-output-memory-store"),
 ], className="bg-dark", style={"height": "100vh", 'overflow': 'auto', "padding-right": "20px", "padding-left": "20px"})
