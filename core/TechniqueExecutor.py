@@ -2,18 +2,17 @@
 Name : TechniqueExecutor.py
 Description : Loads techniques functions to display technique config, logs event on technique execution and parses technique response to display standardized output in 'execution-output-div'.
 '''
-import yaml
 import re
 import importlib
 import csv
 from datetime import datetime
 from dash import html
 import dash_bootstrap_components as dbc
+from core.Functions import MasterRecord
+from core.Constants import TRACE_LOG_FILE
 
-master_record_file = "./Techniques/MasterRecord.yml"
-with open(master_record_file, "r") as master_record_data:
-    techniques_info = yaml.safe_load(master_record_data)
-
+# load techniques info from master record
+techniques_info = MasterRecord().data
 
 def TechniqueInputs(t_id):
     execution_path = techniques_info[t_id]['ExecutionPath']
@@ -24,8 +23,8 @@ def TechniqueInputs(t_id):
 
     return TechniqueExecutionFunction()
 
-# function to parse technique output and return standardized output
-def TechniqueOutput(t_id, technique_input, bool_flag = None, file_content = None):
+def ExecuteTechnique(t_id, technique_input, bool_flag = None, file_content = None):
+    '''Function to execute attack techiques'''
 
     # execute technique
     execution_path = techniques_info[t_id]['ExecutionPath']
@@ -44,7 +43,11 @@ def TechniqueOutput(t_id, technique_input, bool_flag = None, file_content = None
         technique_response = TechniqueMainFunction(*technique_input, file_content)
     else:
         technique_response = TechniqueMainFunction(*technique_input)
+    
+    return technique_response
 
+def ParseTechniqueResponse(technique_response):
+    '''Function to parse the technique execution response and display it structured'''
     # check if technique output is in the expected tuple format (success, raw_response, pretty_response)
     if isinstance(technique_response, tuple) and len(technique_response) == 3:
         success, raw_response, pretty_response = technique_response
@@ -139,13 +142,13 @@ def TechniqueOutput(t_id, technique_input, bool_flag = None, file_content = None
     else:
         return str(response)
 
-# function to log event on execution
 def LogEventOnTrigger(tactic, t_id):
+    '''Function to log event on execution'''
+    
     technique_name = techniques_info[t_id]['Name']
     attack_surface = techniques_info[t_id]['AttackSurface']
 
-    log_file = "./local/Trace_Log.csv"
-    f = open(log_file,"a")
+    f = open(TRACE_LOG_FILE,"a")
 
     fields = ["date_time", "technique", "tactic","attack_surface","result"]
     log_input = {"date_time":str(datetime.today()), "technique":technique_name, "tactic":tactic,"attack_surface":attack_surface, "result":"Executed"}
