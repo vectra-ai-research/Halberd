@@ -12,6 +12,8 @@ def TechniqueMain(password, wait = None, client_id = None, username_file_content
         return False, {"Error" : "Invalid input : Password required"}, None
     if username_file_content in [None, ""]:
         return False, {"Error" : "Provide file containing usernames"}, None
+    if username_file_content[0] in [None, ""]:
+        return False, {"Error" : "Provide file containing usernames"}, None
 
     endpoint_url = "https://login.microsoft.com/common/oauth2/token"
     resource = "https://graph.microsoft.com"
