@@ -3,14 +3,16 @@ import base64
 import time
 
 def TechniqueMain(user_name, wait = None, client_id = None, password_file_content = None):
-    '''Generates graph access token by authenticating with a username & password'''
+    '''Performs password bruteforce by attempting to generate graph access token by authenticating with a username & list of passwords.'''
 
     # username input validation
     if user_name == [None,""]:
         return {"Error" : "Username input required"}
 
     # passwords file input validation
-    if password_file_content == [None,""]:
+    if password_file_content in [None,""]:
+        return {"Error" : "Passwords file required"}
+    if password_file_content[0] in [None,""]:
         return {"Error" : "Passwords file required"}
 
     # client id input validation
@@ -75,7 +77,7 @@ def TechniqueMain(user_name, wait = None, client_id = None, password_file_conten
                     return True, raw_response, None
                 
             # check for error codes that indicate correct password but auth failed due to other reasons
-            elif any(e_code in [50076,50072, 50074, 50005, 50131] for e_code in raw_response.json().get('error')):
+            elif any(e_code in [50076,50072, 50074, 50005, 50131] for e_code in raw_response.json().get('error_codes')):
                 try:
                     pretty_response = {}
                     pretty_response = {
