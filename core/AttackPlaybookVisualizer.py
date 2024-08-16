@@ -1,11 +1,9 @@
 from dash import html
-import yaml
 import dash_cytoscape as cyto
-from core.Automator import Playbook, GetAllPlaybooks
+from core.Functions import MasterRecord, Playbook, GetAllPlaybooks
 
-master_record_file = "./Techniques/MasterRecord.yml"
-with open(master_record_file, "r") as master_record_data:
-    techniques_info = yaml.safe_load(master_record_data)
+# import techniques info from MasterRecord.yml
+techniques_info = MasterRecord().data
 
 def AttackSequenceVizGenerator(playbook_name):
 
