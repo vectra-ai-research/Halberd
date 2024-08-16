@@ -4,12 +4,12 @@ Page Navigation URL : app/automator
 Page Description : Allows management / execution of playbooks and scheduling.
 '''
 
-from dash import dcc, html, Input, Output, State, callback
+from dash import dcc, html
 import dash
 import dash_bootstrap_components as dbc
 import dash_daq as daq
 from datetime import date
-from core.Automator import GetAllPlaybooks, Playbook
+from core.Functions import GetAllPlaybooks, Playbook
 
 def PlaybooksDropdownListGen():
     return [
