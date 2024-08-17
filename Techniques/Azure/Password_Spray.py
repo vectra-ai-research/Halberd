@@ -6,6 +6,7 @@ import subprocess
 import json
 import base64
 import time
+from core.Functions import CheckAzureCLIInstall
 
 def TechniqueMain(password, wait = None, client_id = None, username_file_content = None):
     # input validation
@@ -19,6 +20,9 @@ def TechniqueMain(password, wait = None, client_id = None, username_file_content
 
     if wait in [None,""]:
         wait = 5 # set default wait to 5 seconds
+
+    # get az full execution path
+    az_command = CheckAzureCLIInstall()
 
     # extract usernames from username text file
     content_string = username_file_content[0].split(',')[-1]
@@ -42,7 +46,7 @@ def TechniqueMain(password, wait = None, client_id = None, username_file_content
             if user_name in [None, ""]:
                 continue
 
-            raw_response = subprocess.run(["az", "login", "-u", user_name, "-p", password], capture_output=True)
+            raw_response = subprocess.run([az_command, "login", "-u", user_name, "-p", password], capture_output=True)
             
             output = raw_response.stdout
             out_error = raw_response.stderr

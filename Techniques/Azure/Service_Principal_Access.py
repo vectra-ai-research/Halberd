@@ -4,13 +4,18 @@ Module Description : Attempts to establish access using a service principal clie
 '''
 import subprocess
 import json
+from core.Functions import CheckAzureCLIInstall
 
 def TechniqueMain(app_id, app_secret, tenant_id, allow_no_sub_login=False):
+
+    # get az full execution path
+    az_command = CheckAzureCLIInstall()
+
     try:
         if allow_no_sub_login == False:
-            raw_response = subprocess.run(["az", "login", "--service-principal", "-u", app_id, f"-p={app_secret}", "--tenant", tenant_id], capture_output=True)
+            raw_response = subprocess.run([az_command, "login", "--service-principal", "-u", app_id, f"-p={app_secret}", "--tenant", tenant_id], capture_output=True)
         else:
-            raw_response = subprocess.run(["az", "login", "--service-principal", "-u", app_id, f"-p={app_secret}", "--tenant", tenant_id, "--allow-no-subscriptions"], capture_output=True)
+            raw_response = subprocess.run([az_command, "login", "--service-principal", "-u", app_id, f"-p={app_secret}", "--tenant", tenant_id, "--allow-no-subscriptions"], capture_output=True)
 
         output = raw_response.stdout
         struc_output = json.loads(output.decode('utf-8'))

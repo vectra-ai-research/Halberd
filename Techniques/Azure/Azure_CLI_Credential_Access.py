@@ -4,6 +4,7 @@ Module Description : Attempts to authenticate using a username and password via 
 '''
 import subprocess
 import json
+from core.Functions import CheckAzureCLIInstall
 
 def TechniqueMain(user_name, password):
 
@@ -13,8 +14,15 @@ def TechniqueMain(user_name, password):
     if password in ["", None]:
         return False, {"Error" : "Password required"}, None
     
+    # get az full execution path
+    az_command = CheckAzureCLIInstall()
+    
     try:
-        raw_response = subprocess.run(["az", "login", "-u", user_name, "-p", password], capture_output=True)
+        raw_response = subprocess.run([az_command, "login", "-u", user_name, "-p", password], capture_output=True)
+
+        # if login attempt fails, launch interactive login
+        if raw_response.returncode == 1:
+            raw_response = subprocess.run([az_command, "login"], capture_output=True)
 
         if raw_response.returncode == 0:
             output = raw_response.stdout

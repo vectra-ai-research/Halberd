@@ -4,12 +4,15 @@ import csv
 import importlib
 import base64
 import os
+import sys
+import shutil
 from datetime import datetime
 from pathlib import Path
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 from core.Constants import *
 from dash_iconify import DashIconify
+import subprocess
 
 class MasterRecord:
     def __init__(self):
@@ -373,6 +376,33 @@ def ReadTraceLog():
     f = open(log_file,"r")
     return csv.DictReader(f)
 
+def CheckAzureCLIInstall():
+    '''Function checks for installation of Azure cli on host'''
+    
+    if sys.platform.startswith('win'):
+        # search in PATH
+        az_cli_path = shutil.which("az")
+        if az_cli_path:
+            return az_cli_path
+        
+        # if not found in PATH, check in common installation paths on Windows
+        common_win_paths = [
+            r"C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin",
+            r"C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin",
+        ]
+        for path in common_win_paths:
+            az_cli_path = os.path.join(path, "az.cmd")
+            if os.path.exists(az_cli_path):
+                return az_cli_path
+            
+    else:
+        # for non-windows systems, check if 'az' is in PATH
+        if shutil.which("az"):
+            return "az"
+    
+    # if az installation not found on host,return None
+    return None
+
 def InitializationCheck():
     # Check for local folder
     if Path(APP_LOCAL_DIR).exists():
@@ -448,6 +478,29 @@ def InitializationCheck():
         with open(AUTOMATOR_SCHEDULES_FILE, 'w') as file:
             pass
         print("[*] Automator files created")
+
+    # check az cli installation
+    if CheckAzureCLIInstall():
+        pass
+    else:
+        # print warning on terminal
+        warning = '''
+        ⚠️  WARNING: Azure CLI (az) not found! ⚠️
+        --------------------------------------------
+        The Azure CLI is required to run the Azure modules but was not found on the system.
+        Please ensure that:
+        1. Azure CLI is installed on the system.
+        2. The installation directory is added to your system's PATH.
+        3. You have restarted your terminal or IDE after installation.
+
+        For installation instructions, visit:
+        https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
+
+        After installation, you may need to restart your terminal or add the Azure CLI 
+        installation directory to your PATH manually.
+        '''
+        print(warning)
+
 
 def PlaybookCreateCSVReport(report_file_name, time_stamp, module, result):
     '''Function to create and write to execution summary report in CSV format'''
@@ -656,4 +709,3 @@ def DisplayPlaybookInfo(selected_pb):
         display_elements.append(html.P("N/A"))
 
     return display_elements 
-
