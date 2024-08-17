@@ -20,16 +20,36 @@ Halberd works on Linux, macOS & Windows and can be setup easily in just a few st
 
 ### Install
 
+Checkout detailed and OS specific setup instructions in [deployment guide](https://github.com/vectra-ai-research/Halberd/wiki/Deployment-Guide). 
+
+1. Clone / download Halberd
 ```
 $ git clone https://github.com/vectra-ai-research/Halberd.git
+```
+2. Move to Halberd directory
+```
 $ cd Halberd
+```
+3. Create virtual environment
+```
 $ python3 -m venv venv
+```
+4. Activate virtual environment
+```
 $ source venv/bin/activate
+```
+5. Install requirements
+```
 $ pip install -r requirements.txt
+```
+6. Install Azure CLI
+```
+$ brew update && brew install azure-cli
+```
+7. Start Halberd
+```
 $ python3 Halberd.py
 ```
-
-Checkout detailed instructions in [deployment guide](https://github.com/vectra-ai-research/Halberd/wiki/Deployment-Guide). 
 
 ### Usage
 Once setup start testing by accessing the Halberd web app in your browser. 
@@ -46,12 +66,12 @@ Checkout [Testing Use Cases](https://github.com/vectra-ai-research/Halberd/wiki/
 - M365 Techniques
 - Azure Techniques
 - AWS Techniques
+- Playbook Automation
 - Advanced Recon Widgets
-- Access Manager
 - Reporting
 - Technique Execution via Intutive Web-App
 
-Note: Halberd is continuously evolving and getting better with more testing techniques, new capabilities & fixes. Try to use the latest version available whenever possible. 
+Note: Halberd is continuously evolving and getting better with more testing techniques, new capabilities & fixes. Ensure to use the latest version available whenever possible. 
 
 ## Getting Started
 
