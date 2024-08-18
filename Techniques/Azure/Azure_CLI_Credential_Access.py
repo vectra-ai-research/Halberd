@@ -4,6 +4,7 @@ Module Description : Attempts to authenticate using a username and password via 
 '''
 import subprocess
 import json
+
 from core.Functions import CheckAzureCLIInstall
 
 def TechniqueMain(user_name, password):

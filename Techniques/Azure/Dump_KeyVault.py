@@ -2,13 +2,14 @@
 Module Name : Dump_KeyVault
 Module Description : Access and extract secrets, keys or certificates from Azure Key Vaults after gaining the necessary permissions. 
 '''
-from azure.identity import DefaultAzureCredential
+
 from azure.keyvault.secrets import SecretClient
 from azure.keyvault.keys import KeyClient
 from azure.mgmt.keyvault import KeyVaultManagementClient
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from base64 import urlsafe_b64encode, urlsafe_b64decode
+from core.AzureFunctions import GetAzureAuthCredential, GetCurrentSubscriptionAccessInfo
 
 import jwt
 import base64
@@ -19,10 +20,12 @@ def TechniqueMain(subscription_id):
     
     # input validation
     if subscription_id in ["", None]:
-        return False, {"Error" : "Invalid input : Subscription ID required"}, None
+        # retrieve default set subscription id
+        current_sub_info = GetCurrentSubscriptionAccessInfo()
+        subscription_id = current_sub_info.get("id")
     
     # Initialize Azure credentials and KeyVaultManagementClient
-    credential = DefaultAzureCredential()
+    credential = GetAzureAuthCredential()
     client = KeyVaultManagementClient(credential, subscription_id)
     
     key_vault_data = {}
@@ -140,7 +143,5 @@ def TechniqueMain(subscription_id):
 def TechniqueInputSrc() -> list:
     '''Returns the input fields required as parameters for the technique execution'''
     return [
-        {"title" : "Subscription ID", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"},
+        {"title" : "Subscription ID (Optional)", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"},
     ]
-
-

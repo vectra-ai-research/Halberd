@@ -3,9 +3,9 @@ Module Name : Delete_VM
 Module Description : Attempts to generate a request to delete a specific Azure VM within a resource group
 '''
 
-from azure.identity import DefaultAzureCredential
 from azure.mgmt.compute import ComputeManagementClient
-from core.AzureFunctions import GetCurrentSubscriptionAccessInfo
+
+from core.AzureFunctions import GetCurrentSubscriptionAccessInfo, GetAzureAuthCredential
 
 def TechniqueMain(vm_name, rg_name):
 
@@ -16,7 +16,7 @@ def TechniqueMain(vm_name, rg_name):
         return False, {"Error" : "Resource Group Name required"}, None
     
     try:
-        default_credential = DefaultAzureCredential()
+        default_credential = GetAzureAuthCredential()
 
         # retrieve subscription id
         current_sub_info = GetCurrentSubscriptionAccessInfo()

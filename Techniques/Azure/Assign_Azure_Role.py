@@ -3,9 +3,10 @@ Module Name :Assign_Azure_Role
 Module Description : Attempts to assign an azure role to a user, group or service principal. 
 '''
 
-from azure.identity import DefaultAzureCredential
 from azure.mgmt.authorization import AuthorizationManagementClient
-from core.AzureFunctions import GetCurrentSubscriptionAccessInfo
+
+from core.AzureFunctions import GetCurrentSubscriptionAccessInfo, GetAzureAuthCredential
+
 import uuid
 import re
 
@@ -63,7 +64,7 @@ def TechniqueMain(principal_id, principal_type, role_definition_id, scope_level,
                 return False, {"Error" : {"Scope Level" : "Incorrect Value", "Valid Inputs" : "'root', 'subscription', 'rg', 'resource'"}}, None
 
         # create credential object
-        default_credential = DefaultAzureCredential()
+        default_credential = GetAzureAuthCredential()
 
         # create client
         auth_mgmt_client = AuthorizationManagementClient(default_credential, subscription_id)

@@ -1,5 +1,6 @@
 import subprocess
 import json
+from azure.identity import AzureCliCredential, DefaultAzureCredential
 from core.Functions import CheckAzureCLIInstall
 
 az_command = CheckAzureCLIInstall()
@@ -35,3 +36,11 @@ def SetDefaultSubscription(subscription_id):
         return True
     else:
         return None
+    
+def GetAzureAuthCredential():
+    try:
+        default_az_credential = AzureCliCredential()
+    except:
+        default_az_credential = DefaultAzureCredential()
+    
+    return default_az_credential

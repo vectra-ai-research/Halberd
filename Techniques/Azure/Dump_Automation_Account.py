@@ -2,9 +2,11 @@
 Module Name : Dump_Automation_Account
 Module Description : Create multiple runbooks within Azure Automation Accounts to execute scripts that extract credentials and tokens. 
 '''
-from azure.identity import DefaultAzureCredential
+
 from azure.mgmt.automation import AutomationClient
 from azure.mgmt.resource import ResourceManagementClient
+
+from core.AzureFunctions import GetAzureAuthCredential, GetCurrentSubscriptionAccessInfo
 
 import random
 import string
@@ -16,7 +18,9 @@ def TechniqueMain(subscription_id):
     
     # input validation
     if subscription_id in ["", None]:
-        return False, {"Error" : "Invalid input : Subscription ID required"}, None
+        # retrieve default set subscription id
+        current_sub_info = GetCurrentSubscriptionAccessInfo()
+        subscription_id = current_sub_info.get("id")
     
     def create_and_run_runbook_direct(resource_group_name, auto_account_name, runbook_content, automation_client):
         '''Create, run, and delete a runbook directly in an Automation Account'''
@@ -170,7 +174,7 @@ def TechniqueMain(subscription_id):
         return value_creds
 
     # Authenticate and initialize clients
-    credential = DefaultAzureCredential()
+    credential = GetAzureAuthCredential()
     automation_client = AutomationClient(credential, subscription_id)
     resource_management_client = ResourceManagementClient(credential, subscription_id)
 
@@ -275,5 +279,5 @@ def TechniqueMain(subscription_id):
 def TechniqueInputSrc() -> list:
     '''Returns the input fields required as parameters for the technique execution'''
     return [
-        {"title" : "Subscription ID", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"},
+        {"title" : "Subscription ID (Optional)", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"},
     ]

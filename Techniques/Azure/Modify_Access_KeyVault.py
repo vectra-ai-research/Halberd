@@ -2,13 +2,15 @@
 Module Name : Modify_Access_KeyVault
 Module Description : Loops through Key Vaults to check permissions and assigning necessary permissions to access the Key Vault. 
 '''
-from azure.identity import DefaultAzureCredential
+
 from azure.keyvault.secrets import SecretClient
 from azure.keyvault.keys import KeyClient
 from azure.mgmt.keyvault import KeyVaultManagementClient
 from azure.mgmt.keyvault.models import AccessPolicyEntry, VaultAccessPolicyParameters, Permissions
 from azure.mgmt.authorization.models import RoleAssignmentCreateParameters
 from azure.mgmt.authorization import AuthorizationManagementClient
+
+from core.AzureFunctions import GetAzureAuthCredential, GetCurrentSubscriptionAccessInfo
 
 import requests
 import uuid
@@ -18,10 +20,12 @@ def TechniqueMain(subscription_id):
     
     # input validation
     if subscription_id in ["", None]:
-        return False, {"Error" : "Invalid input : Subscription ID required"}, None
+        # retrieve default set subscription id
+        current_sub_info = GetCurrentSubscriptionAccessInfo()
+        subscription_id = current_sub_info.get("id")
 
     # User credentials
-    credential = DefaultAzureCredential()
+    credential = GetAzureAuthCredential()
     client = KeyVaultManagementClient(credential, subscription_id)
     token = credential.get_token("https://graph.microsoft.com/.default").token
     headers = {'Authorization': f'Bearer {token}'}

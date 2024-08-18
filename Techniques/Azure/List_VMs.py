@@ -3,13 +3,13 @@ Module Name : List_VMs
 Module Description : Attempts to list VMs in the currrent selected subscription. Returns VM name, its resource group and the vm location.
 '''
 
-from azure.identity import DefaultAzureCredential
 from azure.mgmt.compute import ComputeManagementClient
-from core.AzureFunctions import GetCurrentSubscriptionAccessInfo
+
+from core.AzureFunctions import GetCurrentSubscriptionAccessInfo, GetAzureAuthCredential
 
 def TechniqueMain():
     try:
-        default_credential = DefaultAzureCredential()
+        default_credential = GetAzureAuthCredential()
 
         # retrieve subscription id
         current_sub_info = GetCurrentSubscriptionAccessInfo()

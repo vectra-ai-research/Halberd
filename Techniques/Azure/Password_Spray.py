@@ -6,6 +6,7 @@ import subprocess
 import json
 import base64
 import time
+
 from core.Functions import CheckAzureCLIInstall
 
 def TechniqueMain(password, wait = None, client_id = None, username_file_content = None):

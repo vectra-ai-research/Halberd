@@ -4,6 +4,7 @@ Module Description : Attempts to establish access using a service principal clie
 '''
 import subprocess
 import json
+
 from core.Functions import CheckAzureCLIInstall
 
 def TechniqueMain(app_id, app_secret, tenant_id, allow_no_sub_login=False):

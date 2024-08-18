@@ -3,13 +3,13 @@ Module Name : Recon_Assigned_Roles
 Module Description : Attempts to list role assignments in selected subscription
 '''
 
-from azure.identity import DefaultAzureCredential
 from azure.mgmt.authorization import AuthorizationManagementClient
-from core.AzureFunctions import GetCurrentSubscriptionAccessInfo
+
+from core.AzureFunctions import GetCurrentSubscriptionAccessInfo, GetAzureAuthCredential
 
 def TechniqueMain():
     try:
-        default_credential = DefaultAzureCredential()
+        default_credential = GetAzureAuthCredential()
 
         # retrieve subscription id
         current_sub_info = GetCurrentSubscriptionAccessInfo()

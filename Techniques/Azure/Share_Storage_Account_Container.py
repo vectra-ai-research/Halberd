@@ -3,27 +3,31 @@ Module Name : Share_Storage_Account_Container
 Module Description : Generate Shared Access Signatures (SAS) URIs specifically for containers in Azure Storage Accounts.
 '''
 
-from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, generate_container_sas, ContainerSasPermissions
 from azure.mgmt.storage import StorageManagementClient
+
 from datetime import datetime, timedelta, timezone
+
+from core.AzureFunctions import GetAzureAuthCredential, GetCurrentSubscriptionAccessInfo
 
 def TechniqueMain(subscription_id, resource_group_name, account_name, container_name):
     '''Function to generate SAS token for a container'''
     
     # input validation
-    if subscription_id in ["", None]:
-        return False, {"Error" : "Invalid input : Subscription ID required"}, None
     if resource_group_name in ["", None]:
         return False, {"Error" : "Invalid input : Resource Group Name required"}, None
     if account_name in ["", None]:
         return False, {"Error" : "Invalid input : Account Name required"}, None
     if container_name in ["", None]:
         return False, {"Error" : "Invalid input : Container Name required"}, None
-    
+    if subscription_id in ["", None]:
+        # retrieve default set subscription id
+        current_sub_info = GetCurrentSubscriptionAccessInfo()
+        subscription_id = current_sub_info.get("id")
+
     try:
         # User credentials
-        credential = DefaultAzureCredential()
+        credential = GetAzureAuthCredential()
         storage_client = StorageManagementClient(credential, subscription_id)
 
         # Obtener la clave de la cuenta de almacenamiento
@@ -58,7 +62,7 @@ def TechniqueMain(subscription_id, resource_group_name, account_name, container_
 def TechniqueInputSrc() -> list:
     '''Returns the input fields required as parameters for the technique execution'''
     return [
-        {"title" : "Subscription ID", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"},
+        {"title" : "Subscription ID (Optional)", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"},
         {"title" : "Resource Group Name", "id" : "resource-group-name-text-input", "type" : "text", "placeholder" : "rg-name", "element_type" : "dcc.Input"},
         {"title" : "Account Name", "id" : "account-name-text-input", "type" : "text", "placeholder" : "storageacctest", "element_type" : "dcc.Input"},
         {"title" : "Container Name", "id" : "container-name-text-input", "type" : "text", "placeholder" : "containertest", "element_type" : "dcc.Input"}

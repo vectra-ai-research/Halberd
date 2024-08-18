@@ -3,13 +3,13 @@ Module Name : List_Resources
 Module Description : Attempts to list resources in the current selected subscription
 '''
 
-from azure.identity import DefaultAzureCredential
 from azure.mgmt.resource import ResourceManagementClient
-from core.AzureFunctions import GetCurrentSubscriptionAccessInfo
+
+from core.AzureFunctions import GetCurrentSubscriptionAccessInfo, GetAzureAuthCredential
 
 def TechniqueMain():
     try:
-        default_credential = DefaultAzureCredential()
+        default_credential = GetAzureAuthCredential()
 
         # retrieve subscription id
         current_sub_info = GetCurrentSubscriptionAccessInfo()

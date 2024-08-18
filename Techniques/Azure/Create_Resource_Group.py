@@ -3,9 +3,9 @@ Module Name : Create_Resource_Group
 Module Description : Attempts to create a new resource group in the current selected subscription
 '''
 
-from azure.identity import DefaultAzureCredential
 from azure.mgmt.resource import ResourceManagementClient
-from core.AzureFunctions import GetCurrentSubscriptionAccessInfo
+
+from core.AzureFunctions import GetCurrentSubscriptionAccessInfo, GetAzureAuthCredential
 
 def TechniqueMain(new_rg_name, new_rg_loc):
 
@@ -16,7 +16,7 @@ def TechniqueMain(new_rg_name, new_rg_loc):
         return False, {"Error" : "Resource Group Location required"}, None
     
     try:
-        default_credential = DefaultAzureCredential()
+        default_credential = GetAzureAuthCredential()
 
         # retrieve subscription id
         current_sub_info = GetCurrentSubscriptionAccessInfo()

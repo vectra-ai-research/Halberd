@@ -3,22 +3,26 @@ Module Name : Share_VM_Disk
 Module Description : Generate Shared Access Signatures (SAS) URIs specifically for disks of virtual machines in Azure.
 '''
 
-from azure.identity import DefaultAzureCredential
 from azure.mgmt.compute import ComputeManagementClient
+ 
+from core.AzureFunctions import GetAzureAuthCredential, GetCurrentSubscriptionAccessInfo
 
 def TechniqueMain(subscription_id, resource_group_name, vm_name):
     '''Function to generate SAS token for VM disks'''
     
     # input validation
-    if subscription_id in ["", None]:
-        return False, {"Error" : "Invalid input : Subscription ID required"}, None
     if resource_group_name in ["", None]:
         return False, {"Error" : "Invalid input : Resource Group Name required"}, None
     if vm_name in ["", None]:
         return False, {"Error" : "Invalid input : VM Name required"}, None
     
+    if subscription_id in ["", None]:
+        # retrieve default set subscription id
+        current_sub_info = GetCurrentSubscriptionAccessInfo()
+        subscription_id = current_sub_info.get("id")
+    
     try:
-        credential = DefaultAzureCredential()
+        credential = GetAzureAuthCredential()
         compute_client = ComputeManagementClient(credential, subscription_id)
 
         try:
@@ -105,7 +109,7 @@ def TechniqueMain(subscription_id, resource_group_name, vm_name):
 def TechniqueInputSrc() -> list:
     '''Returns the input fields required as parameters for the technique execution'''
     return [
-        {"title" : "Subscription ID", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"},
+        {"title" : "Subscription ID (Optional)", "id" : "subscription-id-text-input", "type" : "text", "placeholder" : "1234-5678-9098-7654-3210", "element_type" : "dcc.Input"},
         {"title" : "Resource Group Name", "id" : "rg-name-text-input", "type" : "text", "placeholder" : "rg-test", "element_type" : "dcc.Input"},
         {"title" : "VM Name", "id" : "vm-name-text-input", "type" : "text", "placeholder" : "vm-name", "element_type" : "dcc.Input"}
     ]
