@@ -153,7 +153,7 @@ def DisplayAttackTechniqueConfig(t_id):
                     placeholder = config_field['placeholder'],
                     debounce = True,
                     id = {"type": "technique-config-display", "index": "input"},
-                    class_name="text-dark"
+                    className="bg-dark border",
                 ))
                 
             config_div_elements.append(html.Br(id="cosmetics"))
@@ -242,9 +242,18 @@ def ExecuteTechniqueCallback(n_clicks, t_id, values, bool_on, file_content):
     if isinstance(output, tuple) and len(output) == 3:
         success, raw_response, pretty_response = output
 
+    # cleanup data for memorystore
+    if isinstance(raw_response, (str, dict, list, tuple)):
+        if isinstance(raw_response, dict):
+            raw_response = {key: str(value) for key, value in raw_response.items()}
+        elif isinstance(raw_response, (list, tuple)):
+            raw_response = type(raw_response)(str(item) for item in raw_response)
+    else:
+        raw_response = {"Raw Response" : "Unavailable"}
+    
     # return -> technique output, notification_on, notification_message 
     return ParseTechniqueResponse(output), raw_response if type(raw_response) in [str, dict, list, tuple] else {"Raw Response" : "Unavailable"}, True, "Technique Executed"
-
+    
 '''C006 - Entity Map - Generate Map'''
 @app.callback(
     Output(component_id = "entity-map-display-div", component_property = "children", allow_duplicate=True),
