@@ -65,7 +65,7 @@ page_layout = dbc.Container([
                         id="upload-playbook",
                         children=dbc.Button("Import", id="import-pb-button", n_clicks=0, color="info", className="w-100 mb-2"),
                     ),
-                    dbc.Button("Export", id="export-pb-button", n_clicks=0, color="secondary", className="w-100 mb-2"),
+                    dbc.Button("Export", id="toggle-export-playbook-modal-open-button", n_clicks=0, color="secondary", className="w-100 mb-2"),
                     dbc.Button("Delete", id="delete-pb-button", n_clicks=0, color="danger", className="w-100"),
                 ], className="bg-dark")
             ], className="mb-4 border-secondary"),
@@ -161,6 +161,29 @@ page_layout = dbc.Container([
             dbc.Button("Close", id="pb-creator-modal-close-button", n_clicks=0, color="secondary")
         ], className="bg-dark")
     ], id="playbook-creator-modal", className="text-light"),
+
+    # modal to export playbook
+    dbc.Modal([
+        dbc.ModalHeader("Export Playbook", className="bg-dark text-light"),
+        dbc.ModalBody([
+            dbc.Row([
+                dbc.Col([
+                    dbc.Label("Mask Param Values", className="text-light"),
+                    daq.BooleanSwitch(id="export-playbook-mask-param-boolean", on=True, color="#00FF00")
+                ], className="mb-3"),
+            ]),
+            dbc.Row([
+                dbc.Col([
+                    dbc.Label("Export File Name (Optional)", className="text-light"),
+                    dbc.Input(id="export-playbook-filename-text-input", placeholder="my_playbook_007", className="bg-dark text-light")
+                ], className="mb-3"),
+            ]),
+        ], className="bg-dark"),
+        dbc.ModalFooter([
+            dbc.Button("Export", id="export-playbook-button", n_clicks=0, color="danger"),
+            dbc.Button("Close", id="toggle-export-playbook-modal-close-button", n_clicks=0, color="secondary")
+        ], className="bg-dark")
+    ], id="export-playbook-modal", className="text-light"),
 
     # display playbook info
     dbc.Modal(

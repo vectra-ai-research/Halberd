@@ -6,13 +6,16 @@ import base64
 import os
 import sys
 import shutil
+import time
+import copy
+import uuid
 from datetime import datetime
 from pathlib import Path
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 from core.Constants import *
 from dash_iconify import DashIconify
-import subprocess
+from typing import List, Dict, Any, Optional, Union
 
 class MasterRecord:
     def __init__(self):
@@ -61,44 +64,378 @@ class MasterRecord:
         self.count_aws_techniques = len(aws_techniques_list)
         self.count_azure_techniques = len(azure_techniques_list)
 
+class PlaybookError(Exception):
+    """Custom exception class for Playbook-related errors."""
+    pass
+
+class PlaybookStep:
+    def __init__(self, module: str, params: Optional[List[Any]], wait: Optional[int]):
+        self.module = module
+        self.params = params if params is not None else []
+        self.wait = wait
+
 class Playbook:
-    def __init__(self, pb_file_name):
+    REQUIRED_FIELDS = ['PB_Name', 'PB_Author', 'PB_Creation_Date', 'PB_Description', 'PB_Sequence']
+
+    def __init__(self, pb_file_name: str):
+        self.yaml_file = pb_file_name
+        self.yaml_file_path = AUTOMATOR_PLAYBOOKS_DIR + "/" + pb_file_name
+
         pb_config_file = AUTOMATOR_PLAYBOOKS_DIR + "/" + pb_file_name
         with open(pb_config_file, "r") as pb_config_data:
-            pb_config = yaml.safe_load(pb_config_data)
+            self.data = yaml.safe_load(pb_config_data)
 
-        self.file = pb_config_file
-        self.name = pb_config["PB_Name"]
-        self.description = pb_config["PB_Description"]
-        self.author = pb_config["PB_Author"]
-        self.creation_date = pb_config["PB_Creation_Date"]
-        self.references = pb_config["PB_References"]
-        self.sequence = pb_config["PB_Sequence"]
-
-    def AddPlaybookStep(self, module, params = None, wait = 30):
-        # adds a new step to playbook. New step is added as the last step of the sequence
-        pb_sequence = self.sequence
-
-        if list(pb_sequence.keys()) == []:
-            # for a newly created playbook, step count will be zero / an empty list
-            pb_steps_count = 0
-        else:
-            # get step count for an existing playbook
-            pb_steps_count = max(list(pb_sequence.keys()))
-            
-        # add new step to playbook
-        pb_sequence[pb_steps_count+1] = {"Module": module, "Params": params, "Wait": wait}
+        # self.data = yaml.safe_load(yaml_content)
+        self.steps = len(self.data['PB_Sequence'])
+        self._status = "Not started"
     
-    def SavePlaybook(self):
-        # saves latest changes to Playbook file 
-        with open(self.file, "r") as pb_file:
-            pb_config = yaml.safe_load(pb_file)
-
-        pb_config["PB_Sequence"] = self.sequence
+    @classmethod
+    def create_new(cls, name: str, author: Optional[str] = None, description: Optional[str] = None, references: Optional[List[str]] = None) -> 'Playbook':
+        """
+        Create a new playbook from scratch.
         
-        # update playbook config file
-        with open(self.file, "w") as pb_file:
-            yaml.dump(pb_config, pb_file)
+        :param name: Name of the playbook
+        :param author: Author of the playbook (optional)
+        :param description: Description of the playbook (optional)
+        :param references: List of references for the playbook (optional)
+        :return: A new Playbook instance
+        :raises PlaybookError: If there's an error in creating the playbook
+        """
+        try:
+            # Validate input
+            if not name:
+                raise ValueError("Playbook name cannot be empty")
+            if not re.match(r'^[\w\-\s]+$', name):
+                raise ValueError("Playbook name contains invalid characters. Use only letters, numbers, spaces, hyphens, and underscores.")
+            
+            # Generate file name from playbook name
+            pb_file_name = name.replace(' ', '_') + '.yml'
+            
+            # Check if file already exists
+            if os.path.exists(f"{AUTOMATOR_PLAYBOOKS_DIR}/{pb_file_name}"):
+                raise FileExistsError(f"A playbook with the name '{pb_file_name}' already exists.")
+            
+            new_playbook_data = {
+                'PB_Name': name,
+                'PB_Author': author or 'Unknown',
+                'PB_Creation_Date': time.strftime("%m-%d-%Y"),
+                'PB_Description': description or '',
+                'PB_References': references or [],
+                'PB_Sequence': {}
+            }
+            
+            # Try to create and write to the file
+            try:
+                with open(f"{AUTOMATOR_PLAYBOOKS_DIR}/{pb_file_name}", 'w') as file:
+                    yaml.dump(new_playbook_data, file, default_flow_style=False)
+            except IOError as e:
+                raise PlaybookError(f"Error writing playbook to file: {e}")
+            
+            return cls(pb_file_name)
+        
+        except (ValueError, FileExistsError, PlaybookError) as e:
+            raise PlaybookError(f"Error creating playbook: {str(e)}")
+        except Exception as e:
+            raise PlaybookError(f"Unexpected error occurred while creating playbook: {str(e)}")
+
+    @classmethod
+    def import_playbook(cls, playbook_content: str) -> 'Playbook':
+        """
+        Import a playbook from a base64 encoded string content and save it to the app-specific location.
+        
+        :param playbook_content: Base64 encoded string content of the playbook
+        :return: A new Playbook instance
+        :raises PlaybookError: If there's an error in importing the playbook
+        """
+        try:
+            # Extract the base64 encoded content
+            content_match = re.match(r'data:application/x-yaml;base64,(.+)', playbook_content)
+            if not content_match:
+                raise PlaybookError("Invalid base64 content format")
+            
+            base64_yaml = content_match.group(1)
+            
+            # Decode the base64 content
+            try:
+                yaml_content = base64.b64decode(base64_yaml).decode('utf-8')
+            except Exception as e:
+                raise PlaybookError(f"Error decoding base64 content: {str(e)}")
+            
+            # Parse the YAML content
+            try:
+                playbook_data = yaml.safe_load(yaml_content)
+            except yaml.YAMLError as e:
+                raise PlaybookError(f"Error parsing YAML content: {str(e)}")
+            
+            # Validate playbook structure
+            cls._validate_playbook_structure(playbook_data)
+            
+            # Ensure app playbook directory exists
+            os.makedirs(AUTOMATOR_PLAYBOOKS_DIR, exist_ok=True)
+            
+            # Generate a unique file name in app-specific directory
+            file_name = f"{playbook_data['PB_Name'].replace(' ', '_')}_{uuid.uuid4().hex[:8]}.yml"
+            new_file_path = os.path.join(AUTOMATOR_PLAYBOOKS_DIR, file_name)
+            
+            # Write the content to the new file
+            with open(new_file_path, 'w') as file:
+                yaml.dump(playbook_data, file, default_flow_style=False)
+            
+            print(f"Playbook imported and saved to: {new_file_path}")
+            return cls(file_name)
+        
+        except PlaybookError as e:
+            raise e
+        except Exception as e:
+            raise PlaybookError(f"Unexpected error occurred while importing playbook: {str(e)}")
+
+    @classmethod
+    def _validate_playbook_structure(cls, playbook_data: Dict[str, Any]):
+        """
+        Validate the structure of the playbook data.
+        
+        :param playbook_data: Dictionary containing playbook data
+        :raises PlaybookError: If the playbook structure is invalid
+        """
+        # Check for required fields
+        for field in cls.REQUIRED_FIELDS:
+            if field not in playbook_data:
+                raise PlaybookError(f"Missing required field: {field}")
+        
+        # Validate PB_Sequence
+        if not isinstance(playbook_data['PB_Sequence'], dict):
+            raise PlaybookError("PB_Sequence must be a dictionary")
+        
+        for step_num, step_data in playbook_data['PB_Sequence'].items():
+            if not isinstance(step_data, dict):
+                raise PlaybookError(f"Playbook Data Incorrect : Step {step_num} must be a dictionary")
+            if 'Module' not in step_data:
+                raise PlaybookError(f"Playbook Data Incorrect : Step {step_num} is missing 'Module' field")
+            if 'Params' not in step_data:
+                raise PlaybookError(f"Playbook Data Incorrect : Step {step_num} is missing 'Params' field")
+            if 'Wait' not in step_data:
+                raise PlaybookError(f"Playbook Data Incorrect : Step {step_num} is missing 'Wait' field")
+            
+    def step(self, step_number: Optional[int] = None) -> Union[PlaybookStep, List[PlaybookStep]]:
+        """
+        Get a specific step or all steps of the playbook.
+        
+        :param step_number: If provided, return the specific step. If None, return all steps.
+        :return: A single Step object or a list of Step objects.
+        """
+        if step_number is not None:
+            if 1 <= step_number <= self.steps:
+                step_data = self.data['PB_Sequence'][step_number]
+                return PlaybookStep(step_data['Module'], step_data['Params'], step_data['Wait'])
+            else:
+                raise ValueError(f"Step number {step_number} is out of range")
+        else:
+            return [PlaybookStep(step_data['Module'], step_data['Params'], step_data['Wait']) 
+                    for step_data in self.data['PB_Sequence'].values()]
+
+    def add_step(self, new_step: PlaybookStep, step_no: Optional[int] = None) -> None:
+        step_dict = {
+            'Module': new_step.module,
+            'Params': new_step.params,
+            'Wait': new_step.wait if new_step.wait else 0
+        }
+
+        if step_no is None:
+            self.data['PB_Sequence'][self.steps + 1] = step_dict
+            self.steps += 1
+        else:
+            if 1 <= step_no <= self.steps + 1:
+                # Shift existing steps
+                for i in range(self.steps, step_no - 1, -1):
+                    self.data['PB_Sequence'][i + 1] = self.data['PB_Sequence'][i]
+                self.data['PB_Sequence'][step_no] = step_dict
+                self.steps += 1
+            else:
+                raise ValueError(f"Step number {step_no} is out of range")
+            
+        self.save()  # save playbook after adding a step
+
+    def execute(self, step_number: Optional[int] = None) -> None:
+        """
+        Execute the entire playbook or a specific step.
+        
+        :param step_number: If provided, execute only this step. Otherwise, execute the entire playbook.
+        """
+        # Create automation run folder
+        execution_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        execution_folder_name = f"{self.name}_{execution_time}"
+        execution_folder_path = os.path.join(AUTOMATOR_OUTPUT_DIR, execution_folder_name)
+        os.makedirs(execution_folder_path)
+
+        # Store current execution config
+        execution_config_file_path = os.path.join(execution_folder_path, "Execution_Config.yml")
+        with open(execution_config_file_path, 'w') as file:
+            # Write the YAML data to the file
+            yaml.dump(self.data['PB_Sequence'], file, default_flow_style=False)
+
+        execution_report_file_path = os.path.join(execution_folder_path, "Report.csv")
+
+        # Execute
+        if step_number is not None:
+            if 1 <= step_number <= self.steps:
+                # Log execution start time
+                execution_start_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                
+                # Execute playbook step
+                execution_result = self._execute_step(step_number)
+                self.generate_report(module_tid = self.step(step_number).module, execution_start_time = execution_start_time, execution_result = execution_result, execution_folder_path = execution_folder_path)
+            else:
+                raise ValueError(f"Step number {step_number} is out of range")
+        else:
+            self._status = "Running"
+            for step_no in range(1, self.steps + 1):
+                # Log execution start time
+                execution_start_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                # Execute playbook step
+                execution_result = self._execute_step(step_no)
+                # Generate report
+                self.generate_report(module_tid = self.step(step_no).module, execution_start_time = execution_start_time, execution_result = execution_result, execution_folder_path = execution_folder_path)
+                # Start wait to execute next step
+                time.sleep(self.step(step_no).wait if self.step(step_no).wait else 0)
+
+            # Update playbook run status
+            self._status = "Completed"
+
+    def _execute_step(self, step_number: int):
+        """
+        Execute a single step of the playbook.
+        
+        :param step_number: The step number to execute.
+        """
+
+        step = self.step(step_number)
+        print(f"Executing step {step_number}: {step.module}")
+
+        module_tid = step.module
+        '''technique input'''
+        technique_input = step.params
+
+        '''technique execution'''
+        techniques_info = MasterRecord().data
+        execution_path = techniques_info[module_tid]['ExecutionPath']
+
+        exec_module_path = re.findall(r'[^\/\.]+', execution_path)
+        exec_module = importlib.import_module(f"Techniques.{exec_module_path[0]}.{exec_module_path[1]}")
+        TechniqueMainFunction = getattr(exec_module, "TechniqueMain")
+
+        if technique_input == None:
+            technique_response = TechniqueMainFunction()
+        else:
+            technique_response = TechniqueMainFunction(*technique_input)
+
+        return technique_response
+    
+    def generate_report(self, module_tid, execution_start_time, execution_result, execution_folder_path, save_output = True) -> None:
+        """
+        Generate report of playbook step execution.
+        
+        :param module_tid: The id of the module being executed.
+        :param execution_start_time: The start time of step execution.
+        :param execution_result: The result of playbook step execution.
+        :param execution_folder_path: The path of current playbook execution folder.
+        """
+        execution_report_file_path = os.path.join(execution_folder_path, "Report.csv")
+        module_output_file = os.path.join(execution_folder_path, f"Result_{module_tid}.txt")
+
+        # check if technique output is in the expected tuple format (success, raw_response, pretty_response)
+        if isinstance(execution_result, tuple) and len(execution_result) == 3:
+            success, raw_response, pretty_response = execution_result
+            # parse output
+            if pretty_response != None:
+                response = pretty_response
+            else:
+                response = raw_response
+        else:
+            response = execution_result
+
+        # Create summary report
+        try:
+            if success == True:
+                PlaybookCreateCSVReport(execution_report_file_path, execution_start_time, module_tid, "success")
+            else:
+                PlaybookCreateCSVReport(execution_report_file_path, execution_start_time, module_tid, "failed")
+        except:
+            PlaybookCreateCSVReport(execution_report_file_path, execution_start_time, module_tid, "failed")
+
+        # Store responses
+        if save_output:
+            # Save step/module execution output
+            with open(module_output_file, 'w') as file:
+                # write result data to the file
+                file.write(str(response))
+
+    def status(self) -> str:
+        return self._status
+    
+    def save(self, new_file: Optional[str] = None) -> None:
+        """
+        Save the current playbook configuration to a YAML file.
+        If new_file is provided, save to a new file. Otherwise, overwrite the original file.
+        """
+        if new_file:
+            save_file = os.path.join(AUTOMATOR_PLAYBOOKS_DIR,new_file)
+        else:
+            save_file = self.yaml_file_path
+        
+        # Update the creation date to the current date
+        self.data['PB_Creation_Date'] = time.strftime("%m-%d-%Y")
+        
+        with open(save_file, 'w') as file:
+            yaml.dump(self.data, file, default_flow_style=False)
+        
+        print(f"Playbook saved to {save_file}")
+        
+        # Update the yaml_file attribute if a new file was created
+        if new_file:
+            self.yaml_file = new_file
+
+    def export(self, export_file: str, include_params: bool = False):
+        """
+        Export the playbook to a new YAML file, optionally excluding parameter values.
+        
+        :param export_file: The filename to export the playbook to.
+        :param include_params: If True, include parameter values. If False, replace with placeholders.
+        """
+        export_data = copy.deepcopy(self.data)
+        export_file_path = os.path.join(AUTOMATOR_EXPORTS_DIR, export_file)
+        if not include_params:
+            for step in export_data['PB_Sequence'].values():
+                if step['Params']:
+                    step['Params'] = ['<param_value>' for _ in step['Params']]
+        
+        # Update the creation date to the current date
+        export_data['PB_Creation_Date'] = time.strftime("%m-%d-%Y")
+        
+        with open(export_file_path, 'w') as file:
+            yaml.dump(export_data, file, default_flow_style=False)
+        
+        return export_file_path
+
+    @property
+    def name(self) -> str:
+        return self.data['PB_Name']
+
+    @property
+    def author(self) -> str:
+        return self.data['PB_Author']
+
+    @property
+    def creation_date(self) -> str:
+        return self.data['PB_Creation_Date']
+
+    @property
+    def description(self) -> str:
+        return self.data['PB_Description']
+    
+    @property
+    def references(self) -> List[str]:
+        return self.data.get('PB_References', [])
+
 
 def DisplayTechniqueInfo(technique_id):
     '''Generates Technique information from the MasterRecord.yml and displays it in the offcanvas on the attack page. The offcanvas is triggered by the About Technique button'''
@@ -460,6 +797,13 @@ def InitializationCheck():
         else:
             os.makedirs(AUTOMATOR_OUTPUT_DIR)
             print("[*] Automator outputs dir created")
+        
+        # check for automator/Exports folder
+        if Path(AUTOMATOR_EXPORTS_DIR).exists():
+            pass
+        else:
+            os.makedirs(AUTOMATOR_EXPORTS_DIR)
+            print("[*] Automator exports dir created")
 
         # check for automator/Schedules.yml file
         if Path(AUTOMATOR_SCHEDULES_FILE).exists():
@@ -522,78 +866,7 @@ def PlaybookCreateCSVReport(report_file_name, time_stamp, module, result):
     write_log = csv.DictWriter(f, fieldnames= headers)
     write_log.writerow(report_input)
 
-def ExecutePlaybook(playbook_name):
-    
-    # import techniques info from MasterRecord.yml
-    techniques_info = MasterRecord().data
-
-    # automator file
-    for pb in GetAllPlaybooks():
-        pb_config = Playbook(pb)
-        if  pb_config.name == playbook_name:
-            playbook_attack_config = pb_config.sequence
-
-    # create automation run folder
-    execution_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    execution_folder_name = f"{playbook_name}_{execution_time}"
-    os.makedirs(f"{AUTOMATOR_OUTPUT_DIR}/{execution_folder_name}")
-
-    # store current execution config
-    with open(f"{AUTOMATOR_OUTPUT_DIR}/{execution_folder_name}/Execution_Config.yml", 'w') as file:
-        # Write the YAML data to the file
-        yaml.dump(playbook_attack_config, file, default_flow_style=False)
-
-    execution_report_file = f"{AUTOMATOR_OUTPUT_DIR}/{execution_folder_name}/Report.csv"
-
-    # execute attack sequence
-    for step in playbook_attack_config:
-        module_tid = playbook_attack_config[step]["Module"]
-        '''technique input'''
-        technique_input = playbook_attack_config[step]["Params"]
-
-        '''technique execution'''
-        execution_path = techniques_info[module_tid]['ExecutionPath']
-
-        exec_module_path = re.findall(r'[^\/\.]+', execution_path)
-        exec_module = importlib.import_module(f"Techniques.{exec_module_path[0]}.{exec_module_path[1]}")
-        TechniqueMainFunction = getattr(exec_module, "TechniqueMain")
-
-        # module execution start time
-        execution_start_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-        if technique_input == None:
-            technique_response = TechniqueMainFunction()
-        else:
-            technique_response = TechniqueMainFunction(*technique_input)
-
-        '''technique output'''
-        # check if technique output is in the expected tuple format (success, raw_response, pretty_response)
-        if isinstance(technique_response, tuple) and len(technique_response) == 3:
-            success, raw_response, pretty_response = technique_response
-            # parse output
-            if pretty_response != None:
-                response = pretty_response
-            else:
-                response = raw_response
-        else:
-            response = technique_response
-
-        # save output
-        module_output_file = f"{AUTOMATOR_OUTPUT_DIR}/{execution_folder_name}/Result_{module_tid}.txt"
-        with open(module_output_file, 'w') as file:
-            # write the data to the file
-            file.write(str(response))
-
-        # create summary report & store responses
-        try:
-            if success == True:
-                PlaybookCreateCSVReport(execution_report_file, execution_start_time, module_tid, "success")
-            else:
-                PlaybookCreateCSVReport(execution_report_file, execution_start_time, module_tid, "failed")
-        except:
-            PlaybookCreateCSVReport(execution_report_file, execution_start_time, module_tid, "failed")
-
-def AddNewSchedule(schedule_name, automation_id, start_date, end_date, execution_time, repeat, repeat_frequency):
+def AddNewSchedule(schedule_name, playbook_id, start_date, end_date, execution_time, repeat, repeat_frequency):
     # automator file
     with open(AUTOMATOR_SCHEDULES_FILE, "r") as schedule_data:
         schedules = yaml.safe_load(schedule_data)
@@ -607,7 +880,7 @@ def AddNewSchedule(schedule_name, automation_id, start_date, end_date, execution
         sched_create_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         schedule_name = f"schedule-{sched_create_time}"
 
-    schedules[schedule_name] = {"Playbook_Id" : automation_id, "Start_Date" : start_date, "End_Date" : end_date, "Execution_Time" : execution_time, "Repeat" : str(repeat), "Repeat_Frequency" : repeat_frequency}
+    schedules[schedule_name] = {"Playbook_Id" : playbook_id, "Start_Date" : start_date, "End_Date" : end_date, "Execution_Time" : execution_time, "Repeat" : str(repeat), "Repeat_Frequency" : repeat_frequency}
     # update schedules file
     with open(AUTOMATOR_SCHEDULES_FILE, "w") as file:
         yaml.dump(schedules, file)
@@ -633,78 +906,41 @@ def GetAllPlaybooks():
     except:
         return "Error"
 
-def ImportPlaybook(file_content, filename):
-    # function to import external Halberd playbooks 
-    if file_content is not None:
-        # base64 decoding file contents
-        content_type, content_string = file_content.split(',')
-        decoded_content = base64.b64decode(content_string)
-        
-        # save playbook to playbooks directory
-        playbook_filepath = os.path.join(AUTOMATOR_PLAYBOOKS_DIR, filename)
-        with open(playbook_filepath, 'wb') as f:
-            f.write(decoded_content)
-        
-        return None
-
-def CreateNewPlaybook(name, description = "N/A", author = "N/A", references = "N/A"):
-    playbook_config = {}
-    creation_date = datetime.today().strftime('%m-%d-%Y')
-    playbook_config["PB_Author"] = author
-    playbook_config["PB_Creation_Date"] = creation_date
-    playbook_config["PB_Description"] = str(description)
-    playbook_config["PB_Name"] = str(name)
-    playbook_config["PB_References"] = references
-    
-    # initialize playbook with empty sequence
-    playbook_config["PB_Sequence"] = {}
-
-    # new playbook file
-    pb_file = f"{AUTOMATOR_PLAYBOOKS_DIR}/{name}.yml"
-
-    # update playbook file
-    with open(pb_file, "w") as file:
-        yaml.dump(playbook_config, file)
-
 def DisplayPlaybookInfo(selected_pb):
     for pb in GetAllPlaybooks():
-        pb_config = Playbook(pb)
-        if  pb_config.name == selected_pb:
+        playbook = Playbook(pb)
+        if  playbook.name == selected_pb:
             break
     display_elements = []
 
     # display playbook name
-    display_elements.append(html.H4(f"Name : {pb_config.name}"))
+    display_elements.append(html.H4(f"Name : {playbook.name}"))
     display_elements.append(html.Br())
 
     # display playbook description
     display_elements.append(html.H5("Description : "))
-    display_elements.append(html.P(pb_config.description))
+    display_elements.append(html.P(playbook.description))
 
     # display playbook step count
-    if pb_config.sequence == {}:
-        display_elements.append(html.H5("Steps Count : "))
-        display_elements.append(html.P("0"))
-    else:
-        display_elements.append(html.H5("Plabook Steps Count : "))
-        display_elements.append(html.P(max(pb_config.sequence.keys())))
+    display_elements.append(html.H5(f"Steps Count : {playbook.steps}"))
+    display_elements.append(html.P(""))
 
     # display playbook author
     display_elements.append(html.H5("Plabook Author : "))
-    display_elements.append(html.P(pb_config.author))
+    display_elements.append(html.P(playbook.author))
 
     # display playbook creation date
     display_elements.append(html.H5("Plabook Creation Date : "))
-    display_elements.append(html.P(pb_config.creation_date))
+    display_elements.append(html.P(playbook.creation_date))
 
     # display playbook references
     display_elements.append(html.H5("Plabook References : "))
-    if pb_config.references: 
-        if type(pb_config.references) == list:
-            for ref in pb_config.references:
+    if playbook.references: 
+        if type(playbook.references) == list:
+            for ref in playbook.references:
                 display_elements.append(html.Li(dcc.Link(ref, href=ref, target='_blank')))
         else:
-            display_elements.append(html.Li(dcc.Link(pb_config.references, href=pb_config.references, target='_blank')))
+            display_elements.append(html.Li(dcc.Link(playbook.references, href=playbook.references, target='_blank')))
     else:
         display_elements.append(html.P("N/A"))
 

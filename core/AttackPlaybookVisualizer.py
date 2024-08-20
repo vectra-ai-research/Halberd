@@ -16,7 +16,7 @@ def AttackSequenceVizGenerator(playbook_name):
         for pb in GetAllPlaybooks():
             pb_config = Playbook(pb)
             if pb_config.name == playbook_name:
-                pb_sequence = pb_config.sequence
+                pb_sequence = pb_config.step()
                 break
         
         # initialize array for cytoscope
@@ -25,8 +25,8 @@ def AttackSequenceVizGenerator(playbook_name):
         position_x = 50
 
         for step in pb_sequence:
-            step_module_id = pb_sequence[step]['Module']
-            step_wait = pb_sequence[step]['Wait']
+            step_module_id = step.module
+            step_wait = step.wait
             attack_sequence_viz_elements.append({'data': {'id': str(n), 'label': f"{step_module_id}: {techniques_info[step_module_id]['Name']}"}, 'position': {'x': position_x, 'y': 50}})
             position_x += 70
             n += 1
