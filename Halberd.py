@@ -13,9 +13,12 @@ from dash.exceptions import PreventUpdate
 from core.EntraAuthFunctions import FetchSelectedToken, ExtractTokenInfo, SetSelectedToken, FetchAllTokens
 from core.AzureFunctions import GetCurrentSubscriptionAccessInfo, GetAccountSubscriptionList, SetDefaultSubscription
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.TechniqueExecutor import TechniqueInputs, ExecuteTechnique, ParseTechniqueResponse, LogEventOnTrigger
 from core.AttackPlaybookVisualizer import AttackSequenceVizGenerator, EnrichNodeInfo
-from core.Functions import DisplayTechniqueInfo, TacticMapGenerator, TechniqueMapGenerator, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, Playbook, PlaybookStep, GetAllPlaybooks
+# from core.Functions import DisplayTechniqueInfo, TacticMapGenerator, TechniqueMapGenerator, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, Playbook, PlaybookStep, GetAllPlaybooks, HalberdAttackLibrary, ParseTechniqueResponse, LogEventOnTrigger
+from core.Functions import DisplayTechniqueInfo, TacticMapGenerator, TechniqueMapGenerator, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, LogEventOnTrigger
+from core.playbook.playbook import Playbook
+from core.playbook.playbook_step import PlaybookStep
+from core.technique.attack_library import HalberdAttackLibrary
 from core.Constants import *
 
 # Create Application
@@ -153,7 +156,9 @@ def DisplayAttackTechniqueOptions(tab, tactic):
 '''C004 - Callback to display technique config'''
 @app.callback(Output(component_id = "attack-config-div", component_property = "children"), Input(component_id = "attack-options-radio", component_property = "value"))
 def DisplayAttackTechniqueConfig(t_id):
-    technique_config = TechniqueInputs(t_id)
+    
+    technique = ATTACK_LIBRARY.get_technique(t_id)
+    technique_config = technique.inputs()
 
     config_div_elements = []
 
@@ -256,17 +261,19 @@ def ExecuteTechniqueCallback(n_clicks, t_id, values, bool_on, file_content):
     if n_clicks == 0:
         raise PreventUpdate
     
+    technique = ATTACK_LIBRARY.get_technique(t_id)
+
     # if inputs also contains boolean flag and uploaded file content
     if bool_on and file_content:
-        output = ExecuteTechnique(t_id, values, bool_on, file_content)
+        output = technique.execute(t_id, values, bool_on, file_content)
     # if inputs also contains boolean flag
     elif bool_on: 
-        output = ExecuteTechnique(t_id, values, bool_on)
+        output = technique.execute(t_id, values, bool_on)
     # if input also contains uploaded file content
     elif file_content:
-        output = ExecuteTechnique(t_id, values, file_content)
+        output = technique.execute(t_id, values, file_content)
     else:
-        output = ExecuteTechnique(t_id, values)
+        output = technique.execute(*values)
     
     # check if technique output is in the expected tuple format (success, raw_response, pretty_response)
     if isinstance(output, tuple) and len(output) == 3:
@@ -1090,7 +1097,7 @@ def DownloadTechniqueRawResponse(n_clicks, data):
 
 '''C040 - Callback to open playbook export modal'''
 @app.callback(Output(component_id = "export-playbook-modal", component_property = "is_open"), [Input("toggle-export-playbook-modal-open-button", "n_clicks"), Input("toggle-export-playbook-modal-close-button", "n_clicks")], [State("export-playbook-modal", "is_open")])
-def toggle_modal(open_trigger, close_trigger, is_open):
+def ToggleModal(open_trigger, close_trigger, is_open):
     if open_trigger or close_trigger:
         return not is_open
     return is_open
@@ -1102,7 +1109,7 @@ def toggle_modal(open_trigger, close_trigger, is_open):
     State("app-error-display-modal", "is_open"),
     prevent_initial_call=True
 )
-def ClosePbInfoModal(n_clicks, is_open):
+def CloseAppErrorModal(n_clicks, is_open):
     if n_clicks:
         return False
     return is_open
@@ -1112,5 +1119,6 @@ if __name__ == '__main__':
     InitializationCheck()
     TacticMapGenerator()
     TechniqueMapGenerator()
+    ATTACK_LIBRARY = HalberdAttackLibrary()
     # start application
     app.run_server(debug = True)
