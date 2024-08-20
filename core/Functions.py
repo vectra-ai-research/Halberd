@@ -1,8 +1,5 @@
 import yaml
-import re
 import csv
-import importlib
-import base64
 import os
 import sys
 import shutil
@@ -12,93 +9,9 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 from core.Constants import *
 from dash_iconify import DashIconify
-import subprocess
-
-class MasterRecord:
-    def __init__(self):
-        # load the MasterRecord.yml file
-        with open(MASTER_RECORD_FILE, 'r') as file:
-            master_record = yaml.safe_load(file)
-        
-        self.data = master_record
-
-        self.entra_id = {}
-        self.m365 = {}
-        self.aws = {}
-        self.azure = {}
-
-        techniques_list = []
-        entra_id_techniques_list = []
-        m365_techniques_list = []
-        aws_techniques_list = []
-        azure_techniques_list = []
-
-        for technique in master_record:
-            techniques_list.append(technique)
-
-            if str(technique).startswith("EntraID"):
-                self.entra_id[technique] = master_record[technique]
-                entra_id_techniques_list.append(technique)
-            elif str(technique).startswith("M365"):
-                self.m365[technique] = master_record[technique]
-                m365_techniques_list.append(technique)
-            elif str(technique).startswith("AWS"):
-                self.aws[technique] = master_record[technique]
-                aws_techniques_list.append(technique)
-            elif str(technique).startswith("Azure"):
-                self.azure[technique] = master_record[technique]
-                azure_techniques_list.append(technique)
-
-        self.list_all_techniques = techniques_list
-        self.list_m365_techniques = m365_techniques_list
-        self.list_entraid_techniques = entra_id_techniques_list
-        self.list_aws_techniques = aws_techniques_list
-        self.list_azure_techniques = azure_techniques_list
-
-        self.count_all_techniques = len(techniques_list)
-        self.count_m365_techniques = len(m365_techniques_list)
-        self.count_entraid_techniques = len(entra_id_techniques_list)
-        self.count_aws_techniques = len(aws_techniques_list)
-        self.count_azure_techniques = len(azure_techniques_list)
-
-class Playbook:
-    def __init__(self, pb_file_name):
-        pb_config_file = AUTOMATOR_PLAYBOOKS_DIR + "/" + pb_file_name
-        with open(pb_config_file, "r") as pb_config_data:
-            pb_config = yaml.safe_load(pb_config_data)
-
-        self.file = pb_config_file
-        self.name = pb_config["PB_Name"]
-        self.description = pb_config["PB_Description"]
-        self.author = pb_config["PB_Author"]
-        self.creation_date = pb_config["PB_Creation_Date"]
-        self.references = pb_config["PB_References"]
-        self.sequence = pb_config["PB_Sequence"]
-
-    def AddPlaybookStep(self, module, params = None, wait = 30):
-        # adds a new step to playbook. New step is added as the last step of the sequence
-        pb_sequence = self.sequence
-
-        if list(pb_sequence.keys()) == []:
-            # for a newly created playbook, step count will be zero / an empty list
-            pb_steps_count = 0
-        else:
-            # get step count for an existing playbook
-            pb_steps_count = max(list(pb_sequence.keys()))
-            
-        # add new step to playbook
-        pb_sequence[pb_steps_count+1] = {"Module": module, "Params": params, "Wait": wait}
-    
-    def SavePlaybook(self):
-        # saves latest changes to Playbook file 
-        with open(self.file, "r") as pb_file:
-            pb_config = yaml.safe_load(pb_file)
-
-        pb_config["PB_Sequence"] = self.sequence
-        
-        # update playbook config file
-        with open(self.file, "w") as pb_file:
-            yaml.dump(pb_config, pb_file)
+from core.technique.master_record import MasterRecord
+from core.technique.attack_library import HalberdAttackLibrary
+from core.playbook.playbook import Playbook
 
 def DisplayTechniqueInfo(technique_id):
     '''Generates Technique information from the MasterRecord.yml and displays it in the offcanvas on the attack page. The offcanvas is triggered by the About Technique button'''
@@ -460,6 +373,13 @@ def InitializationCheck():
         else:
             os.makedirs(AUTOMATOR_OUTPUT_DIR)
             print("[*] Automator outputs dir created")
+        
+        # check for automator/Exports folder
+        if Path(AUTOMATOR_EXPORTS_DIR).exists():
+            pass
+        else:
+            os.makedirs(AUTOMATOR_EXPORTS_DIR)
+            print("[*] Automator exports dir created")
 
         # check for automator/Schedules.yml file
         if Path(AUTOMATOR_SCHEDULES_FILE).exists():
@@ -522,78 +442,7 @@ def PlaybookCreateCSVReport(report_file_name, time_stamp, module, result):
     write_log = csv.DictWriter(f, fieldnames= headers)
     write_log.writerow(report_input)
 
-def ExecutePlaybook(playbook_name):
-    
-    # import techniques info from MasterRecord.yml
-    techniques_info = MasterRecord().data
-
-    # automator file
-    for pb in GetAllPlaybooks():
-        pb_config = Playbook(pb)
-        if  pb_config.name == playbook_name:
-            playbook_attack_config = pb_config.sequence
-
-    # create automation run folder
-    execution_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    execution_folder_name = f"{playbook_name}_{execution_time}"
-    os.makedirs(f"{AUTOMATOR_OUTPUT_DIR}/{execution_folder_name}")
-
-    # store current execution config
-    with open(f"{AUTOMATOR_OUTPUT_DIR}/{execution_folder_name}/Execution_Config.yml", 'w') as file:
-        # Write the YAML data to the file
-        yaml.dump(playbook_attack_config, file, default_flow_style=False)
-
-    execution_report_file = f"{AUTOMATOR_OUTPUT_DIR}/{execution_folder_name}/Report.csv"
-
-    # execute attack sequence
-    for step in playbook_attack_config:
-        module_tid = playbook_attack_config[step]["Module"]
-        '''technique input'''
-        technique_input = playbook_attack_config[step]["Params"]
-
-        '''technique execution'''
-        execution_path = techniques_info[module_tid]['ExecutionPath']
-
-        exec_module_path = re.findall(r'[^\/\.]+', execution_path)
-        exec_module = importlib.import_module(f"Techniques.{exec_module_path[0]}.{exec_module_path[1]}")
-        TechniqueMainFunction = getattr(exec_module, "TechniqueMain")
-
-        # module execution start time
-        execution_start_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-        if technique_input == None:
-            technique_response = TechniqueMainFunction()
-        else:
-            technique_response = TechniqueMainFunction(*technique_input)
-
-        '''technique output'''
-        # check if technique output is in the expected tuple format (success, raw_response, pretty_response)
-        if isinstance(technique_response, tuple) and len(technique_response) == 3:
-            success, raw_response, pretty_response = technique_response
-            # parse output
-            if pretty_response != None:
-                response = pretty_response
-            else:
-                response = raw_response
-        else:
-            response = technique_response
-
-        # save output
-        module_output_file = f"{AUTOMATOR_OUTPUT_DIR}/{execution_folder_name}/Result_{module_tid}.txt"
-        with open(module_output_file, 'w') as file:
-            # write the data to the file
-            file.write(str(response))
-
-        # create summary report & store responses
-        try:
-            if success == True:
-                PlaybookCreateCSVReport(execution_report_file, execution_start_time, module_tid, "success")
-            else:
-                PlaybookCreateCSVReport(execution_report_file, execution_start_time, module_tid, "failed")
-        except:
-            PlaybookCreateCSVReport(execution_report_file, execution_start_time, module_tid, "failed")
-
-def AddNewSchedule(schedule_name, automation_id, start_date, end_date, execution_time, repeat, repeat_frequency):
+def AddNewSchedule(schedule_name, playbook_id, start_date, end_date, execution_time, repeat, repeat_frequency):
     # automator file
     with open(AUTOMATOR_SCHEDULES_FILE, "r") as schedule_data:
         schedules = yaml.safe_load(schedule_data)
@@ -607,7 +456,7 @@ def AddNewSchedule(schedule_name, automation_id, start_date, end_date, execution
         sched_create_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         schedule_name = f"schedule-{sched_create_time}"
 
-    schedules[schedule_name] = {"Playbook_Id" : automation_id, "Start_Date" : start_date, "End_Date" : end_date, "Execution_Time" : execution_time, "Repeat" : str(repeat), "Repeat_Frequency" : repeat_frequency}
+    schedules[schedule_name] = {"Playbook_Id" : playbook_id, "Start_Date" : start_date, "End_Date" : end_date, "Execution_Time" : execution_time, "Repeat" : str(repeat), "Repeat_Frequency" : repeat_frequency}
     # update schedules file
     with open(AUTOMATOR_SCHEDULES_FILE, "w") as file:
         yaml.dump(schedules, file)
@@ -633,79 +482,155 @@ def GetAllPlaybooks():
     except:
         return "Error"
 
-def ImportPlaybook(file_content, filename):
-    # function to import external Halberd playbooks 
-    if file_content is not None:
-        # base64 decoding file contents
-        content_type, content_string = file_content.split(',')
-        decoded_content = base64.b64decode(content_string)
-        
-        # save playbook to playbooks directory
-        playbook_filepath = os.path.join(AUTOMATOR_PLAYBOOKS_DIR, filename)
-        with open(playbook_filepath, 'wb') as f:
-            f.write(decoded_content)
-        
-        return None
-
-def CreateNewPlaybook(name, description = "N/A", author = "N/A", references = "N/A"):
-    playbook_config = {}
-    creation_date = datetime.today().strftime('%m-%d-%Y')
-    playbook_config["PB_Author"] = author
-    playbook_config["PB_Creation_Date"] = creation_date
-    playbook_config["PB_Description"] = str(description)
-    playbook_config["PB_Name"] = str(name)
-    playbook_config["PB_References"] = references
-    
-    # initialize playbook with empty sequence
-    playbook_config["PB_Sequence"] = {}
-
-    # new playbook file
-    pb_file = f"{AUTOMATOR_PLAYBOOKS_DIR}/{name}.yml"
-
-    # update playbook file
-    with open(pb_file, "w") as file:
-        yaml.dump(playbook_config, file)
-
 def DisplayPlaybookInfo(selected_pb):
     for pb in GetAllPlaybooks():
-        pb_config = Playbook(pb)
-        if  pb_config.name == selected_pb:
+        playbook = Playbook(pb)
+        if  playbook.name == selected_pb:
             break
     display_elements = []
 
     # display playbook name
-    display_elements.append(html.H4(f"Name : {pb_config.name}"))
+    display_elements.append(html.H4(f"Name : {playbook.name}"))
     display_elements.append(html.Br())
 
     # display playbook description
     display_elements.append(html.H5("Description : "))
-    display_elements.append(html.P(pb_config.description))
+    display_elements.append(html.P(playbook.description))
 
     # display playbook step count
-    if pb_config.sequence == {}:
-        display_elements.append(html.H5("Steps Count : "))
-        display_elements.append(html.P("0"))
-    else:
-        display_elements.append(html.H5("Plabook Steps Count : "))
-        display_elements.append(html.P(max(pb_config.sequence.keys())))
+    display_elements.append(html.H5(f"Steps Count : {playbook.steps}"))
+    display_elements.append(html.P(""))
 
     # display playbook author
     display_elements.append(html.H5("Plabook Author : "))
-    display_elements.append(html.P(pb_config.author))
+    display_elements.append(html.P(playbook.author))
 
     # display playbook creation date
     display_elements.append(html.H5("Plabook Creation Date : "))
-    display_elements.append(html.P(pb_config.creation_date))
+    display_elements.append(html.P(playbook.creation_date))
 
     # display playbook references
     display_elements.append(html.H5("Plabook References : "))
-    if pb_config.references: 
-        if type(pb_config.references) == list:
-            for ref in pb_config.references:
+    if playbook.references: 
+        if type(playbook.references) == list:
+            for ref in playbook.references:
                 display_elements.append(html.Li(dcc.Link(ref, href=ref, target='_blank')))
         else:
-            display_elements.append(html.Li(dcc.Link(pb_config.references, href=pb_config.references, target='_blank')))
+            display_elements.append(html.Li(dcc.Link(playbook.references, href=playbook.references, target='_blank')))
     else:
         display_elements.append(html.P("N/A"))
 
     return display_elements 
+
+def ParseTechniqueResponse(technique_response):
+    '''Function to parse the technique execution response and display it structured'''
+    # check if technique output is in the expected tuple format (success, raw_response, pretty_response)
+    if isinstance(technique_response, tuple) and len(technique_response) == 3:
+        success, raw_response, pretty_response = technique_response
+        # parse output
+        if pretty_response != None:
+            response = pretty_response
+        else:
+            response = raw_response
+    else:
+        response = technique_response
+
+    # initialize the response div elements list
+    response_div_elements = []
+
+    # display notification based on technique result
+    try:
+        if success == True:
+            response_div_elements.append(
+                dbc.Toast(
+                    children = "Success",
+                    id="output-notification",
+                    header="Technique Result",
+                    is_open=True,
+                    dismissable=True,
+                    duration=5000,
+                    color="success",
+                    style={"position": "fixed", "top": 166, "right": 10, "width": 350},
+                )
+            )
+        else:
+            response_div_elements.append(
+                dbc.Toast(
+                    children = "Failed",
+                    id="output-notification",
+                    header="Technique Result",
+                    is_open=True,
+                    dismissable=True,
+                    duration=5000,
+                    color="danger",
+                    style={"position": "fixed", "top": 168, "right": 10, "width": 350},
+                )
+            )
+    except:
+        pass
+
+    '''Format parsed response based on response data type (dict / list / str)'''
+    if isinstance(response,list):
+        # if the response is a null then return message
+        if response == []:
+            return html.H4("No results returned", style ={"textAlign": "center", "padding": "5px"})
+        
+        for item in response:
+            response_div_elements.append(html.Div(str(item), style={"overflowY": "auto", "border":"1px solid #ccc"}))
+            response_div_elements.append(html.Br())
+
+        return html.Div(response_div_elements)
+
+    elif isinstance(response,dict):
+        # if the response is a null then return message
+        if response == {}:
+            return html.H4("No results returned", style ={"textAlign": "center", "padding": "5px"})
+        
+        for item in response:
+            response_div_elements.append(html.H3(f"{item}"))
+
+            if isinstance(response[item], dict):
+                sub_response_div_elements = []
+                for sub_item in response[item]:
+                    sub_response_div_elements.append(
+                        f"{sub_item} : {response[item][sub_item]}"
+                    )
+                    sub_response_div_elements.append(html.Br())
+                    sub_response_div_elements.append(html.Br())
+                
+                response_div_elements.append(
+                    html.Div([
+                        html.Div(sub_response_div_elements),
+                    ], style={"overflowY": "auto", "border":"1px solid #ccc"})
+                )
+                response_div_elements.append(html.Br())
+
+            else:
+                response_div_elements.append(
+                    html.Div([
+                        html.Div(str(response[item])),
+                    ], style={"overflowY": "auto", "border":"1px solid #ccc"})
+                )
+                response_div_elements.append(html.Br())
+
+        return html.Div(response_div_elements)
+
+    else:
+        return str(response)
+
+def LogEventOnTrigger(tactic, t_id):
+    '''Function to log event on execution'''
+    library = HalberdAttackLibrary()
+    technique = library.get_technique(t_id)
+    technique_name = technique.name
+    attack_surface = technique.attack_surface
+
+    f = open(TRACE_LOG_FILE,"a")
+
+    fields = ["date_time", "technique", "tactic","attack_surface","result"]
+    log_input = {"date_time":str(datetime.today()), "technique":technique_name, "tactic":tactic,"attack_surface":attack_surface, "result":"Executed"}
+
+    write_log = csv.DictWriter(f, fieldnames= fields)
+    write_log.writerow(log_input)
+
+    return True

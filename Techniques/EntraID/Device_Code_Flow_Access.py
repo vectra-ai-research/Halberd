@@ -51,10 +51,10 @@ def TechniqueMain(tenant_id, client_id = None):
                 "User Code" : user_code,
                 "Note" : "Continue with other actions after saving URI & code. When the target successfully authenticates the token will be available on Access page"
             }
-            return True, raw_response, pretty_response
+            return True, None, pretty_response
         except:
             # return only raw response if pretty response fails
-            return True, raw_response, None
+            return True, None, None
     except Exception as e:
         return False, {"Error" : e}, None
 

@@ -13,9 +13,12 @@ from dash.exceptions import PreventUpdate
 from core.EntraAuthFunctions import FetchSelectedToken, ExtractTokenInfo, SetSelectedToken, FetchAllTokens
 from core.AzureFunctions import GetCurrentSubscriptionAccessInfo, GetAccountSubscriptionList, SetDefaultSubscription
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.TechniqueExecutor import TechniqueInputs, ExecuteTechnique, ParseTechniqueResponse, LogEventOnTrigger
 from core.AttackPlaybookVisualizer import AttackSequenceVizGenerator, EnrichNodeInfo
-from core.Functions import DisplayTechniqueInfo, TacticMapGenerator, TechniqueMapGenerator, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, ExecutePlaybook, AddNewSchedule, Playbook, GetAllPlaybooks, ImportPlaybook, CreateNewPlaybook
+# from core.Functions import DisplayTechniqueInfo, TacticMapGenerator, TechniqueMapGenerator, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, Playbook, PlaybookStep, GetAllPlaybooks, HalberdAttackLibrary, ParseTechniqueResponse, LogEventOnTrigger
+from core.Functions import DisplayTechniqueInfo, TacticMapGenerator, TechniqueMapGenerator, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, LogEventOnTrigger
+from core.playbook.playbook import Playbook
+from core.playbook.playbook_step import PlaybookStep
+from core.technique.attack_library import HalberdAttackLibrary
 from core.Constants import *
 
 # Create Application
@@ -83,6 +86,30 @@ app.layout = html.Div([
         size="lg",
         scrollable=True,
     ),
+    # Error modal -> use this to display an error pop up message
+    dbc.Modal(
+    [
+        dbc.ModalHeader("Error", style={"background-color": "#dc3545", "color": "white"}),
+        dbc.ModalBody(id="app-error-display-modal-body"),
+        dbc.ModalFooter(
+            dbc.Button("Close", id="close-app-error-display-modal", className="ml-auto")
+        ),
+    ],
+    id="app-error-display-modal",
+    is_open=False,
+    ),
+    # Success modal -> use this to display a success pop up message
+    dbc.Modal(
+    [
+        dbc.ModalHeader("Success", style={"background-color": "#28a745", "color": "white"}),
+        dbc.ModalBody(id="app-success-display-modal-body"),
+        dbc.ModalFooter(
+            dbc.Button("Close", id="close-app-success-display-modal", className="ml-auto")
+        ),
+    ],
+    id="app-success-display-modal",
+    is_open=False,
+)
 ])
 
 
@@ -129,7 +156,9 @@ def DisplayAttackTechniqueOptions(tab, tactic):
 '''C004 - Callback to display technique config'''
 @app.callback(Output(component_id = "attack-config-div", component_property = "children"), Input(component_id = "attack-options-radio", component_property = "value"))
 def DisplayAttackTechniqueConfig(t_id):
-    technique_config = TechniqueInputs(t_id)
+    
+    technique = ATTACK_LIBRARY.get_technique(t_id)
+    technique_config = technique.inputs()
 
     config_div_elements = []
 
@@ -199,13 +228,19 @@ def DisplayAttackTechniqueConfig(t_id):
             [
                 dbc.ModalHeader("Add Technique to Playbook"),
                 dbc.ModalBody([
-                    html.H6("Choose playbook to add current attack technique and its configuration"),
+                    dbc.Label("Select Playbook to Add Step"),
                     dcc.Dropdown(
                         options = playbook_dropdown_options, 
                         value = None, 
                         id='att-pb-selector-dropdown',
-                        placeholder="Select Playbook"),
+                        placeholder="Select Playbook",
+                        ),
                     html.Br(),
+                    dbc.Label("Add to Step # (Optional)", className="text-light"),
+                    dbc.Input(id='pb-add-step-number-input', placeholder="3", type= "number", className="bg-dark text-light"),
+                    html.Br(),
+                    dbc.Label("Wait in Seconds After Step Execution (Optional)", className="text-light"),
+                    dbc.Input(id='pb-add-step-wait-input', placeholder="120", type= "number", className="bg-dark text-light")
                 ]),
                 dbc.ModalFooter([
                     dbc.Button("Cancel", id="close-add-to-playbook-modal-button", className="ml-auto", color="danger", n_clicks=0),
@@ -226,17 +261,19 @@ def ExecuteTechniqueCallback(n_clicks, t_id, values, bool_on, file_content):
     if n_clicks == 0:
         raise PreventUpdate
     
+    technique = ATTACK_LIBRARY.get_technique(t_id)
+
     # if inputs also contains boolean flag and uploaded file content
     if bool_on and file_content:
-        output = ExecuteTechnique(t_id, values, bool_on, file_content)
+        output = technique.execute(t_id, values, bool_on, file_content)
     # if inputs also contains boolean flag
     elif bool_on: 
-        output = ExecuteTechnique(t_id, values, bool_on)
+        output = technique.execute(t_id, values, bool_on)
     # if input also contains uploaded file content
     elif file_content:
-        output = ExecuteTechnique(t_id, values, file_content)
+        output = technique.execute(t_id, values, file_content)
     else:
-        output = ExecuteTechnique(t_id, values)
+        output = technique.execute(*values)
     
     # check if technique output is in the expected tuple format (success, raw_response, pretty_response)
     if isinstance(output, tuple) and len(output) == 3:
@@ -612,15 +649,20 @@ def DisplayAttackSequenceViz(selected_pb):
 
 '''C020 - Callback to execute attack sequence in automator view'''
 @app.callback(Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "execute-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
-def ExecuteAttackSequence(playbook_id, n_clicks):
+def ExecuteAttackSequence(playbook_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     
-    if playbook_id == None:
+    if playbook_name == None:
         return True, "No Playbook Selected to Execute"
     
     # execute playbook
-    ExecutePlaybook(playbook_id)
+    for pb in GetAllPlaybooks():
+        pb_config = Playbook(pb)
+        if  pb_config.name == playbook_name:
+            playbook_file = pb_config.yaml_file
+
+    playbook_execution = Playbook(playbook_file).execute()
     
     return True, "Playbook Execution Completed"
 
@@ -651,78 +693,112 @@ def CreateNewAutomatorSchedule(playbook_id, execution_time, start_date, end_date
 @app.callback(
         Output(component_id = "app-download-sink", component_property = "data", allow_duplicate = True), 
         Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
-        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True),
+        Output(component_id = "app-error-display-modal", component_property = "is_open", allow_duplicate=True),
+        Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True), 
         State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
-        Input(component_id = "export-pb-button", component_property = "n_clicks"), 
+        State(component_id = "export-playbook-mask-param-boolean", component_property = "on"),
+        State(component_id = "export-playbook-filename-text-input", component_property = "value"),
+        Input(component_id = "export-playbook-button", component_property = "n_clicks"), 
         prevent_initial_call=True)
-def ExportAttackPlaybook(playbook_name, n_clicks):
+def ExportAttackPlaybook(playbook_name, mask_param, export_file_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
         
-    # if no playbook is selected, send notification
+    # If no playbook is selected, show error pop-up
     if playbook_name == None:
-        return None, True, "No Playbook Selected to Export"
+        return None, False, "", True, "No Playbook Selected to Export"
     
-    # get the selected playbook file location
+    # Get the selected playbook file name
     for pb in GetAllPlaybooks():
         pb_config = Playbook(pb)
         if  pb_config.name == playbook_name:
-            playbook_file = pb_config.file
+            playbook_file = pb_config.yaml_file
+            break
+    
+    # Export playbook
+    playbook_export_file_path = Playbook(playbook_file).export(export_file = export_file_name, include_params=not(mask_param))
 
     # download playbook and send app notification
-    return dcc.send_file(playbook_file), True, "Playbook Exported"
+    return dcc.send_file(playbook_export_file_path), True, "Playbook Exported", False, ""
 
 '''C024 - Callback to import playbook'''
 @app.callback(
         Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
-        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True),
+        Output(component_id = "app-error-display-modal", component_property = "is_open", allow_duplicate=True),
+        Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True), 
         Input(component_id = 'import-pb-button', component_property = 'n_clicks'), 
         Input(component_id = 'upload-playbook', component_property = 'contents'), 
-        State(component_id = 'upload-playbook', component_property = 'filename'),
         prevent_initial_call=True)
-def UploadHalberdPlaybook(n_clicks, contents, filename):
+def UploadHalberdPlaybook(n_clicks, file_contents):
     if n_clicks == 0:
         raise PreventUpdate
-    ImportPlaybook(contents, filename)
-    return True, "Playbook Imported"
 
-'''C025 - Callback to add technique to playbook'''
+    if file_contents:
+        try:
+            # Import playbook
+            Playbook.import_playbook(file_contents)
+            return True, "Playbook Imported", False, ""
+        except Exception as e:
+            # Display error in modal pop up
+            return False, "", True, str(e)
+
+    else:
+        raise PreventUpdate
+
+'''C025 - Callback to add technique as step to playbook'''
 @app.callback(
-        Output(component_id = "app-notification", component_property = "is_open"), 
-        Output(component_id = "app-notification", component_property = "children"), 
+        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
+        Output(component_id = "app-error-display-modal", component_property = "is_open", allow_duplicate=True),
+        Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True),
         Input(component_id = "confirm-add-to-playbook-modal-button", component_property = "n_clicks"), 
         Input(component_id = "att-pb-selector-dropdown", component_property = "value"), 
+        State(component_id = "pb-add-step-number-input", component_property = "value"),
+        State(component_id = "pb-add-step-wait-input", component_property = "value"),
         State(component_id = "attack-options-radio", component_property = "value"),
         State(component_id = {"type": "technique-config-display", "index": ALL}, component_property = "value"), 
-        State(component_id = {"type": "technique-config-display-file-upload", "index": ALL}, component_property = "contents")
+        State(component_id = {"type": "technique-config-display-file-upload", "index": ALL}, component_property = "contents"),
+        prevent_initial_call=True
     )
-def AddTechniqueToPlaybook(n_clicks, selected_pb, t_id, technique_input, file_content):
+def AddTechniqueToPlaybook(n_clicks, selected_pb, step_no, wait, t_id, technique_input, file_content):
     if n_clicks == 0:
         raise PreventUpdate
     
     # if config has file as input
-    if file_content:
-        if selected_pb:
+    if selected_pb:
+        if file_content:
             for pb in GetAllPlaybooks():
                 pb_config = Playbook(pb)
                 if  pb_config.name == selected_pb:
                     break
 
-        technique_input.append(file_content)
-    
-    else:
-        if selected_pb:
-            for pb in GetAllPlaybooks():
-                pb_config = Playbook(pb)
-                if  pb_config.name == selected_pb:
-                    break
+            technique_input.append(file_content)
         
-    # add technique to playbook
-    pb_config.AddPlaybookStep(t_id, technique_input)
-    # save and update new playbook config
-    pb_config.SavePlaybook()
+        else:
+            for pb in GetAllPlaybooks():
+                pb_config = Playbook(pb)
+                if  pb_config.name == selected_pb:
+                    break
+            
+        # Create playbook step
+        try:
+            new_step = PlaybookStep(module=t_id, params=technique_input, wait=wait)
+            
+            # Add technique to playbook
+            pb_config.add_step(new_step=new_step, step_no=step_no)
+            
+            # Save and update with new playbook config
+            pb_config.save()
 
-    return True, "Added to Playbook"
+            return True, "Added to Playbook", False, ""
+        except Exception as e:
+            # Display error in error pop-up
+            return False, "", True, str(e)
+    else:
+        # Display error in error pop-up
+        return False, "", True, "Cannot Add Step : No Playbook Selected"
 
 '''C026 - Callback to open playbook creator modal'''
 @app.callback(Output(component_id = "playbook-creator-modal", component_property = "is_open"), [Input("pb-creator-modal-open-button", "n_clicks"), Input("pb-creator-modal-close-button", "n_clicks")], [State("playbook-creator-modal", "is_open")])
@@ -733,8 +809,11 @@ def toggle_modal(open_trigger, close_trigger, is_open):
 
 '''C027 - Callback to create new playbook'''
 @app.callback(
-        Output(component_id = "hidden-div", component_property = "children", allow_duplicate=True), 
         Output(component_id = "playbook-creator-modal", component_property = "is_open", allow_duplicate=True),  
+        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
+        Output(component_id = "app-error-display-modal", component_property = "is_open", allow_duplicate=True),
+        Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True),
         State(component_id = "pb-name-input", component_property = "value"), 
         State(component_id = "pb-desc-input", component_property = "value"), 
         State(component_id = "pb-author-input", component_property = "value"), 
@@ -745,7 +824,18 @@ def CreateNewPlaybookCallback(pb_name, pb_desc, pb_author, pb_references, n_clic
     if n_clicks == 0:
         raise PreventUpdate
     
-    return CreateNewPlaybook(pb_name, pb_desc, pb_author, pb_references), False
+    try:
+        new_playbook = Playbook.create_new(
+            name= pb_name,
+            author= pb_author,
+            description= pb_desc,
+            references=[pb_references]
+        )
+        return False, True, f"New Playbook Created : {new_playbook.name}", False, ""
+    except Exception as e:
+        return True, False, "", True, str(e)
+    
+    
 
 '''C028 - Callback to display technique info from playbook node in modal'''
 @app.callback(
@@ -875,28 +965,30 @@ def GenerateDropdownOptionsCallBack(title):
 @app.callback(
         Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
         Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
+        Output(component_id = "app-error-display-modal", component_property = "is_open", allow_duplicate=True),
+        Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True),
         Input(component_id = "delete-pb-button", component_property = "n_clicks"), 
         State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
         prevent_initial_call=True)
-def ExportAttackPlaybook(n_clicks, playbook_name):
+def DeleteAttackPlaybook(n_clicks, playbook_name):
     if n_clicks == 0:
         raise PreventUpdate
         
     # if no playbook is selected, send notification
     if playbook_name == None:
-        return True, "No Playbook Selected to Delete"
+        return False, "", True, "Delete Error : No Playbook Selected to Delete"
     
     # get the selected playbook file location
     for pb in GetAllPlaybooks():
         pb_config = Playbook(pb)
         if  pb_config.name == playbook_name:
-            playbook_file = pb_config.file
+            playbook_file = pb_config.yaml_file_path
 
     try:
         os.remove(playbook_file)
-        return True, "Playbook Deleted"
+        return True, "Playbook Deleted", False, ""
     except Exception as e:
-        return True, "Failed to Delete Playbook"
+        return False, "", True, str(e)
 
 '''C033 - Callback to open modal and display technique information from home techniques matrix'''
 @app.callback(
@@ -1003,10 +1095,30 @@ def DownloadTechniqueRawResponse(n_clicks, data):
     # download response file
     return dcc.send_file(output_filepath)
 
+'''C040 - Callback to open playbook export modal'''
+@app.callback(Output(component_id = "export-playbook-modal", component_property = "is_open"), [Input("toggle-export-playbook-modal-open-button", "n_clicks"), Input("toggle-export-playbook-modal-close-button", "n_clicks")], [State("export-playbook-modal", "is_open")])
+def ToggleModal(open_trigger, close_trigger, is_open):
+    if open_trigger or close_trigger:
+        return not is_open
+    return is_open
+
+'''C041 - Callback to close the app error modal'''
+@app.callback(
+    Output("app-error-display-modal", "is_open", allow_duplicate=True),
+    Input("close-app-error-display-modal", "n_clicks"),
+    State("app-error-display-modal", "is_open"),
+    prevent_initial_call=True
+)
+def CloseAppErrorModal(n_clicks, is_open):
+    if n_clicks:
+        return False
+    return is_open
+
 if __name__ == '__main__':
     # initialize primary app files
     InitializationCheck()
     TacticMapGenerator()
     TechniqueMapGenerator()
+    ATTACK_LIBRARY = HalberdAttackLibrary()
     # start application
     app.run_server(debug = True)
