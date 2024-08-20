@@ -678,4 +678,5 @@ Techniques/TacticsMap.yml
 Techniques/TechniquesMap.yml
 automator/Outputs/
 automator/Playbooks/
+automator/Exports/
 automator/Schedules.yml
