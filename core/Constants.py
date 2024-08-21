@@ -14,4 +14,6 @@ APP_LOG_FILE = APP_LOCAL_DIR+"/App_Log.csv"
 TRACE_LOG_FILE = APP_LOCAL_DIR+"/Trace_Log.csv"
 MSFT_TOKENS_FILE = APP_LOCAL_DIR+"/MSFT_Graph_Tokens.yml"
 
+OUTPUT_DIR = "./output"
+
 GRAPH_ENDPOINT_URL = "https://graph.microsoft.com/v1.0"
