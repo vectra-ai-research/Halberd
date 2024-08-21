@@ -14,7 +14,6 @@ from core.EntraAuthFunctions import FetchSelectedToken, ExtractTokenInfo, SetSel
 from core.AzureFunctions import GetCurrentSubscriptionAccessInfo, GetAccountSubscriptionList, SetDefaultSubscription
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
 from core.AttackPlaybookVisualizer import AttackSequenceVizGenerator, EnrichNodeInfo
-# from core.Functions import DisplayTechniqueInfo, TacticMapGenerator, TechniqueMapGenerator, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, Playbook, PlaybookStep, GetAllPlaybooks, HalberdAttackLibrary, ParseTechniqueResponse, LogEventOnTrigger
 from core.Functions import DisplayTechniqueInfo, TacticMapGenerator, TechniqueMapGenerator, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, LogEventOnTrigger
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
@@ -265,13 +264,13 @@ def ExecuteTechniqueCallback(n_clicks, t_id, values, bool_on, file_content):
 
     # if inputs also contains boolean flag and uploaded file content
     if bool_on and file_content:
-        output = technique.execute(t_id, values, bool_on, file_content)
+        output = technique.execute(*values, *bool_on, *file_content)
     # if inputs also contains boolean flag
     elif bool_on: 
-        output = technique.execute(t_id, values, bool_on)
+        output = technique.execute(*values, *bool_on)
     # if input also contains uploaded file content
     elif file_content:
-        output = technique.execute(t_id, values, file_content)
+        output = technique.execute(*values, *file_content)
     else:
         output = technique.execute(*values)
     
