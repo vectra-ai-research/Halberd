@@ -10,10 +10,10 @@ import re
 def TechniqueMain(target_domain, authenticated = None):
 
     # username input validation
-    if target_domain == [None,""]:
-        return {"Error" : "Domain input required"}
+    if target_domain in [None,""]:
+        return False, {"Error" : "Domain Name input required"}, None
     
-    if authenticated == [True]:
+    if authenticated == True:
         # make authenticated request
         endpoint_url = f"https://graph.microsoft.com/v1.0/tenantRelationships/findTenantInformationByDomainName(domainName='{target_domain}')"
 

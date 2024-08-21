@@ -13,12 +13,12 @@ def TechniqueMain(target_username, username_file_content = None):
     user_list = []
 
     # username input validation
-    if target_username == [None,""]:
-        return {"Error" : "Username file required"}
+    if target_username in [None,""] and username_file_content == None:
+        return False, {"Error" : "Username or username file required"}, None
 
     # if file provided -> extract usernames from username text file
-    if username_file_content[0]:
-        content_string = username_file_content[0].split(',')[-1]
+    if username_file_content:
+        content_string = username_file_content.split(',')[-1]
         decoded = base64.b64decode(content_string)
         try:
             text = decoded.decode('utf-8')
