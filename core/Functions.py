@@ -323,6 +323,12 @@ def InitializationCheck():
     else:
         os.makedirs(APP_LOCAL_DIR)
 
+    # Check for output folder
+    if Path(OUTPUT_DIR).exists():
+        pass
+    else:
+        os.makedirs(OUTPUT_DIR)
+
     # Check for application log file
     if Path(APP_LOG_FILE).exists():
         pass
