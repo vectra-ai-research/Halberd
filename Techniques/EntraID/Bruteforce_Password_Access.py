@@ -6,13 +6,11 @@ def TechniqueMain(user_name, wait = None, client_id = None, password_file_conten
     '''Performs password bruteforce by attempting to generate graph access token by authenticating with a username & list of passwords.'''
 
     # username input validation
-    if user_name == [None,""]:
+    if user_name in [None,""]:
         return {"Error" : "Username input required"}
 
     # passwords file input validation
     if password_file_content in [None,""]:
-        return {"Error" : "Passwords file required"}
-    if password_file_content[0] in [None,""]:
         return {"Error" : "Passwords file required"}
 
     # client id input validation
@@ -33,7 +31,7 @@ def TechniqueMain(user_name, wait = None, client_id = None, password_file_conten
     }
 
     # extract passwords from text file
-    content_string = password_file_content[0].split(',')[-1]
+    content_string = password_file_content.split(',')[-1]
     decoded = base64.b64decode(content_string)
     try:
         text = decoded.decode('utf-8')

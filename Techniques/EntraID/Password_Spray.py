@@ -12,8 +12,6 @@ def TechniqueMain(password, wait = None, client_id = None, username_file_content
         return False, {"Error" : "Invalid input : Password required"}, None
     if username_file_content in [None, ""]:
         return False, {"Error" : "Provide file containing usernames"}, None
-    if username_file_content[0] in [None, ""]:
-        return False, {"Error" : "Provide file containing usernames"}, None
 
     endpoint_url = "https://login.microsoft.com/common/oauth2/token"
     resource = "https://graph.microsoft.com"
@@ -32,7 +30,7 @@ def TechniqueMain(password, wait = None, client_id = None, username_file_content
         wait = 5 # set default wait to 5 seconds
 
     # extract usernames from username text file
-    content_string = username_file_content[0].split(',')[-1]
+    content_string = username_file_content.split(',')[-1]
     decoded = base64.b64decode(content_string)
     try:
         text = decoded.decode('utf-8')

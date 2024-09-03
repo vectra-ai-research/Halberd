@@ -301,7 +301,7 @@ EntraID-014 :
         Technique : Valid Accounts
         SubTechnique: Cloud Accounts
         TechniqueID : T1078.004
-        URL : https://attack.mitre.org/techniques/T1526/
+        URL : https://attack.mitre.org/techniques/T1078/004/
     AzureThreatResearchMatrix:
       - ~
   Resources:
@@ -519,7 +519,7 @@ EntraID-024 :
 AWS-001 :
   Name: "AWS Access"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/Access.py
+  ExecutionPath: AWS/Access.py
   Description: ~
   References:
     MITRE:
@@ -539,7 +539,7 @@ AWS-001 :
 AWS-002 :
   Name: "List S3 Buckets"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/List_S3_Buckets.py
+  ExecutionPath: AWS/List_S3_Buckets.py
   Description: ~
   References:
     MITRE:
@@ -559,7 +559,7 @@ AWS-002 :
 AWS-003 :
   Name: "Get Bucket ACL"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/Get_Bucket_ACL.py
+  ExecutionPath: AWS/Get_Bucket_ACL.py
   Description: ~
   References:
     MITRE:
@@ -579,7 +579,7 @@ AWS-003 :
 AWS-004 :
   Name: "List Bucket Objects"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/List_Bucket_Objects.py
+  ExecutionPath: AWS/List_Bucket_Objects.py
   Description: ~
   References:
     MITRE:
@@ -599,7 +599,7 @@ AWS-004 :
 AWS-005 :
   Name: "Exfil S3 Bucket"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/Exfil_S3_Bucket.py
+  ExecutionPath: AWS/Exfil_S3_Bucket.py
   Description: ~
   References:
     MITRE:
@@ -619,7 +619,7 @@ AWS-005 :
 AWS-006 :
   Name: "Enumerate EC2 Instances"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/EC2_Enum.py
+  ExecutionPath: AWS/EC2_Enum.py
   Description: ~
   References:
     MITRE:
@@ -640,7 +640,7 @@ AWS-006 :
 AWS-007 :
   Name: "Recon Available Services"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/List_Available_Services.py
+  ExecutionPath: AWS/List_Available_Services.py
   Description: ~
   References:
     MITRE:
@@ -660,7 +660,7 @@ AWS-007 :
 AWS-008 :
   Name: "Assume Role"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/Assume_Role.py
+  ExecutionPath: AWS/Assume_Role.py
   Description: ~
   References:
     MITRE:
@@ -681,7 +681,7 @@ AWS-008 :
 AWS-009 :
   Name: "List IAM Roles"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/List_IAM_Roles.py
+  ExecutionPath: AWS/List_IAM_Roles.py
   Description: ~
   References:
     MITRE:
@@ -701,7 +701,7 @@ AWS-009 :
 AWS-010 :
   Name: "Delete Bucket Object"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/Delete_Bucket_Objects.py
+  ExecutionPath: AWS/Delete_Bucket_Objects.py
   Description: ~
   References:
     MITRE:
@@ -721,7 +721,7 @@ AWS-010 :
 AWS-011 :
   Name: "Delete S3 Bucket"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/Delete_S3_Bucket.py
+  ExecutionPath: AWS/Delete_S3_Bucket.py
   Description: ~
   References:
     MITRE:
@@ -741,7 +741,7 @@ AWS-011 :
 AWS-012 :
   Name: "List DynamoDB Tables"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/List_DynamoDB_Tables.py
+  ExecutionPath: AWS/List_DynamoDB_Tables.py
   Description: ~
   References:
     MITRE:
@@ -762,7 +762,7 @@ AWS-012 :
 AWS-013 :
   Name: "Delete DynamoDB Table"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/Delete_DynamoDB_Table.py
+  ExecutionPath: AWS/Delete_DynamoDB_Table.py
   Description: ~
   References:
     MITRE:
@@ -782,7 +782,7 @@ AWS-013 :
 AWS-014 :
   Name: "Recon IAM Users"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/List_IAM_Users.py
+  ExecutionPath: AWS/List_IAM_Users.py
   Description: ~
   References:
     MITRE:
@@ -802,7 +802,7 @@ AWS-014 :
 AWS-015 :
   Name: "Recon IAM Policies"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/List_IAM_Policies.py
+  ExecutionPath: AWS/List_IAM_Policies.py
   Description: ~
   References:
     MITRE:
@@ -822,7 +822,7 @@ AWS-015 :
 AWS-016 :
   Name: "Recon Connected Account Auth Details"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/Recon_Acc_Authorization_Details.py
+  ExecutionPath: AWS/Recon_Acc_Authorization_Details.py
   Description: ~
   References:
     MITRE:
@@ -842,7 +842,7 @@ AWS-016 :
 AWS-017 :
   Name: "Recon User Details"
   AttackSurface: "AWS"
-  ExecutionPath: /AWS/Recon_User_Details.py
+  ExecutionPath: AWS/Recon_User_Details.py
   Description: ~
   References:
     MITRE:
@@ -863,7 +863,7 @@ AWS-017 :
 M365-001 :
   Name: "Setup Email Forwarding Rule"
   AttackSurface: "M365"
-  ExecutionPath: /M365/Email_Forwarding_Rule.py
+  ExecutionPath: M365/Email_Forwarding_Rule.py
   Description: ~
   References:
     MITRE:
@@ -883,7 +883,7 @@ M365-001 :
 M365-002 :
   Name: "Setup Email Deletion Rule"
   AttackSurface: "M365"
-  ExecutionPath: /M365/Email_Deletion_Rule.py
+  ExecutionPath: M365/Email_Deletion_Rule.py
   Description: ~
   References:
     MITRE:
@@ -903,7 +903,7 @@ M365-002 :
 M365-003 :
   Name: "Search User Teams Chat"
   AttackSurface: "M365"
-  ExecutionPath: /M365/Search_Teams_Chat.py
+  ExecutionPath: M365/Search_Teams_Chat.py
   Description: ~
   References:
     MITRE:
@@ -923,7 +923,7 @@ M365-003 :
 M365-004 :
   Name: "Search Teams Messages"
   AttackSurface: "M365"
-  ExecutionPath: /M365/Search_Teams_Messages.py
+  ExecutionPath: M365/Search_Teams_Messages.py
   Description: ~
   References:
     MITRE:
@@ -943,7 +943,7 @@ M365-004 :
 M365-005 :
   Name: "Search User SP One Drive"
   AttackSurface: "M365"
-  ExecutionPath: /M365/Search_User_SP_One_Drive.py
+  ExecutionPath: M365/Search_User_SP_One_Drive.py
   Description: ~
   References:
     MITRE:
@@ -963,7 +963,7 @@ M365-005 :
 M365-006 :
   Name: "Search User Outlook Messages"
   AttackSurface: "M365"
-  ExecutionPath: /M365/Search_Outlook_Messages.py
+  ExecutionPath: M365/Search_Outlook_Messages.py
   Description: ~
   References:
     MITRE:
@@ -983,7 +983,7 @@ M365-006 :
 M365-007 :
   Name: "Send Email (Spear-Phishing)"
   AttackSurface: "M365"
-  ExecutionPath: /M365/Send_Outlook_Email.py
+  ExecutionPath: M365/Send_Outlook_Email.py
   Description: ~
   References:
     MITRE:
@@ -1003,7 +1003,7 @@ M365-007 :
 M365-008 :
   Name: "Exfil User Mailbox"
   AttackSurface: "M365"
-  ExecutionPath: /M365/Exfil_User_Mailbox.py
+  ExecutionPath: M365/Exfil_User_Mailbox.py
   Description: ~
   References:
     MITRE:
