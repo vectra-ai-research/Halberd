@@ -1407,11 +1407,86 @@ Azure-017:
         Tactic: [Defense Evasion]
         Technique: Impair Defenses
         SubTechnique: Disable or Modify Cloud Firewall
-        TechniqueID: T1562/007/
+        TechniqueID: T1562.007
         URL: https://attack.mitre.org/techniques/T1562/007/
     AzureThreatResearchMatrix:
       - ~
   Resources:
     - https://techcrunch.com/2024/04/09/microsoft-employees-exposed-internal-passwords-security-lapse/
+  Notes:
+    - N/A
+
+Azure-018:
+  Name: "Virtual Machine Scale Set Scripting"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/VMss_Scripting.py
+  Description: "By utilizing the 'RunCommand' feature on a Virtual Machine Scale Set (VMSS), an attacker can run arbitrary scripts or commands on the target VMs. This capability allows them to install malicious software, exfiltrate data, or perform other nefarious activities, potentially compromising the VM instances within the scale set."
+  References:
+    MITRE:
+      T1650:
+        Tactic: [Execution]
+        Technique: Command and Scripting Interpreter
+        SubTechnique: 
+        TechniqueID: T1059
+        URL: https://attack.mitre.org/techniques/T1059/
+    AzureThreatResearchMatrix:
+      - AZT301.6:
+        Tactic: [Execution]
+        Technique: Virtual Machine Scripting
+        SubTechnique: Vmss Run Command
+        TechniqueID: AZT301.6
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/Execution/AZT301/AZT301-6/
+  Resources:
+    - https://securitylabs.datadoghq.com/cloud-security-atlas/attacks/executing-commands-on-a-virtual-machine-runcommand/
+  Notes:
+    - N/A
+
+Azure-019:
+  Name: "Azure Policy Exploitation"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/Azure_Policy_Exploitation.py
+  Description: "This attack uses a malicious DeployIfNotExists policy primarily focused on Defense Evasion by impairing logging and monitoring capabilities in Azure through manipulation of the Azure Policy service."
+  References:
+    MITRE:
+      T1650:
+        Tactic: [Defense Evasion]
+        Technique: Disable or Modify Cloud Logs
+        SubTechnique: 
+        TechniqueID: T1562.008
+        URL: https://attack.mitre.org/techniques/T1562/008/
+    AzureThreatResearchMatrix:
+      - AZT508:
+        Tactic: [Persistence]
+        Technique: Azure Policy
+        SubTechnique: ~
+        TechniqueID: AZT508 
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/Persistence/AZT508/AZT508/
+  Resources:
+    - https://securitylabs.datadoghq.com/articles/azure-policy-privilege-escalation/#permissions-privileges-and-escalation-thereof
+  Notes:
+    - N/A
+
+Azure-020:
+  Name: "Virtual Machine Scale Set Extension Scripting"
+  AttackSurface: "Azure"
+  ExecutionPath: Azure/VMss_Extension_Scripting.py
+  Description: "By exploiting the extension update feature on a Virtual Machine Scale Set, an attacker can deploy malicious extensions across all VMs within the scale set. This allows them to gain unauthorized access, execute arbitrary commands, or install backdoors, potentially compromising the entire VMSS and its operations."
+  References:
+    MITRE:
+      T1650:
+        Tactic: [Execution]
+        Technique: Command and Scripting Interpreter
+        SubTechnique: 
+        TechniqueID: T1059
+        URL: https://attack.mitre.org/techniques/T1059/
+    AzureThreatResearchMatrix:
+      - AZT301.6:
+        Tactic: [Execution]
+        Technique: Virtual Machine Scripting
+        SubTechnique: CustomScriptExtension
+        TechniqueID: AZT301.2
+        URL: https://microsoft.github.io/Azure-Threat-Research-Matrix/Execution/AZT301/AZT301-2/
+  Resources:
+    - https://www.netspi.com/blog/technical-blog/cloud-pentesting/attacking-azure-with-custom-script-extensions/
   Notes:
     - N/A
