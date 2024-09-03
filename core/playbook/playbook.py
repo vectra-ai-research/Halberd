@@ -1,7 +1,6 @@
 import yaml
 import re
 import csv
-import importlib
 import base64
 import os
 import time
@@ -13,9 +12,10 @@ from core.Constants import *
 from typing import List, Dict, Any, Optional, Union
 from core.playbook.playbook_error import PlaybookError
 from core.playbook.playbook_step import PlaybookStep
-from core.technique.attack_library import HalberdAttackLibrary
+from attack_techniques.technique_registry import TechniqueRegistry
 
 class Playbook:
+    """Creates, modifies, executes and manages Halberd playbook"""
     REQUIRED_FIELDS = ['PB_Name', 'PB_Author', 'PB_Creation_Date', 'PB_Description', 'PB_Sequence']
 
     def __init__(self, pb_file_name: str):
@@ -252,24 +252,28 @@ class Playbook:
         step = self.step(step_number)
         print(f"Executing step {step_number}: {step.module}")
 
-        module_tid = step.module
-        '''technique input'''
-        technique_input = step.params
+        # Technique
+        t_id = step.module
+    
+        # Technique input
+        step_input = step.params
 
-        '''technique execution'''
-        technique = HalberdAttackLibrary().get_technique(module_tid)
-        execution_path = technique.file
+        # Execute technique
+        technique = TechniqueRegistry.get_technique(t_id)
+        technique_params = (technique().get_parameters())
+        
+        technique_input = {}
+        i=0
+        for param in technique_params:
+            if i < len(step_input):
+                technique_input[param] = step_input[i]
+                i+=1
+            else:
+                break
 
-        exec_module_path = re.findall(r'[^\/\.]+', execution_path)
-        exec_module = importlib.import_module(f"Techniques.{exec_module_path[0]}.{exec_module_path[1]}")
-        TechniqueMainFunction = getattr(exec_module, "TechniqueMain")
+        output = technique().execute(**technique_input)
 
-        if technique_input == None:
-            technique_response = TechniqueMainFunction()
-        else:
-            technique_response = TechniqueMainFunction(*technique_input)
-
-        return technique_response
+        return output
     
     def generate_report(self, module_tid : str, execution_start_time, execution_result, execution_folder_path : str, save_output : Optional[bool] = True) -> None:
         """
@@ -283,20 +287,15 @@ class Playbook:
         execution_report_file_path = os.path.join(execution_folder_path, "Report.csv")
         module_output_file = os.path.join(execution_folder_path, f"Result_{module_tid}.txt")
 
-        # check if technique output is in the expected tuple format (success, raw_response, pretty_response)
-        if isinstance(execution_result, tuple) and len(execution_result) == 3:
-            success, raw_response, pretty_response = execution_result
-            # parse output
-            if pretty_response != None:
-                response = pretty_response
-            else:
-                response = raw_response
+        # Check if technique output is in the expected tuple format (success, response)
+        if isinstance(execution_result, tuple) and len(execution_result) == 2:
+            result, response = execution_result
         else:
             response = execution_result
 
         # Create summary report
         try:
-            if success == True:
+            if result.value == "success":
                 self._playbook_create_csv_report(execution_report_file_path, execution_start_time, module_tid, "success")
             else:
                 self._playbook_create_csv_report(execution_report_file_path, execution_start_time, module_tid, "failed")
@@ -383,8 +382,6 @@ class Playbook:
             yaml.dump(export_data, file, default_flow_style=False)
         
         return export_file_path
-    
-    
 
     @property
     def name(self) -> str:

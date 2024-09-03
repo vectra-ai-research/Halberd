@@ -1,6 +1,5 @@
 '''
 Page Navigation URL : app/automator
-
 Page Description : Allows management / execution of playbooks and scheduling.
 '''
 

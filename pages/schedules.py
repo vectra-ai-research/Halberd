@@ -1,17 +1,16 @@
 '''
 Page Navigation URL : app/schedules
-
-Page Description : Displays currently configured automated attack execution schedules 
+Page Description : Displays currently configured playbook execution schedules
 '''
 
 from dash import html
 import dash_bootstrap_components as dbc
 import yaml
+from core.Constants import AUTOMATOR_SCHEDULES_FILE
 
 def GenerateAutomatorSchedulesView():
 
-    schedules_file = "./automator/Schedules.yml"
-    with open(schedules_file, "r") as schedule_data:
+    with open(AUTOMATOR_SCHEDULES_FILE, "r") as schedule_data:
         schedules = yaml.safe_load(schedule_data)
 
     # set table headers

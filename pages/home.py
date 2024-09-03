@@ -1,37 +1,32 @@
 '''
 Page Navigation url : app/home
-
 Page Description : Hosts the launch page of Halberd. Displays information regarding the tool and overview of included modules.
 '''
 
 import dash
 import dash_bootstrap_components as dbc
-import yaml
 from dash import html,dcc
 from collections import defaultdict
+from attack_techniques.technique_registry import TechniqueRegistry
 
-# load MasterRecord.yml file
-with open('./Techniques/MasterRecord.yml', 'r') as file:
-    master_record = yaml.safe_load(file)
-
-#  initialize tactics_dict 
+# Initialize tactics_dict 
 tactics_dict = defaultdict(list)
 
-# process master record data
-for technique_id, technique_info in master_record.items():
-    if isinstance(technique_info, dict) and 'References' in technique_info:
-        mitre_info = next(iter(technique_info['References']['MITRE'].values()))
-        tactics = mitre_info.get('Tactic', [])
-        if isinstance(tactics, str):
-            tactics = [tactics]
-        
-        # add technique to each associated tactic in tactics_dict
-        for tactic in tactics:
-            tactics_dict[tactic].append({
-                'id': technique_id,
-                'name': technique_info['Name'],
-                'surface': technique_info['AttackSurface']
-            })
+# Process all techniques data
+for technique_class, technique in TechniqueRegistry.list_techniques().items():
+    t = technique()
+    tactics = []
+    for mitre_technique in t.mitre_techniques:
+        tactics += mitre_technique.tactics
+
+    tactics = list(set(tactics))
+    # add technique to each associated tactic in tactics_dict
+    for tactic in tactics:
+        tactics_dict[tactic].append({
+            'id': technique_class,
+            'name': t.name,
+            'surface': TechniqueRegistry.get_technique_category(technique_class)
+        })
 
 # tactics order to follow typical kill chain 
 tactics_order = [
@@ -70,7 +65,7 @@ page_layout = html.Div([
     dbc.Row([
         dbc.Col([
             dbc.Card([
-                html.H4("64 Techniques", className="card-title"),
+                html.H4(f"{len(TechniqueRegistry().list_techniques().keys())} Techniques", className="card-title"),
                 html.P("Covering a wide range of attack vectors", className="card-text")
             ],
             body=True,

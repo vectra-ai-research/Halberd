@@ -4,14 +4,15 @@ Dashboard Description: Displays an interactive graph of access & privilege of an
 '''
 from dash import html, dcc
 import dash_bootstrap_components as dbc
-from Techniques.EntraID.EntraPrimaryFunctions import GetUserInfo, ListJoinedTeams, ListObjectsMemberOf, ListAppRoleAssignments, ListDrives
-from core.EntraAuthFunctions import FetchSelectedToken, ExtractTokenInfo
+from core.entra.entra_token_manager import EntraTokenManager
+from core.entra.graph_request import GraphRequest
 import dash_cytoscape as cyto
 
 # generate entity map
 def GenerateEntityMappingGraph(map_layout = 'cose', filter_category = None):
-    active_token = FetchSelectedToken()
-    active_token_info = ExtractTokenInfo(active_token)
+    manager = EntraTokenManager()
+    active_token = manager.get_active_token()
+    active_token_info = manager.decode_jwt_token(active_token)
     access_type = active_token_info['Entity Type']
     if access_type == "user":
         username,displayname, user_object_id = GetUserInfo()
@@ -20,16 +21,16 @@ def GenerateEntityMappingGraph(map_layout = 'cose', filter_category = None):
         elements = []
         n = 1
 
-        #Create primary node as the selected entity
+        # Create primary node as the selected entity
         elements.append({'data': {'id': '0', 'label': displayname}, 'classes': 'entity'})
         
-        #Dynamically create nodes for each detection on the entity
+        # Dynamically create nodes for each detection on the entity
         for category in categories:
             if filter_category and category != filter_category:
                 continue
-            #create a node for each category on the entity
+            # Create a node for each category on the entity
             elements.append({'data': {'id': str(n), 'label': category}, 'classes': 'category'})
-            #create an edge between entity and each detection
+            # Create an edge between entity and each detection
             elements.append({'data': {'source': '0', 'target': str(n)}})
             n += 1
             if category == 'Groups':
@@ -38,7 +39,7 @@ def GenerateEntityMappingGraph(map_layout = 'cose', filter_category = None):
                     teams = ListJoinedTeams()
                     for team in teams:
                         elements.append({'data': {'id': str(n), 'label': team}, 'classes': 'end_node'})
-                        #create an edge between entity and each detection
+                        # Create an edge between entity and each detection
                         elements.append({'data': {'source': str(sub_node_n), 'target': str(n)}})
                         n += 1
             if category == 'Roles':   
@@ -47,7 +48,7 @@ def GenerateEntityMappingGraph(map_layout = 'cose', filter_category = None):
                     group_list, roles_list, others_list = ListObjectsMemberOf()
                     for role in roles_list:
                         elements.append({'data': {'id': str(n), 'label': role}, 'classes': 'end_node'})
-                        #create an edge between entity and each detection
+                        # Create an edge between entity and each detection
                         elements.append({'data': {'source': str(sub_node_n), 'target': str(n)}})
                         n += 1
 
@@ -57,7 +58,7 @@ def GenerateEntityMappingGraph(map_layout = 'cose', filter_category = None):
                     applications = ListAppRoleAssignments()
                     for application in applications:
                         elements.append({'data': {'id': str(n), 'label': application}, 'classes': 'end_node'})
-                        #create an edge between entity and each detection
+                        # Create an edge between entity and each detection
                         elements.append({'data': {'source': str(sub_node_n), 'target': str(n)}})
                         n += 1
 
@@ -67,15 +68,14 @@ def GenerateEntityMappingGraph(map_layout = 'cose', filter_category = None):
                     repos = ListDrives()
                     for repo in repos:
                         elements.append({'data': {'id': str(n), 'label': repo}, 'classes': 'end_node'})
-                        #create an edge between entity and each detection
+                        # Create an edge between entity and each detection
                         elements.append({'data': {'source': str(sub_node_n), 'target': str(n)}})
                         n += 1
                 
 
-        #return the network graph
+        # Return the network graph
         return cyto.Cytoscape(
             id='entity-detection-cytoscape-nodes',
-            # layout={'name': 'circle', 'radius':250},
             layout={'name': map_layout},
             style={'width': '100vw', 'height': '100vh'},
             elements= elements,
@@ -214,3 +214,77 @@ page_layout = html.Div([
         ], className="mb-4 border-secondary")
     ]),
 ], className="bg-dark p-4")
+
+def GetUserInfo():
+    endpoint_url = "https://graph.microsoft.com/v1.0/me"
+
+    user_info = GraphRequest().get(url = endpoint_url)
+    user_name = user_info['userPrincipalName']
+    display_name = user_info['displayName']
+    user_object_id = user_info['id']
+    return user_name, display_name, user_object_id
+
+def ListJoinedTeams():
+    try:
+        endpoint_url = "https://graph.microsoft.com/v1.0/me/joinedTeams"
+
+        joined_teams_list = GraphRequest().get(url = endpoint_url)
+        
+        output_list=[]
+        for teams in joined_teams_list:
+            output_list.append(teams['displayName'])
+
+        return output_list
+    except:
+        return None
+    
+def ListObjectsMemberOf():
+    try:
+        username,displayname, user_object_id = GetUserInfo()
+
+        endpoint_url = f"https://graph.microsoft.com/v1.0/users/{user_object_id}/memberOf"
+
+        member_objects_list = GraphRequest().get(url = endpoint_url)
+
+        group_list = []
+        roles_list = []
+        others_list = []
+        for object in member_objects_list:
+            if object["@odata.type"] == "#microsoft.graph.directoryRole":
+                roles_list.append(object["displayName"])
+            elif object["@odata.type"] == "#microsoft.graph.group":
+                group_list.append(object["displayName"])
+            else:
+                others_list.append(object["displayName"])
+
+        return group_list, roles_list, others_list
+    except:
+        return None
+    
+def ListAppRoleAssignments():
+    try:
+        username,displayname, user_object_id = GetUserInfo()
+        endpoint_url = f"https://graph.microsoft.com/v1.0/users/{user_object_id}/appRoleAssignments"
+
+        app_role_assignments_list = GraphRequest().get(url = endpoint_url)
+        output_list = []
+
+        for app_role in app_role_assignments_list:
+            output_list.append(app_role['resourceDisplayName'])
+
+        return output_list
+    except:
+        return None
+    
+def ListDrives():
+    try:
+        endpoint_url = "https://graph.microsoft.com/v1.0/me/drive"
+
+        drives_list = GraphRequest().get(url = endpoint_url)
+
+        output_list = []
+        output_list.append(f"{drives_list['name']} : {drives_list['webUrl']}")
+
+        return output_list
+    except:
+        return None

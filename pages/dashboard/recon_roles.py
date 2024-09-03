@@ -1,6 +1,6 @@
 import dash_bootstrap_components as dbc
 from dash import dcc,html
-from core.GraphFunctions import graph_get_request
+from core.entra.graph_request import GraphRequest
 
 # find role ID
 def FindRole(role_name):
@@ -9,7 +9,7 @@ def FindRole(role_name):
         '$filter': f'displayName eq \'{role_name}\''
     }
 
-    role_recon_response = graph_get_request(role_endpoint_url, params=params)
+    role_recon_response = GraphRequest().get(role_endpoint_url, params=params)
     if 'error' in role_recon_response:
         # graph request failed
         return None
@@ -30,7 +30,7 @@ def ReconRoleInfo(role_id):
 # find members of role
 def ReconRoleMembers(role_template_id):
     graph_url = f"https://graph.microsoft.com/v1.0/directoryRoles(roleTemplateId='{role_template_id}')/members"
-    raw_response = graph_get_request(graph_url)
+    raw_response = GraphRequest().get(graph_url)
 
     if 'error' in raw_response:
         # graph request failed
