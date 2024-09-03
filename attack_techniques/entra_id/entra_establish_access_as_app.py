@@ -15,7 +15,7 @@ class EntraEstablishAccessAsApp(BaseTechnique):
                 sub_technique_name="Cloud Accounts"
             )
         ]
-        super().__init__("Entra ID Establish Access As App", "Establishes app-only access to Entra ID", mitre_techniques)
+        super().__init__("Establish Access As App", "Establishes app-only access to Entra ID", mitre_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)

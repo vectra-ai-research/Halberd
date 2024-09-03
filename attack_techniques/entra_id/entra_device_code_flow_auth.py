@@ -36,7 +36,7 @@ class EntraDeviceCodeFlowAuth(BaseTechnique):
                 sub_technique_name="Cloud Accounts"
             )
         ]
-        super().__init__("Entra ID Device Code Flow Auth", "Authenticates to target tenant using Entra ID device code flow", mitre_techniques)
+        super().__init__("Establish Access via Device Code Flow", "Authenticates to target tenant using Entra ID device code flow", mitre_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
