@@ -1,6 +1,6 @@
 import dash_bootstrap_components as dbc
 from dash import dcc,html
-from core.GraphFunctions import graph_get_request
+from core.entra.graph_request import GraphRequest
 
 # find role ID
 def FindUser(user_string):
@@ -9,7 +9,7 @@ def FindUser(user_string):
         '$filter': f'userPrincipalName eq \'{user_string}\''
     }
 
-    user_recon_response = graph_get_request(role_endpoint_url, params=params)
+    user_recon_response = GraphRequest().get(role_endpoint_url, params=params)
     if 'error' in user_recon_response:
         # graph request failed
         return None, None, None, None, None, None, None
@@ -30,7 +30,7 @@ def FindUser(user_string):
 # find users membership
 def ReconUserMemberships(user_id):
     graph_url = f"https://graph.microsoft.com/v1.0/users/{user_id}/memberOf"
-    raw_response = graph_get_request(graph_url)
+    raw_response = GraphRequest().get(graph_url)
 
     if 'error' in raw_response:
         # graph request failed
@@ -82,7 +82,7 @@ def ReconUserMemberships(user_id):
 # find users assigned applications
 def ReconUserAssignedApps(user_id):
     app_endpoint_url = f"https://graph.microsoft.com/v1.0/users/{user_id}/appRoleAssignments"
-    raw_response = graph_get_request(app_endpoint_url)
+    raw_response = GraphRequest().get(app_endpoint_url)
     if 'error' in raw_response:
         # graph request failed
         return None

@@ -9,32 +9,29 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 from core.Constants import *
 from dash_iconify import DashIconify
-from core.technique.master_record import MasterRecord
-from core.technique.attack_library import HalberdAttackLibrary
 from core.playbook.playbook import Playbook
+from attack_techniques.technique_registry import TechniqueRegistry
 
 def DisplayTechniqueInfo(technique_id):
-    '''Generates Technique information from the MasterRecord.yml and displays it in the offcanvas on the attack page. The offcanvas is triggered by the About Technique button'''
+    '''Generates Technique information and displays it in the offcanvas on the attack page. The offcanvas is triggered by the About Technique button'''
     
-    # load MasterRecord.yml file
-    master_record = MasterRecord().data
-    
-    technique_info = master_record.get(technique_id, {})
+    technique = TechniqueRegistry.get_technique(technique_id)()
     
     technique_details = []
-    technique_details.append(html.H4(f"Technique: {technique_info.get('Name', 'N/A')}"))
-    technique_details.append(html.P(f"ID: {technique_id}"))
-    technique_details.append(html.H5(f"Attack Surface:"))
-    technique_details.append(html.P(f"{technique_info.get('AttackSurface', 'N/A')}"))
+    technique_details.append(html.H4(f"Technique: {technique.name}"))
+    technique_details.append(html.Br())
+    technique_details.append(html.H5(f"Attack Surface: {TechniqueRegistry.get_technique_category(technique_id)}"))
+    technique_details.append(html.Br())
     technique_details.append(html.H5("MITRE ATT&CK Reference:"))
     
     # add mitre technique information
-    for mitre_info in technique_info.get('References', {}).get('MITRE', {}).values():
+    for mitre_info in technique.mitre_techniques:
         ul_items = []
-        ul_items.append(html.Li(f"Technique: {mitre_info.get('Technique', 'N/A')}"))
-        ul_items.append(html.Li(f"Sub-technique: {mitre_info.get('SubTechnique', 'N/A')}"))
-        ul_items.append(html.Li(f"Tactic: {', '.join(mitre_info.get('Tactic', ['N/A']))}"))
-        mitre_url = mitre_info.get('URL', '#')
+        mitre_info.mitre_url
+        ul_items.append(html.Li(f"Technique: {mitre_info.technique_name}"))
+        ul_items.append(html.Li(f"Sub-technique: {mitre_info.sub_technique_name}"))
+        ul_items.append(html.Li(f"Tactic: {', '.join(mitre_info.tactics)}"))
+        mitre_url = mitre_info.mitre_url
         if mitre_url in [None, "#"]:
             ul_items.append(html.Li(dcc.Link("More info", href="#")))
         else:
@@ -45,23 +42,9 @@ def DisplayTechniqueInfo(technique_id):
     accordion_content = []
 
     # add technique description
-    if technique_info.get('Description', None):
-        accordion_content.append(html.H6("Technique Description:",  className="text-muted"))
-        accordion_content.append(html.P(technique_info.get('Description', "N/A"), className="text-muted"))
-
-    # add linked additional resources information
-    linked_resources = technique_info.get('Resources', [])
-    if linked_resources != [None]:
-        accordion_content.append(html.H6("Additional Resources:",  className="text-muted"))
-        for resource in linked_resources:
-            accordion_content.append(html.Li(dcc.Link(f"{resource}", href=resource, target="_blank"), className="text-muted"))
-
-    # add associated notes 
-    technique_notes = technique_info.get('Notes','N/A')
-    if technique_notes not in [['N/A'],[None]]:
-        accordion_content.append(html.H6("Notes:",  className="text-muted"))
-        for note in technique_notes:
-            accordion_content.append(html.Li(note, className="text-muted"))
+    if technique.description:
+        accordion_content.append(html.H5("Technique Description:",  className="text-muted"))
+        accordion_content.append(html.P(technique.description, className="text-muted"))
     
     # add accordion to modal body
     technique_details.append(
@@ -76,112 +59,35 @@ def DisplayTechniqueInfo(technique_id):
     # return technique details
     return technique_details
 
-
-def TacticMapGenerator():
-    '''Function to generate list of available tactics for each attack surface'''
-    '''Function to run once at the start of application'''
-
-    # load MasterRecord.yml file
-    techniques_info = MasterRecord().data
-
-    Entra_Id_Tactics = []
-    Azure_Tactics = []
-    AWS_Tactics = []
-    M365_Tactics = []
-
-    for t_id in techniques_info:
-        if techniques_info[t_id]['References']['MITRE']:
-            all_mitre_techniques = techniques_info[t_id]['References']['MITRE']
-
-            for technique in all_mitre_techniques:
-                if techniques_info[t_id]['AttackSurface'] == "EntraID":
-                    Entra_Id_Tactics += all_mitre_techniques[technique]['Tactic']
-                elif techniques_info[t_id]['AttackSurface'] == "Azure":
-                    Azure_Tactics += all_mitre_techniques[technique]['Tactic']
-                elif techniques_info[t_id]['AttackSurface'] == "AWS":
-                    AWS_Tactics += all_mitre_techniques[technique]['Tactic']
-                elif techniques_info[t_id]['AttackSurface'] == "M365":
-                    M365_Tactics += all_mitre_techniques[technique]['Tactic']
+def TechniqueOptionsGenerator(tab: str, tactic: str) -> list[str]:
+    """Function generates list of available techniques as dropdown options dynamically based on the attack surface(tab) and the tactic selected"""
     
-    Entra_Id_Tactics = list(set(Entra_Id_Tactics))
-    Azure_Tactics = list(set(Azure_Tactics))
-    AWS_Tactics = list(set(AWS_Tactics))
-    M365_Tactics = list(set(M365_Tactics))
-
-    tactics_map = {"Entra_Id_Tactics" : Entra_Id_Tactics, "Azure_Tactics" : Azure_Tactics, "AWS_Tactics" : AWS_Tactics, "M365_Tactics" : M365_Tactics}
-
-    with open(TACTICS_MAP_FILE, "w") as file:
-        yaml.dump(tactics_map, file)
-    
-    print("[*] Tactic Map Updated")
-
-    return Entra_Id_Tactics, Azure_Tactics, AWS_Tactics, M365_Tactics
-
-def TechniqueMapGenerator():
-    '''Function to generate list of available techniques for each attack surface'''
-    '''Function to run once at the start of application'''
-
-    # load MasterRecord.yml file
-    techniques_info = MasterRecord().data
-    
-    Entra_Id_Technqiues = []
-    Azure_Technqiues = []
-    AWS_Technqiues = []
-    M365_Technqiues = []
-
-    for t_id in techniques_info:
-        if techniques_info[t_id]['AttackSurface'] == "EntraID":
-            Entra_Id_Technqiues.append(t_id)
-        elif techniques_info[t_id]['AttackSurface'] == "Azure":
-            Azure_Technqiues.append(t_id)
-        elif techniques_info[t_id]['AttackSurface'] == "AWS":
-            AWS_Technqiues.append(t_id)
-        elif techniques_info[t_id]['AttackSurface'] == "M365":
-            M365_Technqiues.append(t_id)
-    
-    Entra_Id_Technqiues = list(set(Entra_Id_Technqiues))
-    Azure_Technqiues = list(set(Azure_Technqiues))
-    AWS_Technqiues = list(set(AWS_Technqiues))
-    M365_Technqiues = list(set(M365_Technqiues))
-
-    technique_map = {"Entra_Id_Techniques" : Entra_Id_Technqiues, "Azure_Techniques" : Azure_Technqiues, "AWS_Techniques" : AWS_Technqiues, "M365_Techniques" : M365_Technqiues}
-
-    with open(TECHNIQUES_MAP_FILE, "w") as file:
-        yaml.dump(technique_map, file)
-
-    print("[*] Technique Map Updated")
-    return Entra_Id_Technqiues, Azure_Technqiues, AWS_Technqiues, M365_Technqiues
-
-
-def TechniqueOptionsGenerator(tab, tactic):
-    '''Function generates list of available techniques as dropdown options dynamically based on the attack surface(tab) and the tactic selected'''
-    
-    # load MasterRecord.yml file
-    techniques_info = MasterRecord().data
-
-    # load techniques map file
-    with open(TECHNIQUES_MAP_FILE, "r") as technique_map_data:
-        techniques_map = yaml.safe_load(technique_map_data)
+    technique_registry = TechniqueRegistry()
+    attack_surface_techniques ={}
     
     if tab == "tab-attack-Azure":
-        attack_surface_techniques = techniques_map['Azure_Techniques']
-    if tab == "tab-attack-AWS":
-        attack_surface_techniques = techniques_map['AWS_Techniques']
-    if tab == "tab-attack-M365":
-        attack_surface_techniques = techniques_map['M365_Techniques']
-    if tab == "tab-attack-EntraID":
-        attack_surface_techniques = techniques_map['Entra_Id_Techniques']
+        attack_surface_techniques = technique_registry.list_techniques("azure")
+    elif tab == "tab-attack-AWS":
+        attack_surface_techniques = technique_registry.list_techniques("aws")
+    elif tab == "tab-attack-M365":
+        attack_surface_techniques = technique_registry.list_techniques("m365")
+    elif tab == "tab-attack-EntraID":
+        attack_surface_techniques = technique_registry.list_techniques("entra_id")
         
     technique_options_list = []
-    for technique in attack_surface_techniques:
-        for mitre_technique in techniques_info[technique]['References']['MITRE']:
-            if tactic in techniques_info[technique]['References']['MITRE'][mitre_technique]['Tactic']:
-                technique_options_list.append(
-                    {
-                        "label": html.Div([techniques_info[technique]['Name']], style={"padding-left": "10px","padding-top": "5px", "padding-bottom": "5px", "font-size": 20}, className="bg-dark text-body"),
-                        "value": technique,
-                    }
-                )
+    # tracker list to avoid duplicate entry
+    technique_tracker = []
+    for technique_module, technique in attack_surface_techniques.items():
+        for mitre_technique in technique().get_mitre_info():
+            if tactic in mitre_technique['tactics']:
+                if technique_module not in technique_tracker:
+                    technique_tracker.append(technique_module)
+                    technique_options_list.append(
+                        {
+                            "label": html.Div([technique().name], style={"padding-left": "10px","padding-top": "5px", "padding-bottom": "5px", "font-size": 20}, className="bg-dark text-body"),
+                            "value": technique_module,
+                        }
+                    )
 
     technique_options_element = [
         html.H2(tactic),
@@ -192,21 +98,20 @@ def TechniqueOptionsGenerator(tab, tactic):
 
 def TabContentGenerator(tab):
 
-    # load all tactics information for each attack surface from the TacticsMap.yml file
-    with open(TACTICS_MAP_FILE, "r") as tactics_file_data:
-        tactics_map = yaml.safe_load(tactics_file_data)
+    # Load all technique information from registry
+    technique_registry = TechniqueRegistry()
 
-    # from tab selected, create tactics dropdown list from the available tactics in the attack surface
+    # from tab selected, create tactics dropdown list from the available tactics in the selected attack surface
     if tab == "tab-attack-M365":
-        tactics_options = tactics_map['M365_Tactics']
+        tactics_options = technique_registry.list_tactics("m365")
     if tab == "tab-attack-EntraID":
-        tactics_options = tactics_map['Entra_Id_Tactics']
+        tactics_options = technique_registry.list_tactics("entra_id")
     if tab == "tab-attack-Azure":
-        tactics_options = tactics_map['Azure_Tactics']
+        tactics_options = technique_registry.list_tactics("azure")
     if tab == "tab-attack-AWS":
-        tactics_options = tactics_map['AWS_Tactics']
+        tactics_options = technique_registry.list_tactics("aws")
     
-    # create the dropdown element
+    # Create the dropdown element
     tactic_dropdown_option = []    
     for tactic in tactics_options:
         tactic_dropdown_option.append(
@@ -221,7 +126,7 @@ def TabContentGenerator(tab):
     tab_content_elements.append(dcc.Dropdown(options = tactic_dropdown_option, value = tactic_dropdown_option[0]["value"], id='tactic-dropdown'))
     tab_content_elements.append(html.Br())
 
-    # add element to display technique options under each tactic
+    # Add element to display technique options under each tactic
     tab_content_elements.append(
         html.Div([
             dbc.Row([
@@ -249,7 +154,7 @@ def TabContentGenerator(tab):
             )
         ])
     )
-    # response loading element
+    # Response loading element
     tab_content_elements.append(
         dcc.Loading(
             id="attack-output-loading",
@@ -258,7 +163,7 @@ def TabContentGenerator(tab):
         )
     )
 
-    # final tab div to return
+    # Final tab div to return
     tab_content = html.Div(
         tab_content_elements,
         style={"height":"87vh", "padding-right": "20px", "padding-left": "20px", "padding-top": "20px", "padding-bottom": "20px"}, 
@@ -427,27 +332,6 @@ def InitializationCheck():
         '''
         print(warning)
 
-
-def PlaybookCreateCSVReport(report_file_name, time_stamp, module, result):
-    '''Function to create and write to execution summary report in CSV format'''
-
-    # define headers
-    headers = ["Time_Stamp", "Module", "Result"]
-
-    if Path(f"{AUTOMATOR_DIR}/{report_file_name}").exists():
-        pass
-    else:
-        # create new report file with headers
-        f = open(report_file_name,"a")
-        report_input = {"Time_Stamp":"Time_Stamp", "Module":"Module", "Result":"Result"}
-        write_log = csv.DictWriter(f, fieldnames= headers)
-        write_log.writerow(report_input)
-
-    # write execution information to report
-    report_input = {"Time_Stamp": time_stamp, "Module": module, "Result": result}
-    write_log = csv.DictWriter(f, fieldnames= headers)
-    write_log.writerow(report_input)
-
 def AddNewSchedule(schedule_name, playbook_id, start_date, end_date, execution_time, repeat, repeat_frequency):
     # automator file
     with open(AUTOMATOR_SCHEDULES_FILE, "r") as schedule_data:
@@ -466,7 +350,6 @@ def AddNewSchedule(schedule_name, playbook_id, start_date, end_date, execution_t
     # update schedules file
     with open(AUTOMATOR_SCHEDULES_FILE, "w") as file:
         yaml.dump(schedules, file)
-
 
 def GetAllPlaybooks():
     # list all playbooks
@@ -626,10 +509,9 @@ def ParseTechniqueResponse(technique_response):
 
 def LogEventOnTrigger(tactic, t_id):
     '''Function to log event on execution'''
-    library = HalberdAttackLibrary()
-    technique = library.get_technique(t_id)
-    technique_name = technique.name
-    attack_surface = technique.attack_surface
+    technique = TechniqueRegistry.get_technique(t_id)
+    technique_name = technique().name
+    attack_surface = TechniqueRegistry.get_technique_category(t_id)
 
     f = open(TRACE_LOG_FILE,"a")
 

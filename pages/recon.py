@@ -1,6 +1,5 @@
 '''
 Page Navigation URL : app/recon
-
 Page Description : Recon page hosts various reconnaissance dashboards providing fast and easy information gathering in a connected environment. 
 '''
 

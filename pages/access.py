@@ -31,8 +31,8 @@ page_layout = html.Div(
         html.Br(),
         html.H2("AWS - Access Info", style ={"textAlign": "center", "padding": "5px"}),
         html.Div([
-            html.H4("Set Access Client"),
-            dcc.Dropdown(id="aws-client-selector-dropdown"),
+            html.H4("Set AWS Session"),
+            dcc.Dropdown(id="aws-session-selector-dropdown"),
             html.Br(), 
         ]),
         html.Div([

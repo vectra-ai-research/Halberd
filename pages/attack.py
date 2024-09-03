@@ -1,6 +1,5 @@
 '''
 Page Navigation url : app/attack
-
 Page Description : Allows interaction with Halberd attack modules. Displays attack surfaces, tactics, techniques and corresponding technique config. The main content of the page is generated dynamically by core.Functions.TabContentGenerator (generates the content as per selected attack surface tab), core.Functions.TechniqueOptionsGenerator (generates the techniques available in each tactic of an attack surface) & core.Functions.TechniqueInfoGenerator (generates techniques information pane). The technique configuration form is generated dynamically by callback C004.
 '''
 

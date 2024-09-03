@@ -69,7 +69,8 @@ Checkout [Testing Use Cases](https://github.com/vectra-ai-research/Halberd/wiki/
 - Playbook Automation
 - Advanced Recon Widgets
 - Reporting
-- Technique Execution via Intutive Web-App
+- Testing via Intutive Web-App
+- CLI execution and usage
 
 Note: Halberd is continuously evolving and getting better with more testing techniques, new capabilities & fixes. Ensure to use the latest version available whenever possible. 
 

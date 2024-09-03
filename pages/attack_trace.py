@@ -1,18 +1,17 @@
 '''
 Page Navigation url : app/attack-trace
-
 Page Description : Page displays a log of executed modules and allows exporting the data in a csv format. The logs are generated from local/Trace_Log.csv which is created locally on the users host.  
 '''
 
-from dash import html, dcc
+from dash import html
 import dash_bootstrap_components as dbc
 from csv import DictReader 
+from core.Constants import TRACE_LOG_FILE
 
 def GenerateAttackTraceView():
 
     # Load trace log file
-    log_file = "./Local/Trace_Log.csv"
-    f = open(log_file,"r")
+    f = open(TRACE_LOG_FILE,"r")
     log_data = list(DictReader(f))
 
     # load last 20 events

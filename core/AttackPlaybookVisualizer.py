@@ -1,9 +1,10 @@
 from dash import html
 import dash_cytoscape as cyto
-from core.Functions import MasterRecord, Playbook, GetAllPlaybooks
+from core.Functions import Playbook, GetAllPlaybooks
+from attack_techniques.technique_registry import TechniqueRegistry
 
 # import techniques info from MasterRecord.yml
-techniques_info = MasterRecord().data
+# techniques_info = MasterRecord().data
 
 def AttackSequenceVizGenerator(playbook_name):
 
@@ -27,11 +28,11 @@ def AttackSequenceVizGenerator(playbook_name):
         for step in pb_sequence:
             step_module_id = step.module
             step_wait = step.wait
-            attack_sequence_viz_elements.append({'data': {'id': str(n), 'label': f"{step_module_id}: {techniques_info[step_module_id]['Name']}"}, 'position': {'x': position_x, 'y': 50}})
+            attack_sequence_viz_elements.append({'data': {'id': str(n), 'label': f"{TechniqueRegistry.get_technique(step_module_id)().name}", 'info':step_module_id}, 'position': {'x': position_x, 'y': 50}})
             position_x += 70
             n += 1
 
-            attack_sequence_viz_elements.append({'data': {'id': str(n), 'label': str(step_wait)}, 'position': {'x': position_x, 'y': 50}, 'classes': 'timenode'})
+            attack_sequence_viz_elements.append({'data': {'id': str(n), 'label': str(step_wait), 'info':"time"}, 'position': {'x': position_x, 'y': 50}, 'classes': 'timenode'})
             position_x += 70
             n += 1
         
@@ -89,8 +90,3 @@ def AttackSequenceVizGenerator(playbook_name):
                     }
                 ]
                 )
-    
-
-def EnrichNodeInfo(node_data):
-    selected_module_info = techniques_info[node_data]
-    return selected_module_info
