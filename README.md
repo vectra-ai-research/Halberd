@@ -9,7 +9,7 @@ Leveraging Halberd, security teams can very quickly & easily execute attack tech
 Evaluate defenses across multiple attack surfaces, including [Entra ID](https://learn.microsoft.com/en-us/entra/identity/), [M365](https://learn.microsoft.com/en-us/microsoft-365/?view=o365-worldwide), [Azure](https://learn.microsoft.com/en-us/azure/?product=popular) and [AWS](https://docs.aws.amazon.com).
 
 <h1 align="center">    
-    <img src="assets/halberd_attack_view.png" width=100% align="center"/>
+    <img src="assets/Halberd_Attack_View.png" width=100% align="center"/>
 </h1>
 <p align="center">
 
