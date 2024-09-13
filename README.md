@@ -1,5 +1,5 @@
 <h1 align="center">    
-    <img src="assets/halberd_cloud_logo.jpg" alt="logo" width="30%" align="center"/>
+    <img src="assets/halberd_logo_banner.jpg" alt="logo" width="100%" align="center"/>
 </h1>
 <p align="center">
 Halberd is an open-source security testing tool to proactively assess cloud threat detection by executing a comprehensive array of attack techniques across multiple surfaces.
