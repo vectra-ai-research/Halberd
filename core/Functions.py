@@ -183,27 +183,17 @@ def WriteAppLog(action, result = "success"):
     write_log.writerow(log_input)
 
     return True
-    
-def ReadAppLogger():
-    log_file = APP_LOG_FILE
-    f = open(log_file,"r")
-    return csv.DictReader(f)
-
-def ReadTraceLog():
-    log_file = TRACE_LOG_FILE
-    f = open(log_file,"r")
-    return csv.DictReader(f)
 
 def CheckAzureCLIInstall():
     '''Function checks for installation of Azure cli on host'''
     
     if sys.platform.startswith('win'):
-        # search in PATH
+        # Search in PATH
         az_cli_path = shutil.which("az")
         if az_cli_path:
             return az_cli_path
         
-        # if not found in PATH, check in common installation paths on Windows
+        # If not found in PATH, check in common installation paths on Windows
         common_win_paths = [
             r"C:\Program Files (x86)\Microsoft SDKs\Azure\CLI2\wbin",
             r"C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin",
@@ -214,11 +204,11 @@ def CheckAzureCLIInstall():
                 return az_cli_path
             
     else:
-        # for non-windows systems, check if 'az' is in PATH
+        # For non-windows systems, check if 'az' is in PATH
         if shutil.which("az"):
             return "az"
     
-    # if az installation not found on host,return None
+    # If az installation not found on host,return None
     return None
 
 def InitializationCheck():
@@ -233,6 +223,12 @@ def InitializationCheck():
         pass
     else:
         os.makedirs(OUTPUT_DIR)
+    
+    # Check for output folder
+    if Path(REPORT_DIR).exists():
+        pass
+    else:
+        os.makedirs(REPORT_DIR)
 
     # Check for application log file
     if Path(APP_LOG_FILE).exists():
@@ -247,20 +243,7 @@ def InitializationCheck():
         write_log.writerow(log_input)
         print("[*] Application log file created")
 
-    # Check for trace log file
-    if Path(TRACE_LOG_FILE).exists():
-        pass
-    else:
-        f = open(TRACE_LOG_FILE,"a")
-
-        fields = ["date_time", "technique", "tactic","attack_surface","result"]
-        log_input = {"date_time":"date_time", "technique":"technique", "tactic":"tactic","attack_surface":"attack_surface", "result":"result"}
-
-        write_log = csv.DictWriter(f, fieldnames= fields)
-        write_log.writerow(log_input)
-        print("[*] Trace log file created")
-
-    # check for msft tokens file
+    # Check for msft tokens file
     if Path(MSFT_TOKENS_FILE).exists():
         pass
     else:
@@ -269,40 +252,40 @@ def InitializationCheck():
         with open(MSFT_TOKENS_FILE, 'w') as file:
             yaml.dump(all_tokens_data, file)
 
-    # check for automator folder
+    # Check for automator folder
     if Path(AUTOMATOR_DIR).exists():
-        # check for automtor/Playbooks folder
+        # Check for automtor/Playbooks folder
         if Path(AUTOMATOR_PLAYBOOKS_DIR).exists():
             pass
         else:
             os.makedirs(AUTOMATOR_PLAYBOOKS_DIR)
             print("[*] Automator dir created")
         
-        # check for automator/Outputs folder
+        # Check for automator/Outputs folder
         if Path(AUTOMATOR_OUTPUT_DIR).exists():
             pass
         else:
             os.makedirs(AUTOMATOR_OUTPUT_DIR)
             print("[*] Automator outputs dir created")
         
-        # check for automator/Exports folder
+        # Check for automator/Exports folder
         if Path(AUTOMATOR_EXPORTS_DIR).exists():
             pass
         else:
             os.makedirs(AUTOMATOR_EXPORTS_DIR)
             print("[*] Automator exports dir created")
 
-        # check for automator/Schedules.yml file
+        # Check for automator/Schedules.yml file
         if Path(AUTOMATOR_SCHEDULES_FILE).exists():
             pass
         else:
-            # create Schedules.yml config file
+            # Create Schedules.yml config file
             with open(AUTOMATOR_SCHEDULES_FILE, 'w') as file:
                 pass
             print("[*] Schedules config file created")
             
     else:
-        # create all automator dirs and files
+        # Create all automator dirs and files
         os.makedirs(AUTOMATOR_DIR)
         os.makedirs(AUTOMATOR_PLAYBOOKS_DIR)
         os.makedirs(AUTOMATOR_OUTPUT_DIR)
@@ -310,7 +293,7 @@ def InitializationCheck():
             pass
         print("[*] Automator files created")
 
-    # check az cli installation
+    # Check az cli installation
     if CheckAzureCLIInstall():
         pass
     else:
@@ -331,6 +314,27 @@ def InitializationCheck():
         installation directory to your PATH manually.
         '''
         print(warning)
+
+    # Check for logging config file
+    if not os.path.exists(LOGGING_CONFIG_FILE):
+        with open(LOGGING_CONFIG_FILE, 'w') as config_file:
+            yaml.dump({
+                'logger_level': 'DEBUG',
+                'console_handler': {
+                    'enabled': False,
+                    'level': 'INFO',
+                    'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                },
+                'file_handler': {
+                    'enabled': True,
+                    'level': 'DEBUG',
+                    'filename': 'app.log',
+                    'max_bytes': 5242880,  # 5 MB
+                    'backup_count': 3,
+                    'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                }
+            }, config_file)
+        print("[*] Logging config file created")
 
 def AddNewSchedule(schedule_name, playbook_id, start_date, end_date, execution_time, repeat, repeat_frequency):
     # automator file
@@ -506,19 +510,3 @@ def ParseTechniqueResponse(technique_response):
 
     else:
         return str(response)
-
-def LogEventOnTrigger(tactic, t_id):
-    '''Function to log event on execution'''
-    technique = TechniqueRegistry.get_technique(t_id)
-    technique_name = technique().name
-    attack_surface = TechniqueRegistry.get_technique_category(t_id)
-
-    f = open(TRACE_LOG_FILE,"a")
-
-    fields = ["date_time", "technique", "tactic","attack_surface","result"]
-    log_input = {"date_time":str(datetime.today()), "technique":technique_name, "tactic":tactic,"attack_surface":attack_surface, "result":"Executed"}
-
-    write_log = csv.DictWriter(f, fieldnames= fields)
-    write_log.writerow(log_input)
-
-    return True
