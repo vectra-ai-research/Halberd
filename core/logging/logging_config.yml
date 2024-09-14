@@ -1,0 +1,12 @@
+console_handler:
+  enabled: false
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  level: INFO
+file_handler:
+  backup_count: 3
+  enabled: true
+  filename: ./local/app.log
+  format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+  level: DEBUG
+  max_bytes: 5242880
+logger_level: DEBUG
