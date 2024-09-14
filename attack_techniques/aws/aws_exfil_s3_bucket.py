@@ -31,9 +31,6 @@ class AWSExfilS3Bucket(BaseTechnique):
                     "message": {"Error" : "Invalid Technique Input"}
                 }
             
-            if aws_region in [None, ""]:
-                aws_region = "us-east-1"
-            
             # Ref: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3/client/download_file.html
 
             # Initialize boto3 client
