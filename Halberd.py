@@ -3,8 +3,9 @@ import json
 import dash
 import datetime
 import time
-import boto3
 import os
+import boto3
+import uuid
 import dash_daq as daq
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Patch, ALL
@@ -14,12 +15,16 @@ from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
 from core.AttackPlaybookVisualizer import AttackSequenceVizGenerator
-from core.Functions import DisplayTechniqueInfo, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, LogEventOnTrigger
+from core.Functions import DisplayTechniqueInfo, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
 from core.Constants import *
 from core.aws.aws_session_manager import SessionManager
 from attack_techniques.technique_registry import *
+from core.logging.logger import setup_logger,StructuredAppLog
+from pages.attack_trace import group_events,create_summary, parse_log_file
+from core.logging.report import read_log_file, analyze_log, generate_html_report
+import pandas as pd
 
 # Create Application
 app = dash.Dash(__name__,  external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP],title='Halberd', update_title='Loading...', suppress_callback_exceptions=True)
@@ -37,7 +42,7 @@ navbar = dbc.NavbarSimple(
         dbc.Row(
                 [
                     dbc.Col(html.Img(src="/assets/favicon.ico", height="30px")),
-                    dbc.Col(html.Div("Halberd", className="text-danger")),
+                    dbc.Col(html.Div("Halberd", className="text-danger", style={'font-family':'horizon'})),
                 ],
             ),
         ]),
@@ -112,7 +117,6 @@ app.layout = html.Div([
 )
 ])
 
-
 '''C001 - Callback to update the page content based on the URL'''
 @app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
 def display_page(pathname):
@@ -129,8 +133,8 @@ def display_page(pathname):
         from pages.recon import page_layout
         return page_layout
     elif pathname == '/attack-trace':
-        from pages.attack_trace import GenerateAttackTraceView
-        return GenerateAttackTraceView()
+        from pages.attack_trace import generate_attack_trace_view
+        return generate_attack_trace_view()
     elif pathname == '/automator':
         from pages.automator import page_layout
         return page_layout
@@ -277,18 +281,54 @@ def DisplayAttackTechniqueConfig(technique):
         Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
         Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
         Input(component_id= "technique-execute-button", component_property= "n_clicks"), 
+        State(component_id = "tactic-dropdown", component_property = "value"),
         State(component_id = "attack-options-radio", component_property = "value"), 
         State({"type": "technique-config-display", "index": ALL}, "value"), 
         State({"type": "technique-config-display-boolean-switch", "index": ALL}, "on"), 
         State({"type": "technique-config-display-file-upload", "index": ALL}, "contents"), 
         prevent_initial_call = True)
-def ExecuteTechniqueCallback(n_clicks, t_id, values, bool_on, file_content):
+def ExecuteTechniqueCallback(n_clicks, tactic, t_id, values, bool_on, file_content):
     '''The input callback can handle text inputs, boolean flags and file upload content'''
     if n_clicks == 0:
         raise PreventUpdate
     
     technique = TechniqueRegistry.get_technique(t_id)
     technique_params = (technique().get_parameters())
+
+    # Technique attack surface / category
+    attack_surface = TechniqueRegistry.get_technique_category(t_id)
+    # Active entity / Source
+    active_entity = "Unknown"
+
+    if attack_surface in ["m365","entra_id"]:
+        manager = EntraTokenManager()
+        access_token = manager.get_active_token()
+        
+        if access_token:
+            try:
+                access_info = manager.decode_jwt_token(access_token)
+                active_entity = access_info['Entity']
+            except Exception as e:
+                active_entity = "Unknown"
+        else: 
+            active_entity = "Unknown"
+    
+    if attack_surface == "aws":
+        try:
+            manager = SessionManager()
+            # set default session
+            sts_client = boto3.client('sts')
+            session_info = sts_client.get_caller_identity()
+            active_entity = session_info['UserId']
+        except:
+            active_entity = "Unknown"
+
+    if attack_surface == "azure":
+        try:
+            current_access = AzureAccess().get_current_subscription_info()
+            active_entity = current_access['user']['name']
+        except:
+            active_entity = "Unknown"
 
     # Create technique input
     technique_input = {}
@@ -316,6 +356,19 @@ def ExecuteTechniqueCallback(n_clicks, t_id, values, bool_on, file_content):
             technique_input[param] = [*bool_on][i]
             i+=1
 
+    # Log technique execution start
+    event_id = str(uuid.uuid4()) #Generate unique event_id for the execution
+    
+    logger.info(StructuredAppLog("Technique Execution",
+        event_id = event_id,
+        source = active_entity,
+        status = "started",
+        technique = t_id,
+        tactic=tactic,
+        timestamp=datetime.datetime.now().isoformat())
+    )
+
+    # Execute technique    
     output = technique().execute(**technique_input)
     
     # check if technique output is in the expected tuple format (success, response)
@@ -323,7 +376,32 @@ def ExecuteTechniqueCallback(n_clicks, t_id, values, bool_on, file_content):
         result, response = output
 
     if result.value == "success":
+        # Log technique execution success
+        logger.info(StructuredAppLog("Technique Execution",
+            event_id = event_id,
+            source = active_entity,
+            status = "completed",
+            result = "success",
+            technique = t_id,
+            target = None,
+            tactic=tactic,
+            timestamp=datetime.datetime.now().isoformat())
+        )
+
+        # Return results
         return ParseTechniqueResponse(response['value']), response['value'], True, "Technique Execution Successful"
+    
+    # Log technique execution failure
+    logger.info(StructuredAppLog("Technique Execution",
+        event_id = event_id,
+        source = active_entity,
+        status = "completed",
+        result = "failed",
+        technique = t_id,
+        target = None,
+        tactic=tactic,
+        timestamp=datetime.datetime.now().isoformat())
+    )
     
     return ParseTechniqueResponse(response['error']), response['error'], True, "Technique Execution Failed"
     
@@ -360,18 +438,28 @@ def DisplayAttackTechniqueConfig(n_clicks, t_id, is_open):
     
     return not is_open, technique_details
 
-'''C008 - Callback to log executed technique'''
+'''C008 - Callback to generate trace report'''
 @app.callback(
-    Output(component_id = "attack-technique-sink-hidden-div", component_property = "children"), 
-    Input(component_id= "technique-execute-button", component_property= "n_clicks"),  
-    Input(component_id = "tactic-dropdown", component_property = "value"), 
-    Input(component_id = "attack-options-radio", component_property = "value"), 
-    prevent_initial_call = True)
-def LogEventOnTriggerCallback(n_clicks, tactic, technique):
+    Output(component_id = "app-download-sink", component_property = "data", allow_duplicate=True),
+    Input(component_id= "download-trace-report-button", component_property= "n_clicks"),
+    prevent_initial_call = True
+)
+def GenerateTraceReport(n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
-
-    return LogEventOnTrigger(tactic, technique)
+    try:
+        log_lines = read_log_file(APP_LOG_FILE)
+        analysis_results = analyze_log(log_lines)
+        html_report = generate_html_report(analysis_results)
+        
+        # Save the HTML report
+        with open(f'{REPORT_DIR}/halberd_security_report.html', 'w', encoding='utf-8') as report_file:
+            report_file.write(html_report)
+        return dcc.send_file(f'{REPORT_DIR}/halberd_security_report.html')
+    except FileNotFoundError:
+        return (f"Error: The file '{APP_LOG_FILE}' was not found. Ensure the log file exists and the path is correct.")
+    except Exception as e:
+        return (f"An error occurred: {str(e)}")
 
 '''C009 - Callback to download trace logs'''
 @app.callback(
@@ -382,7 +470,14 @@ def LogEventOnTriggerCallback(n_clicks, tactic, technique):
 def DownloadTraceLogs(n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
-    return dcc.send_file(TRACE_LOG_FILE)
+    # Parse log file and create summary
+    events = parse_log_file(APP_LOG_FILE)
+    grouped_events = group_events(events)
+    summary = create_summary(grouped_events)
+
+    # Create DataFrame
+    df = pd.DataFrame(summary)
+    return dcc.send_data_frame(df.to_csv, "attack_trace.csv", index=False)
 
 '''C010 - Callback to set AWS active/default session and populate AWS access info dynamically based on selected session'''
 @app.callback(Output(component_id = "aws-access-info-div", component_property = "children"), Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"), Input(component_id = "aws-session-selector-dropdown", component_property = "value"))
@@ -897,8 +992,6 @@ def CreateNewPlaybookCallback(pb_name, pb_desc, pb_author, pb_references, n_clic
     except Exception as e:
         return True, False, "", True, str(e)
     
-    
-
 '''C028 - Callback to display technique info from playbook node in modal'''
 @app.callback(
         Output(component_id = "app-technique-info-display-modal-body", component_property = "children"),
@@ -1101,7 +1194,14 @@ def CloseAppModal(n_clicks, is_open):
 def DownloadReport(n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
-    return dcc.send_file(TRACE_LOG_FILE)
+    # Parse log file and create summary
+    events = parse_log_file(APP_LOG_FILE)
+    grouped_events = group_events(events)
+    summary = create_summary(grouped_events)
+
+    # Create DataFrame
+    df = pd.DataFrame(summary)
+    return dcc.send_data_frame(df.to_csv, "attack_trace.csv", index=False)
 
 '''C036 - Callback to display entity map node information'''
 @app.callback(
@@ -1197,7 +1297,9 @@ def GenerateDropdownOptionsCallBack(session_name):
         return all_sessions
 
 if __name__ == '__main__':
-    # initialize primary app files
+    # Run Iinitialization check
     InitializationCheck()
-    # start application
+    #Initialize logger
+    logger = setup_logger() 
+    # Start application
     app.run_server(debug = True)
