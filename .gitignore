@@ -673,6 +673,7 @@ FodyWeavers.xsd
 ### Tool specific ###
 output/
 local/
+report/
 tests.py
 Techniques/TacticsMap.yml
 Techniques/TechniquesMap.yml

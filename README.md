@@ -1,6 +1,5 @@
 <h1 align="center">    
-    <img src="assets/halberd_nbg_lg.png" height="25" width="25">
-    Halberd
+    <img src="assets/halberd_logo_banner.jpg" alt="logo" width="100%" align="center"/>
 </h1>
 <p align="center">
 Halberd is an open-source security testing tool to proactively assess cloud threat detection by executing a comprehensive array of attack techniques across multiple surfaces.
@@ -10,7 +9,7 @@ Leveraging Halberd, security teams can very quickly & easily execute attack tech
 Evaluate defenses across multiple attack surfaces, including [Entra ID](https://learn.microsoft.com/en-us/entra/identity/), [M365](https://learn.microsoft.com/en-us/microsoft-365/?view=o365-worldwide), [Azure](https://learn.microsoft.com/en-us/azure/?product=popular) and [AWS](https://docs.aws.amazon.com).
 
 <h1 align="center">    
-    <img src="assets/Halberd_Attack_View.png" height="600" width="1200">
+    <img src="assets/Halberd_Attack_View.png" width=100% align="center"/>
 </h1>
 <p align="center">
 
@@ -66,11 +65,11 @@ Checkout [Testing Use Cases](https://github.com/vectra-ai-research/Halberd/wiki/
 - M365 Techniques
 - Azure Techniques
 - AWS Techniques
-- Playbook Automation
+- Execute Attack Playbooks
 - Advanced Recon Widgets
-- Reporting
-- Testing via Intutive Web-App
-- CLI execution and usage
+- Generate Testing Reports
+- Execute Attacks via Intutive Web-App
+- Automate further with CLI access
 
 Note: Halberd is continuously evolving and getting better with more testing techniques, new capabilities & fixes. Ensure to use the latest version available whenever possible. 
 
@@ -98,7 +97,7 @@ Manage & execute attack playbooks. Also, setup automation with scheduler.
 
 ### Trace
 
-Displays log of all executed techniques and allows downloading report.
+Displays log of all executed techniques and generates testing report.
 
 Note: Different techniques require varying access & privileges for successful execution. Start by establishing relevant access using `Initial Access` tactic under each attack surface. 
 
