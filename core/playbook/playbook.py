@@ -260,18 +260,8 @@ class Playbook:
 
         # Execute technique
         technique = TechniqueRegistry.get_technique(t_id)
-        technique_params = (technique().get_parameters())
-        
-        technique_input = {}
-        i=0
-        for param in technique_params:
-            if i < len(step_input):
-                technique_input[param] = step_input[i]
-                i+=1
-            else:
-                break
 
-        output = technique().execute(**technique_input)
+        output = technique().execute(**step_input)
 
         return output
     

@@ -916,10 +916,11 @@ def UploadHalberdPlaybook(n_clicks, file_contents):
         State(component_id = "pb-add-step-wait-input", component_property = "value"),
         State(component_id = "attack-options-radio", component_property = "value"),
         State(component_id = {"type": "technique-config-display", "index": ALL}, component_property = "value"), 
+        State(component_id = {"type": "technique-config-display-boolean-switch", "index": ALL}, component_property = "on"), 
         State(component_id = {"type": "technique-config-display-file-upload", "index": ALL}, component_property = "contents"),
         prevent_initial_call=True
     )
-def AddTechniqueToPlaybook(n_clicks, selected_pb, step_no, wait, t_id, technique_input, file_content):
+def AddTechniqueToPlaybook(n_clicks, selected_pb, step_no, wait, t_id, values, bool_on, file_content):
     if n_clicks == 0:
         raise PreventUpdate
     
@@ -938,7 +939,36 @@ def AddTechniqueToPlaybook(n_clicks, selected_pb, step_no, wait, t_id, technique
                 pb_config = Playbook(pb)
                 if  pb_config.name == selected_pb:
                     break
-            
+        
+        # Create technique input
+        technique = TechniqueRegistry.get_technique(t_id)
+        technique_params = (technique().get_parameters())
+
+        technique_input = {}
+        file_input = {}
+        bool_input = {}
+        i=0
+        for param in technique_params:
+            if technique_params[param]['input_field_type'] not in ["bool", "upload"]: 
+                technique_input[param] = [*values][i]
+                i+=1
+            elif technique_params[param]['input_field_type'] == "upload":
+                file_input[param] = technique_params[param]
+            elif technique_params[param]['input_field_type'] == "bool":
+                bool_input[param] = technique_params[param]
+        
+        if file_content:
+            i = 0
+            for param in file_input:
+                technique_input[param] = [*file_content][i]
+                i+=1
+
+        if bool_on:
+            i = 0
+            for param in bool_input:
+                technique_input[param] = [*bool_on][i]
+                i+=1
+
         # Create playbook step
         try:
             new_step = PlaybookStep(module=t_id, params=technique_input, wait=wait)
