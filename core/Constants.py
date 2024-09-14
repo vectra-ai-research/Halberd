@@ -5,10 +5,12 @@ AUTOMATOR_SCHEDULES_FILE = AUTOMATOR_DIR+"/Schedules.yml"
 AUTOMATOR_EXPORTS_DIR = AUTOMATOR_DIR+"/Exports"
 
 APP_LOCAL_DIR = "./local"
-APP_LOG_FILE = APP_LOCAL_DIR+"/App_Log.csv"
-TRACE_LOG_FILE = APP_LOCAL_DIR+"/Trace_Log.csv"
+APP_LOG_FILE = APP_LOCAL_DIR+"/app.log"
 MSFT_TOKENS_FILE = APP_LOCAL_DIR+"/MSFT_Graph_Tokens.yml"
 
 OUTPUT_DIR = "./output"
+REPORT_DIR = "./report"
 
 GRAPH_ENDPOINT_URL = "https://graph.microsoft.com/v1.0"
+
+LOGGING_CONFIG_FILE = "./core/logging/logging_config.yml"
