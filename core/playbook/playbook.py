@@ -361,9 +361,10 @@ class Playbook:
         export_data = copy.deepcopy(self.data)
         export_file_path = os.path.join(AUTOMATOR_EXPORTS_DIR, export_file)
         if not include_params:
+            # Mask all values in playbook steps
             for step in export_data['PB_Sequence'].values():
                 if step['Params']:
-                    step['Params'] = ['<param_value>' for _ in step['Params']]
+                    step['Params'] = {key: "<masked>" for key in step['Params']}
         
         # Update the creation date to the current date
         export_data['PB_Creation_Date'] = time.strftime("%m-%d-%Y")
