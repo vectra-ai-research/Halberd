@@ -44,12 +44,16 @@ class M365SearchTeamsChat(BaseTechnique):
                     "message": "Failed to search teams chat"
                 }
 
+            all_matched_messages = []
             for chat in raw_response:
                 matched_message = SearchChat(chat['id'], search_keyword)
                 all_matched_messages += matched_message
 
             if all_matched_messages == []:
-                return True, all_matched_messages, None
+                return ExecutionStatus.SUCCESS, {
+                    "message": f"Found {len(all_matched_messages)} matching chats",
+                    "value": output
+                }
             
             for message in all_matched_messages:
                 # Checking keys for inconsistent data
