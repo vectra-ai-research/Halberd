@@ -60,7 +60,10 @@ class EntraPasswordSpray(BaseTechnique):
                 user_list = list(set(user_list))
             except Exception as e:
                 # file decoding failed
-                return False, {"Error" : e}, None
+                return ExecutionStatus.FAILURE, {
+                    "error": str(e),
+                    "message": "Failed to decode users file"
+                }
 
             # initialize variable to store password spray results
             attempts_count = 0
@@ -109,7 +112,7 @@ class EntraPasswordSpray(BaseTechnique):
                     # check for error codes that indicate correct password but auth failed due to other reasons
                     elif any(e_code in [50076,50072, 50074, 50005, 50131] for e_code in raw_response.json().get('error_codes')):
                         return ExecutionStatus.SUCCESS, {
-                            "message": f"Successfully found password",
+                            "message": f"Successfully found username",
                             "value": {
                                 "username_matched" : user_name,
                                 "password" : password,
