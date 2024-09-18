@@ -15,24 +15,33 @@ class AzureEnumerateResources(BaseTechnique):
                 sub_technique_name=None
             )
         ]
-        super().__init__("Enumerate Resources", "Enumerates resources in the target Azure subscription", mitre_techniques)
+        super().__init__("Enumerate Resources", "Enumerates resources in a target Azure resource group", mitre_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
         try:
+            rg_name: str = kwargs["rg_name"]
+            
+            # Input Validation
+            if rg_name in [None,""]:
+                return ExecutionStatus.FAILURE, {
+                    "error": {"input_required" : "Resource Group name"},
+                    "message": "Invalid Technique Input"
+                }
+
+            # Get credential
             credential = AzureAccess.get_azure_auth_credential()
-            # retrieve subscription id
+            # Retrieve subscription id
             current_sub_info = AzureAccess().get_current_subscription_info()
             subscription_id = current_sub_info.get("id")
             
-            # create client
+            # Create client
             resource_client = ResourceManagementClient(credential, subscription_id)
             
-            # list resource groups
-            groups_list = resource_client.resource_groups.list()
-            group_list = []
+            # List resources
+            resources_list = resource_client.resources.list_by_resource_group(rg_name)
 
-            resources = [group_list_object.name for group_list_object in groups_list]
+            resources = [resource_list_object for resource_list_object in resources_list]
 
             if resources:
                 return ExecutionStatus.SUCCESS, {
@@ -40,17 +49,17 @@ class AzureEnumerateResources(BaseTechnique):
                     "value": resources
                 }
             else:
-                return ExecutionStatus.PARTIAL_SUCCESS, {
-                    "message": f"No resources found in Azure subscription - {subscription_id}",
+                return ExecutionStatus.SUCCESS, {
+                    "message": f"No resources found in resource group - {rg_name}",
                     "value": []
                 }
         except Exception as e:
             return ExecutionStatus.FAILURE, {
                 "error": str(e),
-                "message": "Failed to enumerate resources in Azure subscription"
+                "message": "Failed to enumerate resources in resource group"
             }
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            "subscription_id": {"type": "str", "required": False, "default": None, "name": "Subscription ID", "input_field_type" : "text"}
+            "rg_name": {"type": "str", "required": True, "default": None, "name": "Resource Group Name", "input_field_type" : "text"}
         }
