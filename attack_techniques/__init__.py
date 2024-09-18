@@ -22,7 +22,10 @@ from .azure.azure_establish_access_as_user import AzureEstablishAccessAsUser
 from .azure.azure_establish_access_as_app import AzureEstablishAccessAsApp
 from .azure.azure_enumerate_vm import AzureEnumerateVm
 from .azure.azure_enumerate_resources import AzureEnumerateResources
+from .azure.azure_enumerate_resource_groups import AzureEnumerateResourceGroups
 from .azure.azure_enumerate_assigned_roles import AzureEnumerateRoleAssignment
+from .azure.azure_enumerate_vmss import AzureEnumerateVMSS
+from .azure.azure_enumerate_vm_in_vmss import AzureEnumerateVMInVMSS
 from .azure.azure_assign_role import AzureAssignRole
 from .azure.azure_create_new_resource_group import AzureCreateNewResourceGroup
 from .azure.azure_dump_automation_accounts import AzureDumpAutomationAccounts
@@ -34,6 +37,9 @@ from .azure.azure_modify_keyvault_access import AzureModifyKeyVaultAccess
 from .azure.azure_delete_vm import AzureDeleteVm
 from .azure.azure_share_storage_account_container import AzureShareStorageAccountContainer
 from .azure.azure_share_vm_disk import AzureShareVmDisk
+from .azure.azure_abuse_azure_policy_to_disable_logging import AzureAbuseAzurePolicyToDisableLogging
+from .azure.azure_deploy_malicious_extension_on_vm import AzureDeployMaliciousExtensionOnVM
+from .azure.azure_execute_script_on_vm import AzureExecuteScriptOnVM
 
 # Entra ID Techniques
 from .entra_id.entra_recon_tenant_info import EntraReconTenantInfo
