@@ -104,7 +104,7 @@ class EntraEstablishAccessAsUser(BaseTechnique):
         return {
             "username": {"type": "str", "required": True, "default":None, "name": "Username", "input_field_type" : "text"},
             "password": {"type": "str", "required": True, "default":None, "name": "Password", "input_field_type" : "password"},
-            "client_id": {"type": "str", "required": True, "default":None, "name": "Client ID", "input_field_type" : "text"},
-            "save_token": {"type": "bool", "required": True, "default":True, "name": "Save Token to App?", "input_field_type" : "bool"},
-            "set_as_active_token": {"type": "bool", "required": True, "default":False, "name": "Set As Active Token?", "input_field_type" : "bool"}
+            "client_id": {"type": "str", "required": False, "default":"d3590ed6-52b3-4102-aeff-aad2292ab01c", "name": "Client ID", "input_field_type" : "text"},
+            "save_token": {"type": "bool", "required": False, "default":True, "name": "Save Token to App?", "input_field_type" : "bool"},
+            "set_as_active_token": {"type": "bool", "required": False, "default":False, "name": "Set As Active Token?", "input_field_type" : "bool"}
         }
