@@ -1,11 +1,11 @@
 from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique
 from ..technique_registry import TechniqueRegistry
 from typing import Dict, Any, Tuple
-from azure.mgmt.resource import ResourceManagementClient
+from azure.mgmt.compute import ComputeManagementClient
 from core.azure.azure_access import AzureAccess
 
 @TechniqueRegistry.register
-class AzureEnumerateResources(BaseTechnique):
+class AzureEnumerateVMInVMSS(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
@@ -15,17 +15,24 @@ class AzureEnumerateResources(BaseTechnique):
                 sub_technique_name=None
             )
         ]
-        super().__init__("Enumerate Resources", "Enumerates resources in a target Azure resource group", mitre_techniques)
+        super().__init__("Enumerate VM in VMSS ", "Enumerates VMs in Azure Virtual Machine Scale Set (VMSS)", mitre_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
         try:
             rg_name: str = kwargs["rg_name"]
+            vmss_name: str = kwargs["vmss_name"]
             
             # Input Validation
             if rg_name in [None,""]:
                 return ExecutionStatus.FAILURE, {
                     "error": {"input_required" : "Resource Group name"},
+                    "message": "Invalid Technique Input"
+                }
+            
+            if vmss_name in ["", None]:
+                return ExecutionStatus.FAILURE, {
+                    "error": {"input_required": "VMSS Name"},
                     "message": "Invalid Technique Input"
                 }
 
@@ -36,30 +43,34 @@ class AzureEnumerateResources(BaseTechnique):
             subscription_id = current_sub_info.get("id")
             
             # Create client
-            resource_client = ResourceManagementClient(credential, subscription_id)
+            compute_client = ComputeManagementClient(credential, subscription_id)
             
             # List resources
-            resources_list = resource_client.resources.list_by_resource_group(rg_name)
+            vmss_vm_list = compute_client.virtual_machine_scale_set_vms.list(
+                resource_group_name = rg_name,
+                virtual_machine_scale_set_name = vmss_name,
+            )
 
-            resources = [resource_list_object for resource_list_object in resources_list]
+            vmss_vms = [vmss_vm_object for vmss_vm_object in vmss_vm_list]
 
-            if resources:
+            if vmss_vms:
                 return ExecutionStatus.SUCCESS, {
-                    "message": f"Successfully enumerated {len(resources)} Azure resources",
-                    "value": resources
+                    "message": f"Successfully enumerated {len(vmss)} VM in {vmss_name} VMSS",
+                    "value": vmss_vms
                 }
             else:
                 return ExecutionStatus.SUCCESS, {
-                    "message": f"No resources found in resource group - {rg_name}",
+                    "message": f"No VMs found in VMSS - {vmss_name}",
                     "value": []
                 }
         except Exception as e:
             return ExecutionStatus.FAILURE, {
                 "error": str(e),
-                "message": "Failed to enumerate resources in resource group"
+                "message": "Failed to enumerate VMs in VMSS"
             }
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            "rg_name": {"type": "str", "required": True, "default": None, "name": "Resource Group Name", "input_field_type" : "text"}
+            "rg_name": {"type": "str", "required": True, "default": None, "name": "Resource Group Name", "input_field_type" : "text"},
+            "vmss_name": {"type": "str", "required": True, "default": None, "name": "VMSS Name", "input_field_type" : "text"}
         }

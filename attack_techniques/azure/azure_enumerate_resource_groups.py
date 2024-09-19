@@ -5,7 +5,7 @@ from azure.mgmt.resource import ResourceManagementClient
 from core.azure.azure_access import AzureAccess
 
 @TechniqueRegistry.register
-class AzureEnumerateResources(BaseTechnique):
+class AzureEnumerateResourceGroups(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
@@ -15,21 +15,12 @@ class AzureEnumerateResources(BaseTechnique):
                 sub_technique_name=None
             )
         ]
-        super().__init__("Enumerate Resources", "Enumerates resources in a target Azure resource group", mitre_techniques)
+        super().__init__("Enumerate Resource Groups", "Enumerates resource groups in the target Azure subscription", mitre_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
         try:
-            rg_name: str = kwargs["rg_name"]
-            
-            # Input Validation
-            if rg_name in [None,""]:
-                return ExecutionStatus.FAILURE, {
-                    "error": {"input_required" : "Resource Group name"},
-                    "message": "Invalid Technique Input"
-                }
-
-            # Get credential
+            # Get credentials
             credential = AzureAccess.get_azure_auth_credential()
             # Retrieve subscription id
             current_sub_info = AzureAccess().get_current_subscription_info()
@@ -38,28 +29,28 @@ class AzureEnumerateResources(BaseTechnique):
             # Create client
             resource_client = ResourceManagementClient(credential, subscription_id)
             
-            # List resources
-            resources_list = resource_client.resources.list_by_resource_group(rg_name)
+            # List resource groups
+            groups_list = resource_client.resource_groups.list()
 
-            resources = [resource_list_object for resource_list_object in resources_list]
+            resource_groups = [group_list_object.name for group_list_object in groups_list]
 
-            if resources:
+            if resource_groups:
                 return ExecutionStatus.SUCCESS, {
-                    "message": f"Successfully enumerated {len(resources)} Azure resources",
-                    "value": resources
+                    "message": f"Successfully enumerated {len(resource_groups)} Azure resource groups",
+                    "value": resource_groups
                 }
             else:
                 return ExecutionStatus.SUCCESS, {
-                    "message": f"No resources found in resource group - {rg_name}",
+                    "message": f"No resource groups found in Azure subscription - {subscription_id}",
                     "value": []
                 }
         except Exception as e:
             return ExecutionStatus.FAILURE, {
                 "error": str(e),
-                "message": "Failed to enumerate resources in resource group"
+                "message": "Failed to enumerate resource groups in Azure subscription"
             }
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            "rg_name": {"type": "str", "required": True, "default": None, "name": "Resource Group Name", "input_field_type" : "text"}
+            "subscription_id": {"type": "str", "required": False, "default": None, "name": "Subscription ID", "input_field_type" : "text"}
         }
