@@ -42,7 +42,6 @@ class AzureEnumerateVMSS(BaseTechnique):
             vmss_list = compute_client.virtual_machine_scale_sets.list(
                 resource_group_name = rg_name
             )
-            print(vmss_list)
 
             vmss = [vmss_object for vmss_object in vmss_list]
 
