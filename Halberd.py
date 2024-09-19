@@ -1326,6 +1326,78 @@ def GenerateDropdownOptionsCallBack(session_name):
 
         return all_sessions
 
+'''C043 - Callback to delete EntraID access token'''
+@app.callback(
+        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True),
+        State(component_id = "token-selector-dropdown", component_property = "value"),
+        Input(component_id = "del-entra-token-button", component_property = "n_clicks"),
+        prevent_initial_call=True
+    )
+def DeleteEntraTokenCallback(value, n_clicks):
+    if n_clicks is None or value is None:
+        raise PreventUpdate
+    
+    # EntraID token manager
+    manager = EntraTokenManager()
+
+    # Load the selected token and get token info
+    selected_token = json.loads(value)
+    selected_token_entity = list(selected_token.keys())[0]
+    selected_token_exp = list(selected_token.values())[0]
+
+    # Check token in token list
+    for token in manager.get_all_tokens():
+        token_info = manager.decode_jwt_token(token)
+        if token_info != None:
+            if token_info['Entity'] == selected_token_entity and token_info['Access Exp'] == selected_token_exp:
+                access_token = token
+                break
+        else:
+            pass
+    
+    # Delete selected token
+    manager.delete_token(access_token)
+    return True, "EntraID Token Deleted"
+
+'''C044 - Callback to delete AWS session'''
+@app.callback(
+        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True),
+        State(component_id = "aws-session-selector-dropdown", component_property = "value"),
+        Input(component_id = "del-aws-session-button", component_property = "n_clicks"),
+        prevent_initial_call=True
+    )
+def DeleteAWSSessionCallback(session_name, n_clicks):
+    if n_clicks is None or session_name is None:
+        raise PreventUpdate
+    
+    # AWS session manager
+    manager = SessionManager()
+    # Delete selected session
+    manager.remove_session(session_name)
+
+    return True, "AWS Session Deleted"
+
+'''C045 - Callback to delete Azure session'''
+@app.callback(
+        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True),
+        Input(component_id = "del-az-session-button", component_property = "n_clicks"),
+        prevent_initial_call=True
+    )
+def DeleteAzureSessionCallback(n_clicks):
+    print(n_clicks)
+    if n_clicks is None:
+        raise PreventUpdate
+    
+    # Azure access manager
+    manager = AzureAccess()
+    # Logout selected session
+    logout = manager.logout()
+    if logout:
+        return True, "Azure Session Closed"
+    
 if __name__ == '__main__':
     # Run Iinitialization check
     InitializationCheck()
