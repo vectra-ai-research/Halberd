@@ -45,9 +45,15 @@ class EntraTokenManager:
         """
         Deletes token from app token store
         """
+        # Check token present in tokens list
         if token_value in self.tokens["AllTokens"]:
-            del self.tokens["AllTokens"][token_value]
+            # Get token index
+            token_index = self.tokens["AllTokens"].index(token_value)
+            # Delete token
+            del self.tokens["AllTokens"][token_index]
+            # Check if token is active token
             if self.active_token == token_value:
+                # Set active tokne to none
                 self.active_token = None
                 self.tokens['Current'] = None
             self._save_tokens()
