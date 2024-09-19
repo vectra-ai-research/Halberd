@@ -1387,7 +1387,6 @@ def DeleteAWSSessionCallback(session_name, n_clicks):
         prevent_initial_call=True
     )
 def DeleteAzureSessionCallback(n_clicks):
-    print(n_clicks)
     if n_clicks is None:
         raise PreventUpdate
     
