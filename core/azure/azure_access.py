@@ -50,6 +50,13 @@ class AzureAccess:
                 return output.decode('utf-8').strip()
         return None
     
+    def logout(self):
+        """Remove established access by logging out the current user."""
+        raw_response = subprocess.run([self.az_command, "logout"], capture_output=True)
+        if raw_response.returncode == 0:
+            return True
+        return False
+    
 def check_azure_cli_install():
     '''Function checks for installation of Azure cli on host'''
     
