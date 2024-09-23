@@ -54,11 +54,13 @@ from .entra_id.entra_check_user_validity import EntraCheckUserValidity
 from .entra_id.entra_enumerate_users import EntraEnumerateUsers
 from .entra_id.entra_enumerate_apps import EntraEnumerateApps
 from .entra_id.entra_enumerate_directory_roles import EntraEnumerateDirectoryRoles
+from .entra_id.entra_enumerate_app_permissions import EntraEnumerateAppPermissions
 from .entra_id.entra_enumerate_groups import EntraEnumerateGroups
 from .entra_id.entra_enumerate_cap import EntraEnumerateCAP
 from .entra_id.entra_enumerate_one_drive import EntraEnumerateOneDrive
 from .entra_id.entra_enumerate_sp_site import EntraEnumerateSPSites
 from .entra_id.entra_assign_directory_role import EntraAssignDirectoryRole
+from .entra_id.entra_assign_app_permission import EntraAssignAppPermission
 from .entra_id.entra_add_user_to_group import EntraAddUserToGroup
 from .entra_id.entra_generate_app_credentials import EntraGenerateAppCredentials
 from .entra_id.entra_create_backdoor_account import EntraCreateBackdoorAccount
