@@ -34,7 +34,6 @@ class GraphRequest:
                 else:
                     url = None
             except Exception as e:
-                print("GET request failed!")
                 return e
 
         return graph_results
@@ -61,25 +60,19 @@ class GraphRequest:
         """Make PATCH request to Graph API"""
         headers = self._create_headers(access_token)
         try:
-            graph_result = requests.patch(url=url, headers=headers, data=json.dumps(data)).json()
-            print('PATCH request successful!')
+            graph_result = requests.patch(url=url, headers=headers, data=json.dumps(data))
             return graph_result
         except Exception as e:
-            print(e)
-            print('PATCH request failed!')
-            return None
+            return e
 
     def put(self, url, data, access_token=None):
         """Make PUT request to Graph API"""
         headers = self._create_headers(access_token)
         try:
             graph_result = requests.put(url=url, headers=headers, data=json.dumps(data)).json()
-            print('PUT request successful!')
             return graph_result
         except Exception as e:
-            print(e)
-            print('PUT request failed!')
-            return None
+            return e
 
     @staticmethod
     def check_guid(inp_string):
