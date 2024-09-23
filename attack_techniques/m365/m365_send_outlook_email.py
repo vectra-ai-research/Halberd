@@ -14,7 +14,7 @@ class M365SendOutlookEmail(BaseTechnique):
                 sub_technique_name=None
             )
         ]
-        super().__init__("Send Outlook email", "Send email using users mailbox", mitre_techniques)
+        super().__init__("Send Outlook Email", "Send email using users mailbox potentially attempting spear-phishing attack", mitre_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
