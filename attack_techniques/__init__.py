@@ -40,6 +40,7 @@ from .azure.azure_share_vm_disk import AzureShareVmDisk
 from .azure.azure_abuse_azure_policy_to_disable_logging import AzureAbuseAzurePolicyToDisableLogging
 from .azure.azure_deploy_malicious_extension_on_vm import AzureDeployMaliciousExtensionOnVM
 from .azure.azure_execute_script_on_vm import AzureExecuteScriptOnVM
+from .azure.azure_remove_role_asignment import AzureRemoveRoleAssignment
 
 # Entra ID Techniques
 from .entra_id.entra_recon_tenant_info import EntraReconTenantInfo
