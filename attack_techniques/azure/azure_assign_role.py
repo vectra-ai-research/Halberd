@@ -22,78 +22,111 @@ class AzureAssignRole(BaseTechnique):
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
         try:
-            principal_id: str = kwargs['asignee_guid']
+            principal_id: str = kwargs['principal_id']
             principal_type: str = kwargs.get('principal_type', 'User')
-            azure_role_id: str = kwargs['azure_role_id']
+            role_name: str = kwargs['role_name']
             scope_level: str = kwargs['scope_level']
             scope_rg_name: str = kwargs.get('scope_rg_name', None)
             scope_resource_name: str = kwargs.get('scope_resource_name', None)
 
+            if principal_id in ["", None]:
+                return ExecutionStatus.FAILURE, {
+                    "error": {"input_required": "Asignee GUID"},
+                    "message": "Invalid Technique Input"
+                }
+            
+            if role_name in ["", None]:
+                return ExecutionStatus.FAILURE, {
+                    "error": {"input_required": "Role Name"},
+                    "message": "Invalid Technique Input"
+                }
+            
+            if scope_level in ["", None]:
+                return ExecutionStatus.FAILURE, {
+                    "error": {"input_required": "Role Name"},
+                    "message": "Invalid Technique Input"
+                }
+            
+            if principal_type in ["", None]:
+                principal_type == "User"
+            
+            # retrieve current subscription id
+            current_sub_info = AzureAccess().get_current_subscription_info()
+            subscription_id = current_sub_info.get("id")
+
             # set scope level
             if scope_level in ["", None, "root", "/"]:
                 scope = "/"
-            else:
-                if scope_level == "subscription":
-                    # retrieve current subscription id
-                    current_sub_info = AzureAccess().get_current_subscription_info()
-                    subscription_id = current_sub_info.get("id")
-                    scope = f"/subscriptions/{subscription_id}/"
-                elif scope_level == "rg":
-                    # retrieve subscription id
-                    current_sub_info = AzureAccess().get_current_subscription_info()
-                    subscription_id = current_sub_info.get("id")
-                    scope = f"/subscriptions/{subscription_id}/resourceGroups/{scope_rg_name}"
-                elif scope_level == "resource":
-                    # input validation
-                    if scope_rg_name in ["", None]:
-                        return False, {"Error" : "Invalid 'Resource Grouop Name' Input"}, None
-                    if scope_resource_name in ["", None]:
-                        return False, {"Error" : "Invalid Technique Input"}, None
-                    else:
-                        pattern = r"^\w+/\w+/\w+$"
-                        if re.match(pattern, scope_resource_name):
-                            # retrieve subscription id
-                            current_sub_info = AzureAccess().get_current_subscription_info()
-                            subscription_id = current_sub_info.get("id")
-                            
-                            # scope_resource expected format "resource_provider/resource_type/resource_name"
-                            scope = f"/subscriptions/{subscription_id}/resourceGroups/{scope_rg_name}/providers/{scope_resource_name}"
-                        else:
-                            return False, {"Error" : "Invalid 'Resource Name' Input"}, None
+            elif scope_level == "subscription":
+                scope = f"/subscriptions/{subscription_id}/"
+            elif scope_level == "rg":
+                scope = f"/subscriptions/{subscription_id}/resourceGroups/{scope_rg_name}"
+            elif scope_level == "resource":
+                # input validation
+                if scope_rg_name in ["", None]:
+                    return ExecutionStatus.FAILURE, {
+                        "error": {"Incorect Value" : "Resource Group Name"},
+                        "message": "For scope level = resource, Resource Group Name is required"
+                    }
+                if scope_resource_name in ["", None]:
+                    return ExecutionStatus.FAILURE, {
+                        "error": {"Incorect Value" : "Resource Name"},
+                        "message": "For scope level = resource, Resource Name is required"
+                    }
                 else:
-                    # handle invalid scope_level inputs
-                    return False, {"Error" : {"Scope Level" : "Incorrect Value", "Valid Inputs" : "'root', 'subscription', 'rg', 'resource'"}}, None
+                    pattern = r"^\w+/\w+/\w+$"
+                    if re.match(pattern, scope_resource_name):
+                        # scope_resource expected format "resource_provider/resource_type/resource_name"
+                        scope = f"/subscriptions/{subscription_id}/resourceGroups/{scope_rg_name}/providers/{scope_resource_name}"
+                        
+                    else:
+                        return ExecutionStatus.FAILURE, {
+                            "error": {"Incorect Value" : "Resource Name"},
+                            "message": "Invalid Resource Name"
+                        }
+            else:
+                # handle invalid scope_level inputs
+                return ExecutionStatus.FAILURE, {
+                    "error": {"Scope Level" : "Incorrect Value"},
+                    "message": "Incorrect scope level"
+                }
 
-
+            # Get credential
             credential = AzureAccess.get_azure_auth_credential()
-            # create client
+            # Create client
             auth_mgmt_client = AuthorizationManagementClient(credential, subscription_id)
+            
+            # Get all role definitions
+            role_definitions = auth_mgmt_client.role_definitions.list(scope)
+            # Search for the role by name to get role id
+            for role in role_definitions:
+                if role.role_name.lower() == role_name.lower():
+                    role_definition = role.id
+                    role_description = role.description
 
-            # create the role assignment
-            role_definition = f"/subscriptions/{subscription_id}/providers/Microsoft.Authorization/roleDefinitions/{azure_role_id}"
-
+            # Create the role assignment
             role_assignment_properties = {
                 "properties": {
                     "roleDefinitionId": role_definition, 
                     "principalId": principal_id, 
-                    "principalType": {principal_type}
+                    "principalType": principal_type
                 }
             }
 
-            # create unique uuid for role assignment name
+            # Create unique uuid for role assignment name
             role_assignment_name = str(uuid.uuid4())
 
-            # attempt role assignment
+            # Attempt role assignment
             role_assignment_result = auth_mgmt_client.role_assignments.create(scope = scope, role_assignment_name = role_assignment_name, parameters = role_assignment_properties)
 
             try:
                 if role_assignment_result:
                     result = {
-                        "Role Definition ID" : role_assignment_result.role_definition_id,
-                        "Principal ID" : role_assignment_result.principal_id,
-                        "Princiapl Type" : role_assignment_result.principal_type,
-                        "Description" : role_assignment_result.description,
-                        "Condition" : role_assignment_result.condition
+                        "role_assigned" : True,
+                        "role_definition_id" : role_assignment_result.role_definition_id,
+                        "principal_id" : role_assignment_result.principal_id,
+                        "princiapl_type" : role_assignment_result.principal_type,
+                        "role_description" : role_description
                     }
                     return ExecutionStatus.SUCCESS, {
                         "message": f"Successfully assigned role",
@@ -107,14 +140,14 @@ class AzureAssignRole(BaseTechnique):
         except Exception as e:
             return ExecutionStatus.FAILURE, {
                 "error": str(e),
-                "message": "Failed to enumerate Azure compute VMs"
+                "message": "Failed to assign role"
             }
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            "principal_id": {"type": "str", "required": True, "name": "Asignee GUID [User ID / Group ID / App ID]", "input_field_type" : "text"},
+            "principal_id": {"type": "str", "required": True, "default": None, "name": "Target GUID [User ID / Group ID / App ID]", "input_field_type" : "text"},
             "principal_type": {"type": "str", "required": False, "default":"User", "name": "Principal Type", "input_field_type" : "text"},
-            "azure_role_id": {"type": "str", "required": True, "name": "Azure Role ID", "input_field_type" : "text"},
+            "role_name": {"type": "str", "required": True, "default": None, "name": "Role Name", "input_field_type" : "text"},
             "scope_level": {"type": "str", "required": True, "default":"/", "name": "Scope : Level", "input_field_type" : "text"},
             "scope_rg_name": {"type": "str", "required": False, "default": None, "name": "Scope : Resource Group Name", "input_field_type" : "text"},
             "scope_resource_name": {"type": "str", "required": False, "default": None, "name": "Scope : Resource Name", "input_field_type" : "text"},
