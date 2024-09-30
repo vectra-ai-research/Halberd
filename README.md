@@ -42,7 +42,7 @@ Halberd lets you:
    pip install -r requirements.txt
    ```
 
-3. Install Azure CLI (because we're fancy like that):
+3. Install Azure CLI:
    - Windows: [Official Microsoft guide](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows?tabs=azure-cli)
    - Linux: `curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash`
    - macOS: `brew update && brew install azure-cli`
@@ -61,6 +61,8 @@ Halberd lets you:
 3. **Recon**: Gather intel with visual dashboards. Try the "Entity Map" for a nice visualization!
 4. **Automator**: Chain attacks together like a mastermind.
 5. **Trace**: Review your handiwork and generate reports.
+
+Checkout [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) for more information on testing with Halberd. 
 
 Pro tip: Start with "Initial Access" under each attack surface. You can't hack what you can't reach!
 
