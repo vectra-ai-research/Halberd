@@ -1,128 +1,79 @@
-<h1 align="center">    
-    <img src="assets/halberd_logo_banner.jpg" alt="logo" width="100%" align="center"/>
-</h1>
+# Halberd: Multi-Cloud Security Testing Framework 🛡️
+
 <p align="center">
-Halberd is a multi-cloud open-source security testing framework, designed to proactively assess cloud security by executing a comprehensive array of attack techniques.
+  <img src="assets/halberd_logo_banner.jpg" alt="logo" width="100%" align="center"/>
 </p>
-Leveraging Halberd, security teams can very quickly & easily execute attack techniques to generate telemetry and validate their detection & response capabilities via a simple intuitive web application.
 
-Evaluate defenses across multiple attack surfaces, including [Entra ID](https://learn.microsoft.com/en-us/entra/identity/), [M365](https://learn.microsoft.com/en-us/microsoft-365/?view=o365-worldwide), [Azure](https://learn.microsoft.com/en-us/azure/?product=popular) and [AWS](https://docs.aws.amazon.com).
+Halberd is a powerful, multi-cloud security testing framework. Born out of the need for a unified, easy-to-use tool, Halberd enables you to proactively assess your cloud defenses by executing a comprehensive array of attack techniques across Entra ID, M365, Azure, and AWS. With its intuitive web interface, you can simulate real-world attacks, generate valuable telemetry, and validate your security controls with ease & speed.
 
-<h1 align="center">    
-    <img src="assets/Halberd_Attack_View.png" width=100% align="center"/>
-</h1>
+## What's the big deal? 🤔
+
+Halberd lets you:
+
+- Execute attack techniques faster than you can say "cloud misconfiguration"
+- Generate telemetry that'll make your SOC team beam with joy
+- Validate your defenses across Entra ID, M365, Azure, and AWS
+- Do it all through a slick web interface that won't make your eyes bleed
+
 <p align="center">
+  <img src="assets/Halberd_Attack_View.png" width=100% align="center"/>
+</p>
 
-## Overview
-[Module details](https://github.com/vectra-ai-research/Halberd/wiki/Module-Details) & [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) elaborates on specific executable techniques and interesting capabalities of Halberd.
+## Features that make Halberd awesome! 😮
 
-Checkout [Testing Use Cases](https://github.com/vectra-ai-research/Halberd/wiki/Testing-Use-Cases) for examples. 
+- 🎭 Realistic attack simulations across multiple cloud platforms
+- 🧠 Smart recon dashboards for gathering intel like a pro
+- 🎬 Attack playbooks to channel your inner hacker
+- 📊 Insightful reports to impress your boss (or your cat)
+- 🖥️ CLI access for when you're feeling extra geeky
 
-- Entra ID Techniques
-- M365 Techniques
-- Azure Techniques
-- AWS Techniques
-- Execute Attack Playbooks
-- Advanced Recon Dashboards
-- Generate Testing Reports
-- Execute Attacks via Intutive Web-App
-- Automate further with CLI access
+## Getting Started: 0 to Testing in 5 Minutes ⏱️
 
-Note: Halberd is continuously evolving and getting better with more testing techniques, new capabilities & fixes. Ensure to use the latest version available whenever possible. 
+1. Clone that repo:
+   ```
+   git clone https://github.com/vectra-ai-research/Halberd.git
+   ```
 
-## Setup
+2. Set up your playground:
+   ```
+   cd Halberd
+   python3 -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   pip install -r requirements.txt
+   ```
 
+3. Install Azure CLI (because we're fancy like that):
+   - Windows: [Official Microsoft guide](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows?tabs=azure-cli)
+   - Linux: `curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash`
+   - macOS: `brew update && brew install azure-cli`
 
+4. Launch Halberd:
+   ```
+   python3 Halberd.py
+   ```
 
-### Install
-Halberd works on Linux, macOS & Windows. Checkout detailed OS specific setup instructions in [deployment guide](https://github.com/vectra-ai-research/Halberd/wiki/Deployment-Guide). 
+5. Point your browser to `http://127.0.0.1:8050/` and start testing
 
-1. Clone / download Halberd
-```
-$ git clone https://github.com/vectra-ai-research/Halberd.git
-```
-2. Move to Halberd directory
-```
-$ cd Halberd
-```
-3. Create virtual environment
-```
-$ python3 -m venv venv
-```
-4. Activate virtual environment
+## Using Halberd: Choose Your Own Adventure 🗺️
 
-***Windows***
-```
-.venv/Scripts/activate
-```
-***Linux / macOS***
-```
-source venv/bin/activate
-```
-5. Install requirements
-```
-$ pip install -r requirements.txt
-```
-6. Install Azure CLI
+1. **Access**: Manage your tokens and sessions like a digital locksmith.
+2. **Attack**: Pick your poison – surface, tactic, technique – and start your testing!
+3. **Recon**: Gather intel with visual dashboards. Try the "Entity Map" for a nice visualization!
+4. **Automator**: Chain attacks together like a mastermind.
+5. **Trace**: Review your handiwork and generate reports.
 
-***Windows***
-```
-Install Azure CLI : https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows?tabs=azure-cli
-```
-***Linux / macOS***
-```
-curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-```
-***macOS***
-```
-$ brew update && brew install azure-cli
-```
-7. Start Halberd
-```
-$ python3 Halberd.py
-```
+Pro tip: Start with "Initial Access" under each attack surface. You can't hack what you can't reach!
 
-## Getting Started
+## Want to Join the Party? 🎉
 
-Once Halberd is deployed & running, start testing by accessing ```http://127.0.0.1:8050/``` in your browser. 
+Got ideas? Found a bug? Want to add that one cool feature? We're all ears! Check out our [contribution guidelines](https://github.com/vectra-ai-research/Halberd/wiki/Contributions) and let's make Halberd even more awesome together.
 
-### Access
+## Who's Behind This Madness? 🕵️‍♂️
 
-Manage access-tokens/clients/sessions and review current access information for various targets.
+Halberd is the brainchild of [Arpan Sarkar](https://www.linkedin.com/in/arpan-sarkar/), a cloud security enthusiast with a penchant for making life harder for attackers (and easier for defenders).
 
-### Attack
+## Standing on the Shoulders of Giants 🏔️
 
-Configure and execute techniques for testing. From the `Attack` view, select `Attack Surface > Tactic > Technique > Execute`.  
+We didn't reinvent the wheel – we just made it roll smoother. Check out our [inspirations](https://github.com/vectra-ai-research/Halberd/wiki/Additional-(Amazing)-Resources) and show some love to the amazing security tools that paved the way.
 
-### Recon
-
-Provides advanced reconnaissance dashboards enabling fast and easy information gathering by automatically executing sequence of reconnaissance in the environment.
-
-Example: Navigate to `Recon` > `Entity Map` > `Generate Entity Map` to generate an interactive graph of access & privileges in the cloud environment.
-
-### Automator
-
-Manage & execute attack playbooks.
-
-### Trace
-
-Review log of executed techniques and generate comprehensive testing report.
-
-Note: Different techniques require varying access & privileges for successful execution. Start by establishing relevant access using `Initial Access` tactic under each attack surface. 
-
-Checkout [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) for detailed information on testing with Halberd. 
-
-Some Quick Links: 
-- [Executing Technique](https://github.com/vectra-ai-research/Halberd/wiki/Execute-Attack-Techniques)
-- [Manage Access](https://github.com/vectra-ai-research/Halberd/wiki/Manage-Access)
-
-## Contribute
-Thanks for considering contributing to Halberd! Your contributions will make security testing easier & better. If you are interested in contributing to Halberd, checkout guidance on [contributions](https://github.com/vectra-ai-research/Halberd/wiki/Contributions) & [development focus areas](https://github.com/vectra-ai-research/Halberd/wiki/Development-Focus-Areas).
-- Submit bugs & issues [here](https://github.com/vectra-ai-research/Halberd/issues/new)
-
-## Contact
-If you found this tool useful, want to share interesting use-cases or ideas - reach out & share them!
- - Creator & Maintainer : [Arpan Sarkar](https://www.linkedin.com/in/arpan-sarkar/)
-
-## Inspiration
-Halberd is inspired from many amazing ideas and work produced by several talented members/groups of the security community. Checkout some of them [here](https://github.com/vectra-ai-research/Halberd/wiki/Additional-(Amazing)-Resources).
+Now go forth and hack responsibly! 🚀
