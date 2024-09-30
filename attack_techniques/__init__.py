@@ -7,14 +7,22 @@ from .aws.aws_enumerate_iam_policies import AWSEnumerateIAMPolicies
 from .aws.aws_enumerate_dynamodb_tables import AWSEnumerateDynamoDBTables
 from .aws.aws_enumerate_s3_bucket_objects import AWSEnumerateS3BucketObjects
 from .aws.aws_enumerate_ec2_instances import AWSEnumerateEC2Instances
+from .aws.aws_enumerate_cloudtrail_trails import AWSEnumerateCloudtrailTrails
+from .aws.aws_enumerate_guardduty_detectors import AWSEnumerateGuarddutyDetectors
 from .aws.aws_recon_iam_user_info import AWSReconIAMUserInfo
 from .aws.aws_recon_account_authorization_info import AWSReconAccountAuthorizationInfo
+from .aws.aws_recon_risky_iam_policy_users import AWSReconRiskyIAMPolicyUsers
+from .aws.aws_recon_s3_public_buckets import AWSReconS3PublicBuckets
+from .aws.aws_recon_ec2_over_permissive_sg import AWSReconEC2OverPermissiveSG
 from .aws.aws_get_bucket_acl import AWSGetS3BucketACL
 from .aws.aws_assume_iam_role import AWSAssumeIAMRole
 from .aws.aws_exfil_s3_bucket import AWSExfilS3Bucket
 from .aws.aws_delete_s3_bucket import AWSDeleteS3Bucket
 from .aws.aws_delete_dynamodb_table import AWSDeleteDynamoDBTable
 from .aws.aws_delete_s3_bucket_object import AWSDeleteS3BucketObject
+from .aws.aws_disable_cloudtrail_logging import AWSDisableCloudtrailLogging
+from .aws.aws_modify_guardduty_trusted_ip import AWSModifyGuaddutyTrustedIP
+from .aws.aws_expose_s3_bucket_public import AWSExposeS3BucketPublic
 
 # Azure Techniques
 from .azure.azure_password_spray import AzurePasswordSpray

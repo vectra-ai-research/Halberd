@@ -29,32 +29,33 @@ class AzureAssignRole(BaseTechnique):
             scope_rg_name: str = kwargs.get('scope_rg_name', None)
             scope_resource_name: str = kwargs.get('scope_resource_name', None)
 
+            # Input validation
             if principal_id in ["", None]:
                 return ExecutionStatus.FAILURE, {
-                    "error": {"input_required": "Asignee GUID"},
-                    "message": "Invalid Technique Input"
+                    "error": "Invalid Technique Input",
+                    "message": {"input_required": "Asignee GUID"}
                 }
             
             if role_name in ["", None]:
                 return ExecutionStatus.FAILURE, {
-                    "error": {"input_required": "Role Name"},
-                    "message": "Invalid Technique Input"
+                    "error": "Invalid Technique Input",
+                    "message": {"input_required": "Role Name"}
                 }
             
             if scope_level in ["", None]:
                 return ExecutionStatus.FAILURE, {
-                    "error": {"input_required": "Role Name"},
-                    "message": "Invalid Technique Input"
+                    "error": "Invalid Technique Input",
+                    "message": {"input_required": "Role Name"}
                 }
             
             if principal_type in ["", None]:
-                principal_type == "User"
+                principal_type == "User" # Defaults to user
             
-            # retrieve current subscription id
+            # Retrieve current subscription id
             current_sub_info = AzureAccess().get_current_subscription_info()
             subscription_id = current_sub_info.get("id")
 
-            # set scope level
+            # Set scope level
             if scope_level in ["", None, "root", "/"]:
                 scope = "/"
             elif scope_level == "subscription":
@@ -62,7 +63,7 @@ class AzureAssignRole(BaseTechnique):
             elif scope_level == "rg":
                 scope = f"/subscriptions/{subscription_id}/resourceGroups/{scope_rg_name}"
             elif scope_level == "resource":
-                # input validation
+                # Input validation
                 if scope_rg_name in ["", None]:
                     return ExecutionStatus.FAILURE, {
                         "error": {"Incorect Value" : "Resource Group Name"},
@@ -85,7 +86,7 @@ class AzureAssignRole(BaseTechnique):
                             "message": "Invalid Resource Name"
                         }
             else:
-                # handle invalid scope_level inputs
+                # Handle invalid scope_level inputs
                 return ExecutionStatus.FAILURE, {
                     "error": {"Scope Level" : "Incorrect Value"},
                     "message": "Incorrect scope level"

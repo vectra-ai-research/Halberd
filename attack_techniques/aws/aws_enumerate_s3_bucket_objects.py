@@ -51,7 +51,7 @@ class AWSEnumerateS3BucketObjects(BaseTechnique):
                 "error": raw_response.get('ResponseMetadata','N/A'),
                 "message": "Failed to enumerate S3 bucket objects"
             }
-        except ClientError as e:
+        except Exception as e:
             return ExecutionStatus.FAILURE, {
                 "error": str(e),
                 "message": "Failed to enumerate S3 bucket objects"
@@ -59,5 +59,5 @@ class AWSEnumerateS3BucketObjects(BaseTechnique):
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            "bucket_name": {"type": "str", "required": False, "default": "us-west-2", "name": "S3 Bucket Name", "input_field_type" : "text"}
+            "bucket_name": {"type": "str", "required": True, "default": None, "name": "S3 Bucket Name", "input_field_type" : "text"}
         }

@@ -53,11 +53,11 @@ page_layout = html.Div([
         dbc.Col([
             html.H1("Welcome to Halberd", className="display-4 mb-4 text-success"),
             html.P(
-                "Execute security testing with advanced attack emulation across cloud environments.",
+                "Execute multi-cloud security testing with advanced attack emulation.",
                 className="lead mb-4"
             ),
             dbc.Button("Attack", href = dash.get_relative_path("/attack"), color="light", size="lg", className="me-2"),
-            dbc.Button("Learn More", href = "https://github.com/vectra-ai-research/Halberd/wiki", external_link=True, target='_blank', color="primary", size="lg"),
+            dbc.Button("Halberd Wiki", href = "https://github.com/vectra-ai-research/Halberd/wiki", external_link=True, target='_blank', color="primary", size="lg"),
         ],
         md=8)
     ],
@@ -158,7 +158,7 @@ page_layout = html.Div([
     # home footer
     dbc.Row([
         dbc.Col([
-            html.P(f"Halberd Security Testing (v2.0).", className="text-muted")
+            html.P(f"Halberd : Multi-Cloud Security Testing (v1.1).", className="text-muted")
         ]),
         dbc.Col([
             dcc.Link("Created by @openrec0n (Arpan Sarkar)", href= "https://github.com/openrec0n", target="_blank", style={'float': 'right'})

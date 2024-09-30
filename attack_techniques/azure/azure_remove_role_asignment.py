@@ -3,8 +3,6 @@ from ..technique_registry import TechniqueRegistry
 import re
 from typing import Dict, Any, Tuple
 from azure.mgmt.authorization import AuthorizationManagementClient
-from azure.mgmt.resource import ResourceManagementClient
-from azure.mgmt.authorization.models import RoleAssignmentFilter
 from core.azure.azure_access import AzureAccess
 
 @TechniqueRegistry.register
@@ -24,11 +22,29 @@ class AzureRemoveRoleAssignment(BaseTechnique):
         self.validate_parameters(kwargs)
         try:
             principal_id: str = kwargs['principal_id']
-            # azure_role_id: str = kwargs['azure_role_id']
             role_name: str = kwargs['role_name']
             scope_level: str = kwargs['scope_level']
             scope_rg_name: str = kwargs.get('scope_rg_name', None)
             scope_resource_name: str = kwargs.get('scope_resource_name', None)
+
+            # Input validation
+            if principal_id in ["", None]:
+                return ExecutionStatus.FAILURE, {
+                    "error": "Invalid Technique Input",
+                    "message": {"input_required": "Asignee GUID"}
+                }
+            
+            if role_name in ["", None]:
+                return ExecutionStatus.FAILURE, {
+                    "error": "Invalid Technique Input",
+                    "message": {"input_required": "Role Name"}
+                }
+            
+            if scope_level in ["", None]:
+                return ExecutionStatus.FAILURE, {
+                    "error": "Invalid Technique Input",
+                    "message": {"input_required": "Role Name"}
+                }
 
             # set scope level
             if scope_level in ["", None, "root", "/"]:
@@ -94,10 +110,8 @@ class AzureRemoveRoleAssignment(BaseTechnique):
             for role in role_definitions:
                 if role.role_name.lower() == role_name.lower():
                     role_id = role.id
-            print(role_id)
 
             # Get role assignments for the scope
-            print(scope)
             role_assignments = auth_mgmt_client.role_assignments.list_for_scope(scope)
 
             # Find and delete the specific role assignment
