@@ -424,11 +424,11 @@ def update_entity_map(n_clicks, map_layout, filter_category):
     return GenerateEntityMappingGraph(map_layout, filter_category)
 
 '''C007 - Callback to open/close Technique Info modal'''
-@app.callback(Output(component_id = "app-technique-info-display-modal", component_property = "is_open", allow_duplicate=True),
-              Output("app-technique-info-display-modal-body", "children", allow_duplicate = True), 
-              Input(component_id= "technique-info-display-button", component_property= "n_clicks"),
-              State(component_id = "attack-options-radio", component_property = "value"), 
-              [State("app-technique-info-display-modal", "is_open")], prevent_initial_call=True
+@app.callback(
+        Output(component_id = "app-technique-info-display-modal", component_property = "is_open", allow_duplicate=True),Output("app-technique-info-display-modal-body", "children", allow_duplicate = True),
+        Input(component_id= "technique-info-display-button", component_property= "n_clicks"),
+        State(component_id = "attack-options-radio", component_property = "value"), 
+        [State("app-technique-info-display-modal", "is_open")], prevent_initial_call=True
 )
 def DisplayAttackTechniqueConfig(n_clicks, t_id, is_open):
     if n_clicks == 0:
@@ -481,7 +481,10 @@ def DownloadTraceLogs(n_clicks):
     return dcc.send_data_frame(df.to_csv, "attack_trace.csv", index=False)
 
 '''C010 - Callback to set AWS active/default session and populate AWS access info dynamically based on selected session'''
-@app.callback(Output(component_id = "aws-access-info-div", component_property = "children"), Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"), Input(component_id = "aws-session-selector-dropdown", component_property = "value"))
+@app.callback(
+        Output(component_id = "aws-access-info-div", component_property = "children"), 
+        Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"), 
+        Input(component_id = "aws-session-selector-dropdown", component_property = "value"))
 def GenerateAccessInfoDivCallBack(n_interval, session_name):
     # n_intervals will refresh the access info periodically
     info_output_div = []
@@ -520,9 +523,10 @@ def GenerateAccessInfoDivCallBack(n_interval, session_name):
         info_output_div.append(html.Div("No Valid Session", className="text-danger"))
         return info_output_div
 
-
 '''C011 - Callback to populate EntraID access info'''
-@app.callback(Output(component_id = "access-info-div", component_property = "children"), Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"))
+@app.callback(
+        Output(component_id = "access-info-div", component_property = "children"), 
+        Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"))
 def GenerateAccessInfoDivCallBack(n_intervals):
     info_output_div = []
     manager = EntraTokenManager()
@@ -571,7 +575,10 @@ def GenerateAccessInfoDivCallBack(n_intervals):
         return "Failed to decode access token"
 
 '''C012 - Callback to select Entra ID access token'''
-@app.callback(Output(component_id = "access-info-div", component_property = "children",  allow_duplicate=True), Input(component_id = "token-selector-dropdown", component_property = "value"), prevent_initial_call=True)
+@app.callback(
+        Output(component_id = "access-info-div", component_property = "children",  allow_duplicate=True), 
+        Input(component_id = "token-selector-dropdown", component_property = "value"), 
+        prevent_initial_call=True)
 def UpdateInfoOnTokenSelectCallBack(value):
 
     manager = EntraTokenManager()
@@ -625,9 +632,10 @@ def UpdateInfoOnTokenSelectCallBack(value):
     else:
         return "No token selected"
 
-
 '''C013 - Callback to generate Entra ID token options in Access dropdown'''
-@app.callback(Output(component_id = "token-selector-dropdown", component_property = "options"), Input(component_id = "token-selector-dropdown", component_property = "title"))
+@app.callback(
+        Output(component_id = "token-selector-dropdown", component_property = "options"), 
+        Input(component_id = "token-selector-dropdown", component_property = "title"))
 def GenerateDropdownOptionsCallBack(title):
     manager = EntraTokenManager()
     if title == None:
@@ -645,7 +653,9 @@ def GenerateDropdownOptionsCallBack(title):
         return all_tokens
 
 '''C014 - Recon page tab switcher'''
-@app.callback(Output("recon-content-div", "children"), Input("recon-target-tabs", "active_tab"))
+@app.callback(
+        Output("recon-content-div", "children"), 
+        Input("recon-target-tabs", "active_tab"))
 def TabSwitcher(tab):
     if tab == "tab-recon-entity-map":
         from pages.dashboard.entity_map import page_layout
@@ -661,20 +671,28 @@ def TabSwitcher(tab):
         return page_layout
 
 '''C015 - Callback to generate data in role recon dashboard'''
-@app.callback(Output(component_id = "role-name-recon-div", component_property = "children"), Output(component_id = "role-template-id-recon-div", component_property = "children"), Output(component_id = "role-id-recon-div", component_property = "children"), Output(component_id = "role-member-count-recon-div", component_property = "children"), Output(component_id = "role-member-recon-div", component_property = "children"), Output(component_id = "role-description-recon-div", component_property = "children"), Input(component_id= "role-recon-start-button", component_property= "n_clicks"),Input(component_id = "role-recon-input", component_property = "value"))
+@app.callback(
+        Output(component_id = "role-name-recon-div", component_property = "children"), 
+        Output(component_id = "role-template-id-recon-div", component_property = "children"), 
+        Output(component_id = "role-id-recon-div", component_property = "children"), 
+        Output(component_id = "role-member-count-recon-div", component_property = "children"), 
+        Output(component_id = "role-member-recon-div", component_property = "children"), 
+        Output(component_id = "role-description-recon-div", component_property = "children"), 
+        Input(component_id= "role-recon-start-button", component_property= "n_clicks"),
+        Input(component_id = "role-recon-input", component_property = "value"))
 def ExecuteRecon(n_clicks, role_name):
     if n_clicks == 0:
         raise PreventUpdate
     
-    # input validation
+    # Input validation
     if role_name in ["",None]:
         response = "N/A"
         return response, response, response, response, response, response
     
-    # import recon functions
+    # Import recon functions
     from pages.dashboard.recon_roles import FindRole, ReconRoleMembers
     
-    # execute recon
+    # Execute recon
     role_name, role_id, role_template_id, role_description = FindRole(role_name)
     member_count, role_members = ReconRoleMembers(role_template_id)
 
@@ -701,15 +719,15 @@ def ExecuteRecon(n_clicks, user_string):
     if n_clicks == 0:
         raise PreventUpdate
     
-    # input validation
+    # Input validation
     if user_string in ["",None]:
         response = "N/A"
         return response, response, response, response, response, response, response, response, response, response, response, response, response
     
-    # import recon functions
+    # Import recon functions
     from pages.dashboard.recon_users import FindUser, ReconUserMemberships, ReconUserAssignedApps
 
-    # execute recon
+    # Execute recon
     user_id, user_upn, user_display_name, user_mail, user_job_title, user_off_location, user_phone = FindUser(user_string)
     groups_count, role_count, group_membership, role_assigned = ReconUserMemberships(user_id)
     app_assigned_count, user_app_assignments = ReconUserAssignedApps(user_id)
@@ -717,28 +735,29 @@ def ExecuteRecon(n_clicks, user_string):
     return user_display_name, user_id, user_upn, user_mail, user_job_title, user_off_location, user_phone, groups_count, role_count, group_membership, role_assigned, app_assigned_count, user_app_assignments
 
 '''C017 - Callback to populate Azure access info dynamically based on selected subscription'''
-@app.callback(Output(component_id = "azure-access-info-div", component_property = "children"), Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"), Input(component_id = "azure-subscription-selector-dropdown", component_property = "value"))
+@app.callback(
+        Output(component_id = "azure-access-info-div", component_property = "children"), 
+        Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"), 
+        Input(component_id = "azure-subscription-selector-dropdown", component_property = "value"))
 def GenerateAccessInfoDivCallBack(n_intervals, value):
     # n_intervals will refresh the access info periodically
-
     info_output_div = []
     info_output_div.append(html.Br())
     info_output_div.append(html.H5("Access : "))
     
-    
     if value == None:
-        # if no subscription has been selected, proceed with default subscription
+        # If no subscription is selected, proceed with default subscription
         pass
     else:
         selected_subscription = value
         AzureAccess().set_active_subscription(selected_subscription)
 
-    # get set subscription info
+    # Get set subscription info
     current_access = AzureAccess().get_current_subscription_info()
     
     try:
         if current_access != None:
-            # construct session info to display
+            # Construct session info to display
             info_output_div.append(html.H5("Active Session", className="text-success"))
             info_output_div.append(html.Br())
             info_output_div.append(html.Br())
@@ -782,7 +801,9 @@ def GenerateAccessInfoDivCallBack(n_intervals, value):
         return info_output_div
 
 '''C018 - Callback to generate Azure subscription options in Access dropdown'''
-@app.callback(Output(component_id = "azure-subscription-selector-dropdown", component_property = "options"), Input(component_id = "azure-subscription-selector-dropdown", component_property = "title"))
+@app.callback(
+        Output(component_id = "azure-subscription-selector-dropdown", component_property = "options"), 
+        Input(component_id = "azure-subscription-selector-dropdown", component_property = "title"))
 def GenerateDropdownOptionsCallBack(title):
     if title == None:
         all_subscriptions = []
@@ -798,7 +819,11 @@ def GenerateDropdownOptionsCallBack(title):
         return all_subscriptions
 
 '''C019 - Callback to generate automated attack sequence visualization'''
-@app.callback(Output(component_id = "attack-automator-path-display-div", component_property = "children"), Output(component_id = "playbook-node-data-div", component_property = "children", allow_duplicate= True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), prevent_initial_call=True)
+@app.callback(
+        Output(component_id = "attack-automator-path-display-div", component_property = "children"), 
+        Output(component_id = "playbook-node-data-div", component_property = "children", allow_duplicate= True), 
+        Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
+        prevent_initial_call=True)
 def DisplayAttackSequenceViz(selected_pb):
     if selected_pb:
         return AttackSequenceVizGenerator(selected_pb), DisplayPlaybookInfo(selected_pb) 
@@ -820,7 +845,7 @@ def ExecuteAttackSequence(playbook_name, n_clicks):
     if playbook_name == None:
         return False, "", True, "Playbook Execution Aborted - You are missing something : Select a playbook"
     
-    # execute playbook
+    # Execute playbook
     for pb in GetAllPlaybooks():
         pb_config = Playbook(pb)
         if pb_config.name == playbook_name:
@@ -837,26 +862,42 @@ def ExecuteAttackSequence(playbook_name, n_clicks):
         return False, "", True, f"Playbook Execution Failed - Unexpected Error : {str(e)}"
 
 '''C021 - Callback to open attack scheduler modal'''
-@app.callback(Output(component_id = "scheduler-modal", component_property = "is_open"), [Input("toggle-scheduler-modal-open-button", "n_clicks"), Input("toggle-scheduler-modal-close-button", "n_clicks")], [State("scheduler-modal", "is_open")])
+@app.callback(
+        Output(component_id = "scheduler-modal", component_property = "is_open"), 
+        [Input("toggle-scheduler-modal-open-button", "n_clicks"), 
+        Input("toggle-scheduler-modal-close-button", "n_clicks")], 
+        [State("scheduler-modal", "is_open")])
 def toggle_modal(open_trigger, close_trigger, is_open):
     if open_trigger or close_trigger:
         return not is_open
     return is_open
 
 '''C022 - Callback to create new automator schedule'''
-@app.callback(Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Output(component_id = "scheduler-modal", component_property = "is_open", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "set-time-input", component_property = "value"), Input(component_id = "automator-date-range-picker", component_property = "start_date"), Input(component_id = "automator-date-range-picker", component_property = "end_date"), Input(component_id = "schedule-repeat-boolean", component_property = "on"), Input(component_id = "repeat-options-dropdown", component_property = "value"), Input(component_id = "schedule-name-input", component_property = "value"), Input(component_id = "schedule-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
+@app.callback(
+        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
+        Output(component_id = "scheduler-modal", component_property = "is_open", allow_duplicate=True), 
+        Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
+        Input(component_id = "set-time-input", component_property = "value"), 
+        Input(component_id = "automator-date-range-picker", component_property = "start_date"), 
+        Input(component_id = "automator-date-range-picker", component_property = "end_date"), 
+        Input(component_id = "schedule-repeat-boolean", component_property = "on"), 
+        Input(component_id = "repeat-options-dropdown", component_property = "value"), 
+        Input(component_id = "schedule-name-input", component_property = "value"), 
+        Input(component_id = "schedule-sequence-button", component_property = "n_clicks"), 
+        prevent_initial_call=True)
 def CreateNewAutomatorSchedule(playbook_id, execution_time, start_date, end_date, repeat_flag, repeat_frequency, schedule_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     
-    # send notification if no playbook selected from dropdown
+    # Send notification if no playbook selected from dropdown
     if playbook_id == None:
         return True, "No Playbook Selected to Schedule", False
     
-    # create new schedule
+    # Create new schedule
     AddNewSchedule(schedule_name, playbook_id, start_date, end_date, execution_time, repeat_flag, repeat_frequency)
 
-    # send notification after new schedule is created
+    # Send notification after new schedule is created
     return True, "Playbook Scheduled", False
 
 '''C023 - Callback to export playbook'''
@@ -889,7 +930,7 @@ def ExportAttackPlaybook(playbook_name, mask_param, export_file_name, n_clicks):
     # Export playbook
     playbook_export_file_path = Playbook(playbook_file).export(export_file = export_file_name, include_params=not(mask_param))
 
-    # download playbook and send app notification
+    # Download playbook and send app notification
     return dcc.send_file(playbook_export_file_path), True, "Playbook Exported", False, ""
 
 '''C024 - Callback to import playbook'''
@@ -913,7 +954,6 @@ def UploadHalberdPlaybook(n_clicks, file_contents):
         except Exception as e:
             # Display error in modal pop up
             return False, "", True, str(e)
-
     else:
         raise PreventUpdate
 
@@ -937,7 +977,7 @@ def AddTechniqueToPlaybook(n_clicks, selected_pb, step_no, wait, t_id, values, b
     if n_clicks == 0:
         raise PreventUpdate
     
-    # if config has file as input
+    # If config has file as input
     if selected_pb:
         if file_content:
             for pb in GetAllPlaybooks():
@@ -1001,7 +1041,10 @@ def AddTechniqueToPlaybook(n_clicks, selected_pb, step_no, wait, t_id, values, b
         return False, "", True, "Cannot Add Step : No Playbook Selected"
 
 '''C026 - Callback to open playbook creator modal'''
-@app.callback(Output(component_id = "playbook-creator-modal", component_property = "is_open"), [Input("pb-creator-modal-open-button", "n_clicks"), Input("pb-creator-modal-close-button", "n_clicks")], [State("playbook-creator-modal", "is_open")])
+@app.callback(
+        Output(component_id = "playbook-creator-modal", component_property = "is_open"), 
+        [Input("pb-creator-modal-open-button", "n_clicks"), Input("pb-creator-modal-close-button", "n_clicks")], 
+        [State("playbook-creator-modal", "is_open")])
 def toggle_modal(open_trigger, close_trigger, is_open):
     if open_trigger or close_trigger:
         return not is_open
@@ -1045,7 +1088,7 @@ def CreateNewPlaybookCallback(pb_name, pb_desc, pb_author, pb_references, n_clic
     )
 def DisplayPlaybookNodeData(data, is_open):
     if data:
-        # extract module_id from node label
+        # Extract module_id from node label
         if data['label'] != "None":
             info = data['info']
             # module_id = data['label'].split(":")[0]
@@ -1073,7 +1116,7 @@ def DisplayPlaybookNodeData(data):
     display_elements = []
     if data:
 
-        # extract module_id from node label
+        # Extract module_id from node label
         if data['label'] != "None":
             info = data['info']
         else:
@@ -1097,7 +1140,7 @@ def DisplayPlaybookNodeData(data):
             display_elements.append(html.A(module_attack_surface))
             display_elements.append(html.Br())
 
-            # display module mitre info
+            # Display module mitre info
             if technique.mitre_techniques:
                 module_mitre_techniques = technique.mitre_techniques
 
@@ -1118,12 +1161,6 @@ def DisplayPlaybookNodeData(data):
                         display_elements.append(html.A(technique_name))
                     display_elements.append(html.Br())
 
-            # display azure threat research matrix info
-            # if module_info['References']['AzureThreatResearchMatrix'][0]:
-            #     module_azure_trm = module_info['References']['AzureThreatResearchMatrix']
-            #     display_elements.append(html.B("Module Azure TRM Info : "))
-            #     display_elements.append(html.A(str(module_azure_trm)))
-            #     display_elements.append(html.Br())
             return display_elements
         except:
             display_elements.append(html.B(f"Node Error : Invalid Node Data"))
@@ -1148,7 +1185,9 @@ def toggle_modal(n1, n2, n3, is_open):
     return is_open
 
 '''C031 - Callback to generate playbook options in Automator - Attack Playbook dropdown'''
-@app.callback(Output(component_id = "automator-pb-selector-dropdown", component_property = "options"), Input(component_id = "automator-pb-selector-dropdown", component_property = "title"))
+@app.callback(
+        Output(component_id = "automator-pb-selector-dropdown", component_property = "options"), 
+        Input(component_id = "automator-pb-selector-dropdown", component_property = "title"))
 def GenerateDropdownOptionsCallBack(title):
     if title == None:
         playbook_dropdown_option = []    
@@ -1175,11 +1214,11 @@ def DeleteAttackPlaybook(n_clicks, playbook_name):
     if n_clicks == 0:
         raise PreventUpdate
         
-    # if no playbook is selected, send notification
+    # If no playbook is selected, send notification
     if playbook_name == None:
         return False, "", True, "Delete Error : No Playbook Selected to Delete"
     
-    # get the selected playbook file location
+    # Get the selected playbook file location
     for pb in GetAllPlaybooks():
         pb_config = Playbook(pb)
         if  pb_config.name == playbook_name:
@@ -1200,16 +1239,16 @@ def DeleteAttackPlaybook(n_clicks, playbook_name):
     prevent_initial_call=True
 )
 def ToggleAppModalFromHomeMatrix(n_clicks, is_open):
-    # prevent call back on page load
+    # Prevent call back on page load
     if any(item is not None for item in n_clicks):
         if not dash.callback_context.triggered:
             return is_open, ""
         
-        # extract technique id
+        # Extract technique id
         triggered_id = dash.callback_context.triggered[0]["prop_id"]
         technique_id = eval(triggered_id.split(".")[0])["index"]
 
-        # generate technique information
+        # Generate technique information
         technique_details = DisplayTechniqueInfo(technique_id)
         
         return not is_open, technique_details
@@ -1257,12 +1296,13 @@ def DisplayEntityMapNodeInfo(data):
     return f"Selected Node: {data['label']}"
     
 '''C037 - Callback to display playbook information in playook information modal'''
-@app.callback(Output(component_id = "automator-playbook-info-display-modal", component_property = "is_open", allow_duplicate=True),
-              Output("automator-playbook-info-display-modal-body", "children", allow_duplicate = True), 
-              Input(component_id= "pb-view-details-button", component_property= "n_clicks"),
-              State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
-              State("automator-playbook-info-display-modal", "is_open"),
-              prevent_initial_call=True
+@app.callback(
+        Output(component_id = "automator-playbook-info-display-modal", component_property = "is_open", allow_duplicate=True),
+        Output("automator-playbook-info-display-modal-body", "children", allow_duplicate = True), 
+        Input(component_id= "pb-view-details-button", component_property= "n_clicks"),
+        State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
+        State("automator-playbook-info-display-modal", "is_open"),
+        prevent_initial_call=True
 )
 def ShowPlaybookInfo(n_clicks, selected_pb, is_open):
     if n_clicks == 0:
@@ -1293,18 +1333,24 @@ def DownloadTechniqueRawResponse(n_clicks, data):
     if n_clicks is None or data is None:
         raise PreventUpdate
     
-    # create a file in the outputs directory
+    # Create a file in the outputs directory
     execution_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
     output_filepath = f"./output/Response_Export_{execution_time}.txt"
     with open(output_filepath, "w") as f:
         f.write(str(data))
     
-    # download response file
+    # Download response file
     return dcc.send_file(output_filepath)
 
 '''C040 - Callback to open playbook export modal'''
-@app.callback(Output(component_id = "export-playbook-modal", component_property = "is_open"), [Input("toggle-export-playbook-modal-open-button", "n_clicks"), Input("toggle-export-playbook-modal-close-button", "n_clicks")], [State("export-playbook-modal", "is_open")])
+@app.callback(
+        Output(component_id = "export-playbook-modal", component_property = "is_open"), 
+        [
+            Input("toggle-export-playbook-modal-open-button", "n_clicks"), 
+            Input("toggle-export-playbook-modal-close-button", "n_clicks")
+        ], 
+        [State("export-playbook-modal", "is_open")])
 def ToggleModal(open_trigger, close_trigger, is_open):
     if open_trigger or close_trigger:
         return not is_open
@@ -1325,7 +1371,6 @@ def CloseAppErrorModal(n_clicks, is_open):
 '''C042 - Callback to generate AWS session options in AWS sessions dropdown'''
 @app.callback(Output(component_id = "aws-session-selector-dropdown", component_property = "options"), Input(component_id = "aws-session-selector-dropdown", component_property = "title"))
 def GenerateDropdownOptionsCallBack(session_name):
-
     manager = SessionManager()
     if session_name == None:
         all_sessions = []
