@@ -927,6 +927,9 @@ def ExportAttackPlaybook(playbook_name, mask_param, export_file_name, n_clicks):
             playbook_file = pb_config.yaml_file
             break
     
+    if not export_file_name:
+        export_file_name = "Halberd_Playbook" # Set default file name
+    
     # Export playbook
     playbook_export_file_path = Playbook(playbook_file).export(export_file = export_file_name, include_params=not(mask_param))
 
