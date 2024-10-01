@@ -25,9 +25,15 @@ class Playbook:
         pb_config_file = AUTOMATOR_PLAYBOOKS_DIR + "/" + pb_file_name
         with open(pb_config_file, "r") as pb_config_data:
             self.data = yaml.safe_load(pb_config_data)
-
-        # self.data = yaml.safe_load(yaml_content)
+        
+        # Total number of steps in playbook
         self.steps = len(self.data['PB_Sequence'])
+        
+        # Minimum required execution time for playbook
+        self.min_exec_time_req: int = 0
+        for step_data in self.data['PB_Sequence'].values():
+            self.min_exec_time_req += step_data['Wait']
+
         self._status = "Not started"
     
     @classmethod
@@ -40,7 +46,7 @@ class Playbook:
         :param description: Description of the playbook (optional)
         :param references: List of references for the playbook (optional)
         :return: A new Playbook instance
-        :raises PlaybookError: If there's an error in creating the playbook
+        :raises PlaybookError: If there's an error in creating, importing or executing the playbook
         """
         try:
             # Validate input
@@ -92,7 +98,7 @@ class Playbook:
             # Extract the base64 encoded content
             content_match = re.match(r'data:application/x-yaml;base64,(.+)', playbook_content)
             if not content_match:
-                raise PlaybookError("Invalid base64 content format")
+                raise PlaybookError(message="Invalid base64 content format", error_type="invalid_data", error_operation="pb_import")
             
             base64_yaml = content_match.group(1)
             
@@ -100,13 +106,13 @@ class Playbook:
             try:
                 yaml_content = base64.b64decode(base64_yaml).decode('utf-8')
             except Exception as e:
-                raise PlaybookError(f"Error decoding base64 content: {str(e)}")
+                raise PlaybookError(f"Error decoding base64 content: {str(e)}", error_type="invalid_data", error_operation="pb_import")
             
             # Parse the YAML content
             try:
                 playbook_data = yaml.safe_load(yaml_content)
             except yaml.YAMLError as e:
-                raise PlaybookError(f"Error parsing YAML content: {str(e)}")
+                raise PlaybookError(f"Error parsing YAML content: {str(e)}", error_type="invalid_data", error_operation="pb_import")
             
             # Validate playbook structure
             cls._validate_playbook_structure(playbook_data)
@@ -131,31 +137,65 @@ class Playbook:
             raise PlaybookError(f"Unexpected error occurred while importing playbook: {str(e)}")
 
     @classmethod
-    def _validate_playbook_structure(cls, playbook_data: Dict[str, Any]):
+    def _validate_playbook_structure(cls, playbook_data: Dict[str, Any], pb_input_validation =False):
         """
         Validate the structure of the playbook data.
         
         :param playbook_data: Dictionary containing playbook data
+        :param pb_input_validation: Boolean indicating if input validation is required
         :raises PlaybookError: If the playbook structure is invalid
         """
         # Check for required fields
         for field in cls.REQUIRED_FIELDS:
             if field not in playbook_data:
-                raise PlaybookError(f"Missing required field: {field}")
+                raise PlaybookError(f"Playbook Data Corrupt - Missing required field: {field}")
         
         # Validate PB_Sequence
         if not isinstance(playbook_data['PB_Sequence'], dict):
-            raise PlaybookError("PB_Sequence must be a dictionary")
+            raise PlaybookError(message= "Playbook Data Corrupt - PB_Sequence must be a dictionary", error_type= "data_error")
         
+        # Get list of Halberd modules
+        halberd_techniques_list = TechniqueRegistry.list_techniques().keys()
+
         for step_num, step_data in playbook_data['PB_Sequence'].items():
+            # Validate playbook data structure
             if not isinstance(step_data, dict):
-                raise PlaybookError(f"Playbook Data Incorrect : Step {step_num} must be a dictionary")
+                raise PlaybookError(message= f"Playbook Data Corrupt : Step '{step_num}' - Step data must be a dictionary", error_type= "data_error")
             if 'Module' not in step_data:
-                raise PlaybookError(f"Playbook Data Incorrect : Step {step_num} is missing 'Module' field")
+                raise PlaybookError(message= f"Playbook Data Corrupt : Step '{step_num}' - Missing 'Module' field", error_type= "data_error")
             if 'Params' not in step_data:
-                raise PlaybookError(f"Playbook Data Incorrect : Step {step_num} is missing 'Params' field")
+                raise PlaybookError(message= f"Playbook Data Corrupt : Step '{step_num}' - Missing 'Params' field", error_type= "data_error")
             if 'Wait' not in step_data:
-                raise PlaybookError(f"Playbook Data Incorrect : Step {step_num} is missing 'Wait' field")
+                raise PlaybookError(message= f"Playbook Data Corrupt : Step '{step_num}' - Missing 'Wait' field", error_type= "data_error")
+            if not isinstance(step_data['Params'], dict):
+                raise PlaybookError(message= f"Playbook Data Corrupt : Step '{step_num}' - Params data must be a dictionary", error_type= "data_error")
+            # Validate if module is a Halberd technique
+            if step_data['Module'] not in halberd_techniques_list:
+                raise PlaybookError(message= f"Playbook Data Corrupt : Step '{step_num}' - Not a Halberd Module '{step_data['Module']}", error_type= "data_error")
+            
+            # Playbook input validation (to be used before PB execution)
+            if pb_input_validation:
+                # Get Halberd technique
+                technique_params = TechniqueRegistry.get_technique(step_data['Module'])().get_parameters()
+                # if Halberd technique has params
+                if technique_params:
+                    for param in step_data['Params']:
+                        # Check if param is a valid field of the Halberd technique
+                        if param in technique_params:
+                            # Check if param is a required field of the technique and if value is provided for it in playbook
+                            if technique_params[param]['required'] == True and step_data['Params'][param] in ["", None]:
+                                raise PlaybookError(message= f"Playbook Input Error : Required field value missing - [Step No: {step_num}, Module : {step_data['Module']}, Field : {param}", error_type= "input_error")
+                        else:
+                            # Playbook param is not a valid field of the Halberd technique
+                            raise PlaybookError(message= f"Playbook Data Corrupt : Invalid field added to Module params - [Step No: {step_num}, Module : {step_data['Module']}, Field : {param}", error_type= "data_error")
+                else:
+                    # Ensure playbook step has no params
+                    if technique_params == step_data['Params']:
+                        # No problem
+                        pass
+                    else:
+                        # Playbook has additional params than required by module
+                        raise PlaybookError(message= f"Playbook Data Corrupt : Excessive field added to Module params - [Step No: {step_num}, Module : {step_data['Module']}", error_type= "data_error")
             
     def step(self, step_number: Optional[int] = None) -> Union[PlaybookStep, List[PlaybookStep]]:
         """
@@ -202,6 +242,9 @@ class Playbook:
         
         :param step_number: If provided, execute only this step. Otherwise, execute the entire playbook.
         """
+        # Validate playbook before execution
+        self._validate_playbook_structure(self.data, pb_input_validation = True)
+
         # Create automation run folder
         execution_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         execution_folder_name = f"{self.name}_{execution_time}"
