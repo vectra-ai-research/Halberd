@@ -3,6 +3,7 @@ import csv
 import os
 import sys
 import shutil
+import json
 from datetime import datetime
 from pathlib import Path
 from dash import html, dcc
@@ -14,50 +15,49 @@ from attack_techniques.technique_registry import TechniqueRegistry
 
 def DisplayTechniqueInfo(technique_id):
     '''Generates Technique information and displays it in the offcanvas on the attack page. The offcanvas is triggered by the About Technique button'''
+    def create_mitre_info_cards(mitre_techniques):
+        """Create dbc.cards with technique MITRE info"""
+        mitre_cards = []
+        for mitre_info in mitre_techniques:
+            mitre_card = dbc.Card([
+                dbc.CardBody([
+                    html.P(f"Technique: {mitre_info.technique_name}", className="card-text"),
+                    html.P(f"Sub-technique: {mitre_info.sub_technique_name}", className="card-text"),
+                    html.P(f"Tactic: {', '.join(mitre_info.tactics)}", className="card-text"),
+                    dcc.Link("Visit MITRE", href=mitre_info.mitre_url if mitre_info.mitre_url not in [None, "#"] else "#", target="_blank", className="card-link")
+                ])
+            ], className="mb-2")
+            mitre_cards.append(mitre_card)
+        return html.Div(mitre_cards)
     
+    # Get technique information from technique registry
     technique = TechniqueRegistry.get_technique(technique_id)()
     
-    technique_details = []
-    technique_details.append(html.H4(f"Technique: {technique.name}"))
-    technique_details.append(html.Br())
-    technique_details.append(html.H5(f"Attack Surface: {TechniqueRegistry.get_technique_category(technique_id)}"))
-    technique_details.append(html.Br())
-    technique_details.append(html.H5("MITRE ATT&CK Reference:"))
-    
-    # add mitre technique information
-    for mitre_info in technique.mitre_techniques:
-        ul_items = []
-        mitre_info.mitre_url
-        ul_items.append(html.Li(f"Technique: {mitre_info.technique_name}"))
-        ul_items.append(html.Li(f"Sub-technique: {mitre_info.sub_technique_name}"))
-        ul_items.append(html.Li(f"Tactic: {', '.join(mitre_info.tactics)}"))
-        mitre_url = mitre_info.mitre_url
-        if mitre_url in [None, "#"]:
-            ul_items.append(html.Li(dcc.Link("More info", href="#")))
-        else:
-            ul_items.append(html.Li(dcc.Link("More info", href=mitre_url, target="_blank")))
-        technique_details.append(html.Ul(ul_items))
-    
-    # display additional information under an accordion
-    accordion_content = []
+    # Main technique information card
+    main_info_card = dbc.Card([
+        dbc.CardHeader(html.H4(f"Technique: {technique.name}", className="mb-0")),
+        dbc.CardBody([
+            html.H5(f"Attack Surface: {TechniqueRegistry.get_technique_category(technique_id)}", className="mb-3"),
+            html.H5("MITRE ATT&CK Reference:", className="mb-2"),
+            create_mitre_info_cards(technique.mitre_techniques)
+        ])
+    ], className="mb-3")
 
-    # add technique description
-    if technique.description:
-        accordion_content.append(html.H5("Technique Description:",  className="text-muted"))
-        accordion_content.append(html.P(technique.description, className="text-muted"))
-    
-    # add accordion to modal body
-    technique_details.append(
-        dbc.Accordion(
-            [
-                dbc.AccordionItem(accordion_content, title = "Additional Information / Resources"),
-            ],
-            start_collapsed=True,
-        )
-    )
+    # Additional information accordion
+    additional_info_accordion = dbc.Accordion([
+        dbc.AccordionItem([
+            html.H5("Technique Description:", className="text-muted mb-2"),
+            html.P(technique.description, className="text-muted")
+        ], title="Additional Information / Resources")
+    ], start_collapsed=True, className="mb-3")
 
-    # return technique details
-    return technique_details
+    # Return final modal body content
+    modal_content = [
+        main_info_card,
+        additional_info_accordion
+    ]
+
+    return modal_content
 
 def TechniqueOptionsGenerator(tab: str, tactic: str) -> list[str]:
     """Function generates list of available techniques as dropdown options dynamically based on the attack surface(tab) and the tactic selected"""
@@ -382,38 +382,111 @@ def DisplayPlaybookInfo(selected_pb):
             break
     display_elements = []
 
-    # display playbook name
-    display_elements.append(html.H4(f"Name : {playbook.name}"))
-    display_elements.append(html.Br())
+    def create_sequence_card(sequence):
+        if not sequence:
+            return dbc.Card(
+                [
+                    dbc.CardHeader(html.H5("PB_Sequence", className="mb-0")),
+                    dbc.CardBody(html.P("No steps defined", className="card-text"))
+                ],
+                className="mb-3"
+            )
+        
+        steps = []
+        for step_num, step_data in sequence.items():
+            params = step_data.get('Params', {})
+            param_cards = []
+            if params:
+                for key, value in params.items():
+                    param_cards.append(
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.H6(key, className="card-subtitle mb-2 text-muted"),
+                                html.P(str(value), className="card-text")
+                            ])
+                        ], className="mb-2")
+                    )
+            else:
+                param_cards.append(
+                    dbc.Card([
+                        dbc.CardBody([
+                            html.P("No parameters", className="card-text text-muted")
+                        ])
+                    ], className="mb-2")
+                )
 
-    # display playbook description
-    display_elements.append(html.H5("Description : "))
-    display_elements.append(html.P(playbook.description))
+            param_accordion = dbc.Accordion([
+                dbc.AccordionItem(
+                    param_cards,
+                    title="Parameters",
+                )
+            ], start_collapsed=True)
 
-    # display playbook step count
-    display_elements.append(html.H5(f"Steps Count : {playbook.steps}"))
-    display_elements.append(html.P(""))
+            step_content = [
+                html.H6(f"Step {step_num}", className="mb-2"),
+                html.P(f"Module: {step_data.get('Module', 'N/A')}", className="mb-1"),
+                html.P(f"Wait: {step_data.get('Wait', 'N/A')}", className="mb-2"),
+                param_accordion
+            ]
+            steps.append(dbc.Card(dbc.CardBody(step_content), className="mb-3"))
+        
+        return dbc.Card(
+            [
+                dbc.CardHeader(html.H5("PB_Sequence", className="mb-0")),
+                dbc.CardBody(steps)
+            ],
+            className="mb-3"
+        )
+    
+    def create_references_card(references):
+        """Creates dbc.card element with information in PB_References"""
+        if not references:
+            return dbc.Card(
+                [
+                    dbc.CardHeader(html.H5("PB_References", className="mb-0")),
+                    dbc.CardBody(html.P("No references available", className="card-text"))
+                ],
+                className="mb-3"
+            )
+        
+        reference_links = [
+            html.Li(
+                html.A(ref, href=ref, target="_blank", rel="noopener noreferrer"),
+                className="mb-2"
+            ) for ref in references
+        ]
+        
+        return dbc.Card(
+            [
+                dbc.CardHeader(html.H5("PB_References", className="mb-0")),
+                dbc.CardBody([
+                    html.P("Click on the links below to open in a new tab:", className="mb-2"),
+                    html.Ul(reference_links, className="pl-3")
+                ])
+            ],
+            className="mb-3"
+        )
+    
+    def create_field_card(key, value):
+        """Creates dbc.card with all information in Playbook configuration"""
+        if key == 'PB_Sequence':
+            return create_sequence_card(value)
+        elif key == 'PB_References':
+            return create_references_card(value)
+        return dbc.Card(
+            [
+                dbc.CardHeader(html.H5(key, className="mb-0")),
+                dbc.CardBody(
+                    html.P(json.dumps(value, indent=2) if isinstance(value, (dict, list)) else str(value), 
+                        className="card-text", style={"white-space": "pre-wrap"})
+                )
+            ],
+            className="mb-3"
+        )
 
-    # display playbook author
-    display_elements.append(html.H5("Plabook Author : "))
-    display_elements.append(html.P(playbook.author))
+    display_elements = [create_field_card(key, value) for key, value in playbook.data.items()]
 
-    # display playbook creation date
-    display_elements.append(html.H5("Plabook Creation Date : "))
-    display_elements.append(html.P(playbook.creation_date))
-
-    # display playbook references
-    display_elements.append(html.H5("Plabook References : "))
-    if playbook.references: 
-        if type(playbook.references) == list:
-            for ref in playbook.references:
-                display_elements.append(html.Li(dcc.Link(ref, href=ref, target='_blank')))
-        else:
-            display_elements.append(html.Li(dcc.Link(playbook.references, href=playbook.references, target='_blank')))
-    else:
-        display_elements.append(html.P("N/A"))
-
-    return display_elements 
+    return display_elements
 
 def ParseTechniqueResponse(technique_response):
     '''Function to parse the technique execution response and display it structured'''
