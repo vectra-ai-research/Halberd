@@ -18,6 +18,7 @@ from core.AttackPlaybookVisualizer import AttackSequenceVizGenerator
 from core.Functions import DisplayTechniqueInfo, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
+from core.playbook.playbook_error import PlaybookError
 from core.Constants import *
 from core.aws.aws_session_manager import SessionManager
 from attack_techniques.technique_registry import *
@@ -805,23 +806,35 @@ def DisplayAttackSequenceViz(selected_pb):
         raise PreventUpdate
 
 '''C020 - Callback to execute attack sequence in automator view'''
-@app.callback(Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), Input(component_id = "execute-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
+@app.callback(
+        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
+        Output(component_id = "app-error-display-modal", component_property = "is_open", allow_duplicate=True),
+        Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True),
+        State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
+        Input(component_id = "execute-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
 def ExecuteAttackSequence(playbook_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     
     if playbook_name == None:
-        return True, "No Playbook Selected to Execute"
+        return False, "", True, "Playbook Execution Aborted - You are missing something : Select a playbook"
     
     # execute playbook
     for pb in GetAllPlaybooks():
         pb_config = Playbook(pb)
-        if  pb_config.name == playbook_name:
+        if pb_config.name == playbook_name:
             playbook_file = pb_config.yaml_file
-
-    playbook_execution = Playbook(playbook_file).execute()
-    
-    return True, "Playbook Execution Completed"
+    try:
+        Playbook(playbook_file).execute()
+        return True, "Playbook Execution Completed", False, ""
+    except PlaybookError as e:
+        if e.error_type == "data_error":
+            return False, "", True, f"Playbook Execution Aborted - Invalid Playbook : {str(e.message)}"
+        else:
+            return False, "", True, f"Playbook Execution Failed - Invalid Playbook : {str(e.message)}"
+    except Exception as e:
+        return False, "", True, f"Playbook Execution Failed - Unexpected Error : {str(e)}"
 
 '''C021 - Callback to open attack scheduler modal'''
 @app.callback(Output(component_id = "scheduler-modal", component_property = "is_open"), [Input("toggle-scheduler-modal-open-button", "n_clicks"), Input("toggle-scheduler-modal-close-button", "n_clicks")], [State("scheduler-modal", "is_open")])
