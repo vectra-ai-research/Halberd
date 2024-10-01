@@ -25,9 +25,15 @@ class Playbook:
         pb_config_file = AUTOMATOR_PLAYBOOKS_DIR + "/" + pb_file_name
         with open(pb_config_file, "r") as pb_config_data:
             self.data = yaml.safe_load(pb_config_data)
-
-        # self.data = yaml.safe_load(yaml_content)
+        
+        # Total number of steps in playbook
         self.steps = len(self.data['PB_Sequence'])
+        
+        # Minimum required execution time for playbook
+        self.min_exec_time_req: int = 0
+        for step_data in self.data['PB_Sequence'].values():
+            self.min_exec_time_req += step_data['Wait']
+
         self._status = "Not started"
     
     @classmethod
