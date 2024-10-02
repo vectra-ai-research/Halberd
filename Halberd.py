@@ -14,8 +14,7 @@ from dash.exceptions import PreventUpdate
 from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.AttackPlaybookVisualizer import AttackSequenceVizGenerator
-from core.Functions import DisplayTechniqueInfo, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse
+from core.Functions import DisplayTechniqueInfo, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, PlaybookVizGenerator
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
 from core.playbook.playbook_error import PlaybookError
@@ -825,7 +824,7 @@ def GenerateDropdownOptionsCallBack(title):
         prevent_initial_call=True)
 def DisplayAttackSequenceViz(selected_pb):
     if selected_pb:
-        return AttackSequenceVizGenerator(selected_pb)
+        return PlaybookVizGenerator(selected_pb)
     else:
         raise PreventUpdate
 
