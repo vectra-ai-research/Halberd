@@ -1,10 +1,10 @@
-# Halberd: Multi-Cloud Security Testing Framework 🛡️
+# Halberd: Multi-Cloud Security Testing Tool 🛡️
 
 <p align="center">
   <img src="assets/halberd_logo_banner.jpg" alt="logo" width="100%" align="center"/>
 </p>
 
-Halberd is a powerful, multi-cloud security testing framework. Born out of the need for a unified, easy-to-use tool, Halberd enables you to proactively assess your cloud defenses by executing a comprehensive array of attack techniques across Entra ID, M365, Azure, and AWS. With its intuitive web interface, you can simulate real-world attacks, generate valuable telemetry, and validate your security controls with ease & speed.
+Halberd is a powerful, multi-cloud security testing tool. Born out of the need for a unified, easy-to-use tool, Halberd enables you to proactively assess your cloud defenses by executing a comprehensive array of attack techniques across Entra ID, M365, Azure, and AWS. With its intuitive web interface, you can simulate real-world attacks, generate valuable telemetry, and validate your security controls with ease & speed.
 
 ## What's the big deal? 🤔
 
