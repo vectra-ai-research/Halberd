@@ -25,62 +25,53 @@ page_layout = dbc.Container([
     dbc.Row([
         dbc.Col([
             dbc.Card([
-                dbc.CardHeader("Playbook Selection", className="bg-dark text-light"),
+                dbc.CardHeader(html.H3("Playbook Library", className="mb-2"), className="bg-dark text-light"),
                 dbc.CardBody([
                     dcc.Dropdown(
                         id='automator-pb-selector-dropdown',
                         options=PlaybooksDropdownListGen(),
                         placeholder="Select Playbook",
+                        value=None,
                         className="mb-3",
                         style={'color': 'black'}
                     ),
-                    dbc.Button("View Details", id="pb-view-details-button", n_clicks=0, color="secondary", className="me-2"),
-                    dbc.Button("Execute Now", id="execute-sequence-button", n_clicks=0, color="danger", className="me-2"),
-                    dbc.Button("Schedule", id="toggle-scheduler-modal-open-button", n_clicks=0, color="primary"),
+                    dbc.Button("Details", id="pb-view-details-button", n_clicks=0, color="info", className="me-2"),
+                    dbc.Button("Execute", id="execute-sequence-button", n_clicks=0, color="danger", className="me-2"),
+                    dbc.Button("Schedule", id="toggle-scheduler-modal-open-button", n_clicks=0, color="success", className="me-2"),
+                    dbc.Button("Export", id="toggle-export-playbook-modal-open-button", n_clicks=0, color="secondary", className="me-2"),
+                    dbc.Button("Delete", id="delete-pb-button", n_clicks=0, color="primary", className="me-2"),
                 ], className="bg-dark")
-            ], className="mb-4 border-secondary"),
-            
-            dbc.Card([
-                dbc.CardHeader("Playbook Information", className="bg-dark text-light"),
-                dbc.CardBody([
-                    html.Div(id="playbook-node-data-div", style={"height": "20vh", "overflowY": "auto"}, className="text-light")
-                ], className="bg-dark")
-            ], className="mb-4 border-secondary"),
-            
-            dbc.Card([
-                dbc.CardHeader("Attack Path Visualization", className="bg-dark text-light"),
-                dbc.CardBody([
-                    html.Div(id="attack-automator-path-display-div", style={"height": "40vh", "overflowY": "auto"}, className="text-light")
-                ], className="bg-dark")
-            ], className="border-secondary")
+            ], className="mb-4"),
         ], md=10),
         
         dbc.Col([
             dbc.Card([
-                dbc.CardHeader("Playbook Management", className="bg-dark text-light"),
+                dbc.CardHeader(html.H3("Add Playbook", className="mb-2"), className="bg-dark text-light"),
                 dbc.CardBody([
                     dbc.Button("Create New", id="pb-creator-modal-open-button", n_clicks=0, color="success", className="w-100 mb-2"),
                     dcc.Upload(
                         id="upload-playbook",
                         children=dbc.Button("Import", id="import-pb-button", n_clicks=0, color="info", className="w-100 mb-2"),
                     ),
-                    dbc.Button("Export", id="toggle-export-playbook-modal-open-button", n_clicks=0, color="secondary", className="w-100 mb-2"),
-                    dbc.Button("Delete", id="delete-pb-button", n_clicks=0, color="danger", className="w-100"),
                 ], className="bg-dark")
-            ], className="mb-4 border-secondary"),
-            
-            dbc.Card([
-                dbc.CardHeader("Quick Actions", className="bg-dark text-light"),
-                dbc.CardBody([
-                    dbc.Button("View Schedules", id="view-schedules-button", href= dash.get_relative_path("/schedules"), n_clicks=0, color="link", className="w-100 text-left text-light"),
-                    dbc.Button("Execution History", id="execution-history-button", href= dash.get_relative_path("/attack-trace"), n_clicks=0, color="link", className="w-100 text-left text-light"),
-                    dbc.Button("Generate Report", id="generate-report-button", n_clicks=0, color="link", className="w-100 text-left text-light"),
-                ], className="bg-dark")
-            ], className="border-secondary")
+            ], className="mb-4"),
         ], md=2)
     ]),
+    dbc.Card([
+        dbc.CardHeader(html.H4("Playbook Information", className="mb-2"), className="bg-dark text-light"),
+        dbc.CardBody([
+            # Playbook path visualization
+            dbc.Card([
+                dbc.CardBody([
+                    html.Div(html.H4("Select Playbook"), id="attack-automator-path-display-div", style={"height": "20vh", "overflowY": "auto"}, className="text-light")
+                ], className="bg-dark")
+            ], className="border-secondary"),
+            html.Br(),
+            html.Div(id="playbook-node-data-div", style={"height": "40vh", "overflowY": "auto"}, className="text-light")
+        ], className="bg-dark")
+    ], className="mb-4"),
     
-    # modal to configure scheduled playbook
+    # Modal to configure scheduled playbook
     dbc.Modal([
         dbc.ModalHeader("Schedule Playbook", className="bg-dark text-light"),
         dbc.ModalBody([
@@ -126,7 +117,7 @@ page_layout = dbc.Container([
         ], className="bg-dark")
     ], id="scheduler-modal", className="text-light"),
     
-    # modal to create a new plabook
+    # Modal to create a new plabook
     dbc.Modal([
         dbc.ModalHeader("Create New Playbook", className="bg-dark text-light"),
         dbc.ModalBody([
@@ -161,7 +152,7 @@ page_layout = dbc.Container([
         ], className="bg-dark")
     ], id="playbook-creator-modal", className="text-light"),
 
-    # modal to export playbook
+    # Modal to export playbook
     dbc.Modal([
         dbc.ModalHeader("Export Playbook", className="bg-dark text-light"),
         dbc.ModalBody([
@@ -184,7 +175,7 @@ page_layout = dbc.Container([
         ], className="bg-dark")
     ], id="export-playbook-modal", className="text-light"),
 
-    # display playbook info
+    # Display playbook info
     dbc.Modal(
         [
             dbc.ModalHeader(dbc.ModalTitle("Playbook Details")),
@@ -198,6 +189,6 @@ page_layout = dbc.Container([
         scrollable=True,
     ),
     
-    # element to trigger download/export of playbooks
+    # Element to trigger download/export of playbooks
     dcc.Download(id="download-pb-config-file")
 ], fluid=True, className="bg-dark", style={"min-height": "93vh"})
