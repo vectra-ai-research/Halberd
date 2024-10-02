@@ -7,6 +7,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 from dash import html, dcc
+import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
 from core.Constants import *
 from dash_iconify import DashIconify
@@ -583,3 +584,88 @@ def ParseTechniqueResponse(technique_response):
 
     else:
         return str(response)
+
+def PlaybookVizGenerator(playbook_name):
+
+    if playbook_name == None:
+        return html.Div([
+            html.H3("No Selection"),
+            ], style={"textAlign": "center", "padding-top": "50px"})
+    
+    else:
+        for pb in GetAllPlaybooks():
+            pb_config = Playbook(pb)
+            if pb_config.name == playbook_name:
+                # pb_sequence = pb_config.step()
+                break
+        
+        # Initialize array for cytoscope
+        attack_sequence_viz_elements = []
+        n = 0
+        position_x = 50
+
+        for step_no,step in pb_config.data['PB_Sequence'].items():
+            step_module_id = step['Module']
+            step_wait = step['Wait']
+            attack_sequence_viz_elements.append({'data': {'id': str(n), 'label': f"{TechniqueRegistry.get_technique(step_module_id)().name}", 'info':{step_no: step}}, 'position': {'x': position_x, 'y': 50}})
+            position_x += 70
+            n += 1
+
+            attack_sequence_viz_elements.append({'data': {'id': str(n), 'label': str(step_wait), 'info':"time"}, 'position': {'x': position_x, 'y': 50}, 'classes': 'timenode'})
+            position_x += 70
+            n += 1
+        
+        while n>1:
+            n = n-1
+            attack_sequence_viz_elements.append({'data': {'source': str(n-1), 'target': str(n)}})
+        
+        return cyto.Cytoscape(
+                id='auto-attack-sequence-cytoscape-nodes',
+                layout={'name': 'preset'},
+                style={'height': '20vh'},
+                elements= attack_sequence_viz_elements,
+                stylesheet=[
+                    # Add styles for the graph here
+                    {
+                        'selector': 'node',
+                        'style': {
+                            'label': 'data(label)',
+                            'background-color': '#FFFFFF',
+                            'color': '#000000',
+                            'width': '40px',
+                            'height': '40px',
+                            'text-halign': 'center',
+                            'text-valign': 'center',
+                            'text-wrap': 'wrap',
+                            'text-max-width': '50',
+                            'font-size': '5px',
+                            'shape': 'square'
+                        }
+                    },
+                    {
+                        'selector': 'edge',
+                        'style': {
+                            'curve-style': 'bezier',
+                            'target-arrow-shape': 'triangle',
+                            'line-color': '#000000',
+                            'target-arrow-color': '#000000',
+                        }
+                    },
+                    {
+                        'selector': '.timenode',
+                        'style': {
+                            'label': 'data(label)',
+                            'background-color': '#000000',
+                            'color': '#fff',
+                            'text-halign': 'center',
+                            'text-valign': 'center',
+                            'text-wrap': 'wrap',
+                            'text-max-width': '20px',
+                            'shape': 'ellipse',
+                            'opacity': 0.7,
+                            'width': '20px',
+                            'height': '20px',
+                        }
+                    }
+                ]
+                )
