@@ -20,7 +20,7 @@ for technique_class, technique in TechniqueRegistry.list_techniques().items():
         tactics += mitre_technique.tactics
 
     tactics = list(set(tactics))
-    # add technique to each associated tactic in tactics_dict
+    # Add technique to each associated tactic in tactics_dict
     for tactic in tactics:
         tactics_dict[tactic].append({
             'id': technique_class,
@@ -28,7 +28,7 @@ for technique_class, technique in TechniqueRegistry.list_techniques().items():
             'surface': TechniqueRegistry.get_technique_category(technique_class)
         })
 
-# tactics order to follow typical kill chain 
+# Tactics order to follow typical kill chain 
 tactics_order = [
     'Initial Access',
     'Execution',
@@ -43,12 +43,12 @@ tactics_order = [
     'Impact'
 ]
 
-# find maximum number of techniques in any tactic
+# Find maximum number of techniques in any tactic
 max_techniques = max(len(techniques) for techniques in tactics_dict.values())
 
-# home layout
+# Home layout
 page_layout = html.Div([
-    # home intro section
+    # Home intro section
     dbc.Row([
         dbc.Col([
             html.H1("Welcome to Halberd", className="display-4 mb-4 text-success"),
@@ -92,7 +92,7 @@ page_layout = html.Div([
         md=4),
     ]),
     
-    # home main content
+    # Home main content
         dbc.Alert(
             "This tool is for authorized security testing only. Ensure you have proper permissions before proceeding.",
             color="danger",
@@ -100,17 +100,17 @@ page_layout = html.Div([
             className="mb-4"
         ),
         
-        # matrix section header
-        html.H2("Halbed Attack Techniques Matrix", className="mb-4"),
+        # Matrix section header
+        html.H2("Halberd Attack Matrix", className="mb-4"),
         
-        # tactics grid table
+        # Tactics grid table
         html.Div(
             className="table-responsive",
             children=[
                 html.Table(
                     className="table table-bordered",
                     children=[
-                        # header row
+                        # Header row
                         html.Thead(
                             html.Tr([
                                 html.Th(
@@ -125,7 +125,7 @@ page_layout = html.Div([
                                 ) for tactic in tactics_order
                             ])
                         ),
-                        # technique rows
+                        # Technique rows
                         html.Tbody([
                             html.Tr([
                                 html.Td(
@@ -155,7 +155,7 @@ page_layout = html.Div([
             ]
         ),
     
-    # home footer
+    # Home footer
     dbc.Row([
         dbc.Col([
             html.P(f"Halberd : Multi-Cloud Security Testing (v1.1).", className="text-muted")

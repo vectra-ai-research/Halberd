@@ -14,8 +14,7 @@ from dash.exceptions import PreventUpdate
 from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.AttackPlaybookVisualizer import AttackSequenceVizGenerator
-from core.Functions import DisplayTechniqueInfo, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse
+from core.Functions import DisplayTechniqueInfo, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, PlaybookVizGenerator
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
 from core.playbook.playbook_error import PlaybookError
@@ -821,12 +820,11 @@ def GenerateDropdownOptionsCallBack(title):
 '''C019 - Callback to generate automated attack sequence visualization'''
 @app.callback(
         Output(component_id = "attack-automator-path-display-div", component_property = "children"), 
-        Output(component_id = "playbook-node-data-div", component_property = "children", allow_duplicate= True), 
         Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
         prevent_initial_call=True)
 def DisplayAttackSequenceViz(selected_pb):
     if selected_pb:
-        return AttackSequenceVizGenerator(selected_pb), DisplayPlaybookInfo(selected_pb) 
+        return PlaybookVizGenerator(selected_pb)
     else:
         raise PreventUpdate
 
@@ -926,6 +924,9 @@ def ExportAttackPlaybook(playbook_name, mask_param, export_file_name, n_clicks):
         if  pb_config.name == playbook_name:
             playbook_file = pb_config.yaml_file
             break
+    
+    if not export_file_name:
+        export_file_name = "Halberd_Playbook" # Set default file name
     
     # Export playbook
     playbook_export_file_path = Playbook(playbook_file).export(export_file = export_file_name, include_params=not(mask_param))
@@ -1091,7 +1092,6 @@ def DisplayPlaybookNodeData(data, is_open):
         # Extract module_id from node label
         if data['label'] != "None":
             info = data['info']
-            # module_id = data['label'].split(":")[0]
         else:
             raise PreventUpdate
         
@@ -1101,7 +1101,9 @@ def DisplayPlaybookNodeData(data, is_open):
             return [html.B(f"Time Gap : {wait_time} seconds")], True
         else:
             # Display module info
-            module_id = data['info']
+            pb_step_info = data['info']
+            step_data = next(iter(pb_step_info.items()))
+            module_id = step_data[1]['Module']
             return DisplayTechniqueInfo(module_id), not is_open
     else:
         raise PreventUpdate
@@ -1110,61 +1112,89 @@ def DisplayPlaybookNodeData(data, is_open):
 @app.callback(
         Output(component_id = "playbook-node-data-div", component_property = "children", allow_duplicate= True),
         Input(component_id = "auto-attack-sequence-cytoscape-nodes", component_property = "mouseoverNodeData"), 
+        State(component_id="automator-pb-selector-dropdown", component_property="value"),
         prevent_initial_call=True
     )
-def DisplayPlaybookNodeData(data):
-    display_elements = []
-    if data:
-
+def DisplayPlaybookNodeData(node_data, value):
+    if node_data:
         # Extract module_id from node label
-        if data['label'] != "None":
-            info = data['info']
+        if node_data['label'] != "None":
+            info = node_data['info']
         else:
             raise PreventUpdate
-
+        
         if info == "time":
-            wait_time = data['label']
-            display_elements.append(html.B(f"Time Gap : {wait_time} seconds"))
-            return display_elements
-
+            wait_time = node_data['label']
+            return dbc.Card(
+                [
+                    dbc.CardHeader(html.H5("Time Gap", className="mb-0")),
+                    dbc.CardBody(
+                        html.P(f"{str(wait_time)} Seconds", className="card-text", style={"white-space": "pre-wrap"})
+                    )
+                ],
+                className="mb-3"
+            )
         try:
-            # If halberd module_id - return the module info
-            module_id = data['info']
-            technique = TechniqueRegistry.get_technique(module_id)()
-            display_elements.append(html.B("Module Name : "))
-            display_elements.append(html.A(technique.name))
-            display_elements.append(html.Br())
+            # Return module info
+            pb_step_info = node_data['info']
+            pb_step_config = next(iter(pb_step_info.items()))
+            pb_step_no = pb_step_config[0]
+            step_data = next(iter(pb_step_info.items()))[1]
+
+            params = step_data.get('Params', {})
+            param_cards = []
+            if params:
+                for key, value in params.items():
+                    param_cards.append(
+                        dbc.Card([
+                            dbc.CardBody([
+                                html.H6(key, className="card-subtitle mb-2 text-muted"),
+                                html.P(str(value), className="card-text")
+                            ])
+                        ], className="mb-2")
+                    )
+            else:
+                param_cards.append(
+                    dbc.Card([
+                        dbc.CardBody([
+                            html.P("No parameters", className="card-text text-muted")
+                        ])
+                    ], className="mb-2")
+                )
+
+            param_accordion = dbc.Accordion([
+                dbc.AccordionItem(
+                    param_cards,
+                    title="Parameters",
+                )
+            ], start_collapsed=True)
+
+            step_content = [
+                html.H6(f"Step {pb_step_no}", className="mb-2"),
+                html.P(f"Module: {step_data.get('Module', 'N/A')}", className="mb-1"),
+                html.P(f"Wait: {step_data.get('Wait', 'N/A')}", className="mb-2"),
+                param_accordion
+            ]
+
+            step_card = dbc.Card(dbc.CardBody(step_content), className="mb-3")
             
-            module_attack_surface = TechniqueRegistry.get_technique_category(module_id)
-            display_elements.append(html.B("Attack Surface : "))
-            display_elements.append(html.A(module_attack_surface))
-            display_elements.append(html.Br())
-
-            # Display module mitre info
-            if technique.mitre_techniques:
-                module_mitre_techniques = technique.mitre_techniques
-
-                for mitre_technique in module_mitre_techniques:
-                    tactics = mitre_technique.tactics
-                    technique_name = mitre_technique.technique_name
-                    sub_technique_name = mitre_technique.sub_technique_name
-                    
-                    display_elements.append(html.B("Tactics : "))
-                    display_elements.append(html.A(', '.join(tactics)))
-                    display_elements.append(html.Br())
-
-                    display_elements.append(html.B("Technique : "))
-                    if sub_technique_name:
-                        display_elements.append(html.A(f"{technique_name} : {sub_technique_name}"))
-                        
-                    else:
-                        display_elements.append(html.A(technique_name))
-                    display_elements.append(html.Br())
-
-            return display_elements
+            return dbc.Card(
+                [
+                    dbc.CardHeader(html.H5("PB_Sequence", className="mb-0")),
+                    dbc.CardBody(step_card)
+                ],
+                className="mb-3"
+            )
         except:
-            display_elements.append(html.B(f"Node Error : Invalid Node Data"))
-            return display_elements
+            return dbc.Card(
+                [
+                    dbc.CardHeader(html.H5("Invalid Playbook Node", className="mb-0")),
+                    dbc.CardBody(
+                        html.P("Nothing to display", className="card-text", style={"white-space": "pre-wrap"})
+                    )
+                ],
+                className="mb-3"
+            )
     else:
         raise PreventUpdate
 
@@ -1301,14 +1331,13 @@ def DisplayEntityMapNodeInfo(data):
         Output("automator-playbook-info-display-modal-body", "children", allow_duplicate = True), 
         Input(component_id= "pb-view-details-button", component_property= "n_clicks"),
         State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
-        State("automator-playbook-info-display-modal", "is_open"),
         prevent_initial_call=True
 )
-def ShowPlaybookInfo(n_clicks, selected_pb, is_open):
+def ShowPlaybookInfo(n_clicks, selected_pb):
     if n_clicks == 0:
         raise PreventUpdate
     
-    return not is_open, DisplayPlaybookInfo(selected_pb)
+    return True, DisplayPlaybookInfo(selected_pb)
 
 '''C038 - Callback to close the playbook information modal'''
 @app.callback(
