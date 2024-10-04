@@ -4,6 +4,7 @@ import os
 import sys
 import shutil
 import json
+from typing import Union, Any, Optional
 from datetime import datetime
 from pathlib import Path
 from dash import html, dcc
@@ -15,7 +16,9 @@ from core.playbook.playbook import Playbook
 from attack_techniques.technique_registry import TechniqueRegistry
 
 def DisplayTechniqueInfo(technique_id):
-    '''Generates Technique information and displays it in the offcanvas on the attack page. The offcanvas is triggered by the About Technique button'''
+    """
+    Generates Technique information and displays it in the offcanvas on the attack page. The offcanvas is triggered by the About Technique button
+    """
     def create_mitre_info_cards(mitre_techniques):
         """Create dbc.cards with technique MITRE info"""
         mitre_cards = []
@@ -61,7 +64,9 @@ def DisplayTechniqueInfo(technique_id):
     return modal_content
 
 def TechniqueOptionsGenerator(tab: str, tactic: str) -> list[str]:
-    """Function generates list of available techniques as dropdown options dynamically based on the attack surface(tab) and the tactic selected"""
+    """
+    Function generates list of available techniques as dropdown options dynamically based on the attack surface(tab) and the tactic selected.
+    """
     
     technique_registry = TechniqueRegistry()
     attack_surface_techniques ={}
@@ -98,11 +103,14 @@ def TechniqueOptionsGenerator(tab: str, tactic: str) -> list[str]:
     return technique_options_element
 
 def TabContentGenerator(tab):
+    """
+    Function generates content dynamically based on the attack tab selected.
+    """
 
     # Load all technique information from registry
     technique_registry = TechniqueRegistry()
 
-    # from tab selected, create tactics dropdown list from the available tactics in the selected attack surface
+    # From tab selected, create tactics dropdown list from the available tactics in the selected attack surface
     if tab == "tab-attack-M365":
         tactics_options = technique_registry.list_tactics("m365")
     if tab == "tab-attack-EntraID":
@@ -186,7 +194,9 @@ def WriteAppLog(action, result = "success"):
     return True
 
 def CheckAzureCLIInstall():
-    '''Function checks for installation of Azure cli on host'''
+    """
+    Function checks for installation of Azure cli on host
+    """
     
     if sys.platform.startswith('win'):
         # Search in PATH
@@ -225,7 +235,7 @@ def InitializationCheck():
     else:
         os.makedirs(OUTPUT_DIR)
     
-    # Check for output folder
+    # Check for report folder
     if Path(REPORT_DIR).exists():
         pass
     else:
@@ -440,7 +450,9 @@ def DisplayPlaybookInfo(selected_pb):
         )
     
     def create_references_card(references):
-        """Creates dbc.card element with information in PB_References"""
+        """
+        Creates dbc.card element with information in PB_References
+        """
         if not references:
             return dbc.Card(
                 [
@@ -469,7 +481,9 @@ def DisplayPlaybookInfo(selected_pb):
         )
     
     def create_field_card(key, value):
-        """Creates dbc.card with all information in Playbook configuration"""
+        """
+        Creates dbc.card with all information in Playbook configuration
+        """
         if key == 'PB_Sequence':
             return create_sequence_card(value)
         elif key == 'PB_References':
@@ -490,11 +504,13 @@ def DisplayPlaybookInfo(selected_pb):
     return display_elements
 
 def ParseTechniqueResponse(technique_response):
-    '''Function to parse the technique execution response and display it structured'''
-    # check if technique output is in the expected tuple format (success, raw_response, pretty_response)
+    """
+    Function to parse the technique execution response and display it structured
+    """
+    # Check if technique output is in the expected tuple format (success, raw_response, pretty_response)
     if isinstance(technique_response, tuple) and len(technique_response) == 3:
         success, raw_response, pretty_response = technique_response
-        # parse output
+        # Parse output
         if pretty_response != None:
             response = pretty_response
         else:
@@ -502,10 +518,10 @@ def ParseTechniqueResponse(technique_response):
     else:
         response = technique_response
 
-    # initialize the response div elements list
+    # Initialize the response div elements list
     response_div_elements = []
 
-    # display notification based on technique result
+    # Display notification based on technique result
     try:
         if success == True:
             response_div_elements.append(
@@ -535,68 +551,133 @@ def ParseTechniqueResponse(technique_response):
             )
     except:
         pass
+    
+    # Format parsed response based on response data type (dict / list / str)
+    def parse_data(data: str) -> Union[dict, list, str]:
+        """
+        Parse the input data string
 
-    '''Format parsed response based on response data type (dict / list / str)'''
-    if isinstance(response,list):
-        # if the response is a null then return message
-        if response == []:
-            return html.H4("No results returned", style ={"textAlign": "center", "padding": "5px"})
-        
-        for item in response:
-            response_div_elements.append(html.Div(str(item), style={"overflowY": "auto", "border":"1px solid #ccc"}))
-            response_div_elements.append(html.Br())
+        Args:
+            data (str): The input data string.
 
-        return html.Div(response_div_elements)
+        Returns:
+            Union[dict, list, str]: Parsed data or "empty" for empty inputs.
+        """
+        try:
+            if isinstance(data, str):
+                parsed = json.loads(data)
+                return parsed if parsed else "empty"
+            return data
+        except json.JSONDecodeError:
+            return data
 
-    elif isinstance(response,dict):
-        # if the response is a null then return message
-        if response == {}:
-            return html.H4("No results returned", style ={"textAlign": "center", "padding": "5px"})
-        
-        for item in response:
-            response_div_elements.append(html.H3(f"{item}"))
+    def is_empty(data: Any) -> bool:
+        """
+        Check if the input data is empty.
 
-            if isinstance(response[item], dict):
-                sub_response_div_elements = []
-                for sub_item in response[item]:
-                    sub_response_div_elements.append(
-                        f"{sub_item} : {response[item][sub_item]}"
-                    )
-                    sub_response_div_elements.append(html.Br())
-                    sub_response_div_elements.append(html.Br())
-                
-                response_div_elements.append(
-                    html.Div([
-                        html.Div(sub_response_div_elements),
-                    ], style={"overflowY": "auto", "border":"1px solid #ccc"})
-                )
-                response_div_elements.append(html.Br())
+        Args:
+            data (Any): The input data to check.
 
-            else:
-                response_div_elements.append(
-                    html.Div([
-                        html.Div(str(response[item])),
-                    ], style={"overflowY": "auto", "border":"1px solid #ccc"})
-                )
-                response_div_elements.append(html.Br())
+        Returns:
+            bool: True if the data is empty, False otherwise.
+        """
+        if data == "empty":
+            return True
+        if isinstance(data, (str, list, dict)) and not data:
+            return True
+        return False
 
-        return html.Div(response_div_elements)
+    def format_output(data: Any, level: int = 0) -> Union[dbc.Card, dbc.ListGroup, html.Span]:
+        """
+        Format the input data into Dash component(dbc.card).
 
-    else:
-        return str(response)
+        Args:
+            data (Any): The input data to format.
+            level (int): The current nesting level (default: 0).
 
-def PlaybookVizGenerator(playbook_name):
+        Returns:
+            Union[dbc.Card, dbc.ListGroup, html.Span]: Formatted Dash components.
+        """
+        if is_empty(data):
+            return html.Em("Empty")
+        if isinstance(data, dict):
+            return dbc.Card([
+                dbc.CardBody([
+                    dbc.Row([
+                        dbc.Col(html.Strong(key), width=3),
+                        dbc.Col(format_output(value, level + 1), width=9)
+                    ], className="mb-2") for key, value in data.items()
+                ])
+            ], className="mb-3")
+        if isinstance(data, list):
+            return dbc.ListGroup([
+                dbc.ListGroupItem(format_output(item, level + 1)) for item in data
+            ], flush=True)
+        return html.Span(str(data))
 
-    if playbook_name == None:
+    def create_cards(data: Any) -> Union[dbc.Card, list]:
+        """
+        Create cards for the top-level data structure.
+
+        Args:
+            data (Any): The input data to create cards for.
+
+        Returns:
+            Union[dbc.Card, list]: A single card or list of cards.
+        """
+        if is_empty(data):
+            return dbc.Card(dbc.CardBody([
+                html.H5("Result", className="card-title"),
+                html.P("No results found", className="card-text text-muted")
+            ]), className="mb-3")
+        if isinstance(data, list):
+            return [
+                dbc.Card(dbc.CardBody(format_output(item)), className="mb-3")
+                for item in data
+            ]
+        if isinstance(data, dict):
+            return [
+                dbc.Card(dbc.CardBody([
+                    html.H5(key, className="card-title"),
+                    format_output(value)
+                ]), className="mb-3")
+                for key, value in data.items()
+            ]
+        return dbc.Card(dbc.CardBody(format_output(data)), className="mb-3")
+
+    parsed_response = parse_data(response)
+    return create_cards(parsed_response)
+
+def playbook_viz_generator(playbook_name: Optional[str]) -> cyto.Cytoscape:
+    """
+    Generate a visualization of a playbook's attack sequence.
+
+    This function creates a Cytoscape graph representation of a playbook's
+    attack sequence. If no playbook is selected, it returns a div with a
+    "No Selection" message.
+
+    Args:
+        playbook_name (Optional[str]): The name of the playbook to visualize.
+            If None, a "No Selection" message is displayed.
+
+    Returns:
+        cyto.Cytoscape: A cytoscope component containing graph of the playbook's attack sequence or a html.Div with "No Selection" message.
+
+    Notes:
+        - The function assumes the existence of several global objects and
+          functions: get_all_playbooks(), Playbook, and TechniqueRegistry.
+        - Each step in the playbook sequence is represented by two nodes:
+          one for the technique and one for the wait time.
+    """
+    if playbook_name is None:
         return html.Div([
-            html.H3("No Selection"),
-            ], style={"textAlign": "center", "padding-top": "50px"})
+            html.H3('No Selection'),
+            ], style={'textAlign': 'center', 'padding-top': '50px'})
     
     else:
         for pb in GetAllPlaybooks():
             pb_config = Playbook(pb)
             if pb_config.name == playbook_name:
-                # pb_sequence = pb_config.step()
                 break
         
         # Initialize array for cytoscope
