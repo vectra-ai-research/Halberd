@@ -14,7 +14,7 @@ from dash.exceptions import PreventUpdate
 from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.Functions import DisplayTechniqueInfo, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, PlaybookVizGenerator
+from core.Functions import DisplayTechniqueInfo, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
 from core.playbook.playbook_error import PlaybookError
@@ -458,8 +458,8 @@ def GenerateTraceReport(n_clicks):
         return dcc.send_file(f'{REPORT_DIR}/halberd_security_report.html')
     except FileNotFoundError:
         return (f"Error: The file '{APP_LOG_FILE}' was not found. Ensure the log file exists and the path is correct.")
-    except Exception as e:
-        return (f"An error occurred: {str(e)}")
+    except Exception:
+        raise PreventUpdate
 
 '''C009 - Callback to download trace logs'''
 @app.callback(
@@ -824,7 +824,7 @@ def GenerateDropdownOptionsCallBack(title):
         prevent_initial_call=True)
 def DisplayAttackSequenceViz(selected_pb):
     if selected_pb:
-        return PlaybookVizGenerator(selected_pb)
+        return playbook_viz_generator(selected_pb)
     else:
         raise PreventUpdate
 
@@ -1337,6 +1337,10 @@ def ShowPlaybookInfo(n_clicks, selected_pb):
     if n_clicks == 0:
         raise PreventUpdate
     
+    # If no playbook is selected
+    if selected_pb == None:
+        raise PreventUpdate
+    
     return True, DisplayPlaybookInfo(selected_pb)
 
 '''C038 - Callback to close the playbook information modal'''
@@ -1485,7 +1489,7 @@ def DeleteAzureSessionCallback(n_clicks):
         return True, "Azure Session Closed"
     
 if __name__ == '__main__':
-    # Run Iinitialization check
+    # Run Initialization check
     InitializationCheck()
     #Initialize logger
     logger = setup_logger() 

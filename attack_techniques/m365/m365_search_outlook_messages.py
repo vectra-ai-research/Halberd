@@ -54,16 +54,16 @@ class M365SearchOutlookMessages(BaseTechnique):
                 search_results = raw_response.json()['value']
                 for search_match in search_results:
                     for hits in search_match['hitsContainers']:
-                        for hit in hits['hits']:
-                            output.append({
-                                "subject" : hit.get("resource","N/A").get("subject","N/A"),
-                                "preview" : hit.get("resource","N/A").get("bodyPreview","N/A"),
-                                "summary" : hit.get("summary","N/A"),
-                                "sender" : hit.get("resource","N/A").get("sender", "N/A").get("emailAddress","N/A"),
-                                "reply_to" : hit.get("resource","N/A").get("replyTo", "N/A"),
-                                "has_attachments" : hit.get("hasAttachments", "N/A")
-                            })
-
+                        if hits.get('total', 0) > 0:
+                            for hit in hits['hits']:
+                                output.append({
+                                    "subject" : hit.get("resource","N/A").get("subject","N/A"),
+                                    "preview" : hit.get("resource","N/A").get("bodyPreview","N/A"),
+                                    "summary" : hit.get("summary","N/A"),
+                                    "sender" : hit.get("resource","N/A").get("sender", "N/A").get("emailAddress","N/A"),
+                                    "reply_to" : hit.get("resource","N/A").get("replyTo", "N/A"),
+                                    "has_attachments" : hit.get("hasAttachments", "N/A")
+                                })
                 if output:
                     return ExecutionStatus.SUCCESS, {
                         "message": f"Successfully found len{output} outlook messages",
