@@ -41,8 +41,8 @@ class AzureEnumerateResources(BaseTechnique):
             # List resources
             resources_list = resource_client.resources.list_by_resource_group(rg_name)
 
-            resources = [resource_list_object for resource_list_object in resources_list]
-
+            resources = [{"resource_name": resource_list_object.name, "resource_type": resource_list_object.type, "resource_id": resource_list_object.id} for resource_list_object in resources_list]
+            
             if resources:
                 return ExecutionStatus.SUCCESS, {
                     "message": f"Successfully enumerated {len(resources)} Azure resources",
