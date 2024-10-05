@@ -15,7 +15,7 @@ class EntraAssignAppPermission(BaseTechnique):
             )
         ]
         
-        super().__init__("Assign App Permission", "Assign permission to an app to perform privilege escalation", mitre_techniques)
+        super().__init__("Assign App Permission", "Assigns API permissions to an application and optionally grants admin consent, enabling privilege escalation.", mitre_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
@@ -115,52 +115,63 @@ class EntraAssignAppPermission(BaseTechnique):
                 }
                 
                 if grant_admin_consent:
-                    # Get Service Principal ID
-                    sp_endpoint_url = f"https://graph.microsoft.com/v1.0/servicePrincipals?$filter=appId eq '{app_id}'"
-                    sp_response = GraphRequest().get(url = sp_endpoint_url)
+                    try:
+                        # Get Service Principal ID
+                        sp_endpoint_url = f"https://graph.microsoft.com/v1.0/servicePrincipals?$filter=appId eq '{app_id}'"
+                        sp_response = GraphRequest().get(url = sp_endpoint_url)
 
-                    if 'error' in sp_response:
-                        print("Failed to retrive Service Principal ID")
-                    else:
-                        sp_id = sp_response[0]['id']
-
-                    # Get Microsoft Graph App SP for resourceID
-                    mg_sp_endpoint_url = f"https://graph.microsoft.com/v1.0/servicePrincipals?$filter=appId eq '00000003-0000-0000-c000-000000000000'"
-                    mg_sp_response = GraphRequest().get(url = mg_sp_endpoint_url)
-
-                    if 'error' in mg_sp_response:
-                        print("Failed to retrive Service Principal ID")
-                    else:
-                        resource_id = mg_sp_response[0]['id']
-
-                    # Get permission info
-                    permission_url = f"https://graph.microsoft.com/v1.0/servicePrincipals/{resource_id}?$select=appRoles"
-                    permission_info_response = GraphRequest().get(url = permission_url)
-                    if permission_info_response['appRoles']:
-                        for role in permission_info_response['appRoles']:
-                            if role['id'] == permission_id:
-                                permission_info = role
-
-                    output['permission_details'] = permission_info
-
-                    if sp_id:
-                        # Grant admin consent
-                        consent_endpoint_url = f"https://graph.microsoft.com/v1.0/servicePrincipals/{sp_id}/appRoleAssignments"
-                        
-                        consent_data = {
-                            "resourceId": resource_id,  # Microsoft Graph SP
-                            "principalId": sp_id, # My apps SP
-                            "appRoleId": permission_id,
-                        }
-                        # Attempt to grant admin consent
-                        consent_response = GraphRequest().post(url = consent_endpoint_url, data = consent_data)
-                        
-                        if 200 <= consent_response.status_code < 300:
-                            # Successfully consented admin grant
-                            output['admin_consent_granted'] = True
+                        if 'error' in sp_response or not sp_response:
+                            output['grant_admin_consent_error'] = f"Failed to retrive app Service Principal ID"
+                            return ExecutionStatus.SUCCESS, {
+                                "message": f"Successfully assigned permission - {permission_id} to app - {app_obj_id}",
+                                "value": output
+                            }
                         else:
-                            # Failed to conset admin grant
-                            output['grant_admin_consent_error'] = f"{consent_response.status_code} - {consent_response.text}"
+                            sp_id = sp_response[0]['id']
+
+                        # Get Microsoft Graph App SP for resourceID
+                        mg_sp_endpoint_url = f"https://graph.microsoft.com/v1.0/servicePrincipals?$filter=appId eq '00000003-0000-0000-c000-000000000000'"
+                        mg_sp_response = GraphRequest().get(url = mg_sp_endpoint_url)
+                        
+                        if 'error' in mg_sp_response or not mg_sp_response :
+                            output['grant_admin_consent_error'] = f"Failed to retrive Service Principal ID"
+                            return ExecutionStatus.SUCCESS, {
+                                "message": f"Successfully assigned permission - {permission_id} to app - {app_obj_id}",
+                                "value": output
+                            }
+                        else:
+                            resource_id = mg_sp_response[0]['id']
+
+                        # Get permission info
+                        permission_url = f"https://graph.microsoft.com/v1.0/servicePrincipals/{resource_id}?$select=appRoles"
+                        permission_info_response = GraphRequest().get(url = permission_url)
+                        if permission_info_response['appRoles']:
+                            for role in permission_info_response['appRoles']:
+                                if role['id'] == permission_id:
+                                    permission_info = role
+
+                        # output['permission_details'] = permission_info
+
+                        if sp_id:
+                            # Grant admin consent
+                            consent_endpoint_url = f"https://graph.microsoft.com/v1.0/servicePrincipals/{sp_id}/appRoleAssignments"
+                            
+                            consent_data = {
+                                "resourceId": resource_id,  # Microsoft Graph SP
+                                "principalId": sp_id, # My apps SP
+                                "appRoleId": permission_id,
+                            }
+                            # Attempt to grant admin consent
+                            consent_response = GraphRequest().post(url = consent_endpoint_url, data = consent_data)
+                            
+                            if 200 <= consent_response.status_code < 300:
+                                # Successfully consented admin grant
+                                output['admin_consent_granted'] = True
+                            else:
+                                # Failed to conset admin grant
+                                output['grant_admin_consent_error'] = f"{consent_response.status_code} - {consent_response.text}"
+                    except Exception as e:
+                        output['grant_admin_consent_error'] = f"Unexpected Error - Failed to grant admin consent"
 
                 return ExecutionStatus.SUCCESS, {
                     "message": f"Successfully assigned permission - {permission_id} to app - {app_obj_id}",
