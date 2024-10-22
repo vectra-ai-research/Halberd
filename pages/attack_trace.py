@@ -8,6 +8,7 @@ import dash_bootstrap_components as dbc
 from dash import html, dash_table
 import pandas as pd
 from core.Constants import APP_LOG_FILE
+from dash_iconify import DashIconify
 
 # Function to parse log file
 def parse_log_file(file_path):
@@ -73,7 +74,7 @@ def generate_attack_trace_view():
     return html.Div([
         dbc.Row([
             dbc.Col(
-                html.H2("Attack Trace - Event Timeline", className="text-success mb-3")
+                html.H2(["Trace ",html.A(DashIconify(icon="mdi:help-circle-outline", width=18, height=18), href="https://github.com/vectra-ai-research/Halberd/wiki/UI-&-Navigation#trace-attack-trace", target="_blank")], className="text-success mb-3"),
             ),
             dbc.Col([
                 dbc.Button("Download Trace", id="download-trace-logs-button", n_clicks=0, color="danger",style={'float': 'right', 'margin-left': '10px'}),

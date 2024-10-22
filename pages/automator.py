@@ -4,11 +4,11 @@ Page Description : Allows management / execution of playbooks and scheduling.
 '''
 
 from dash import dcc, html
-import dash
 import dash_bootstrap_components as dbc
 import dash_daq as daq
 from datetime import date
 from core.Functions import GetAllPlaybooks, Playbook
+from dash_iconify import DashIconify
 
 def PlaybooksDropdownListGen():
     return [
@@ -19,8 +19,8 @@ def PlaybooksDropdownListGen():
         for pb in GetAllPlaybooks()
     ]
 
-page_layout = dbc.Container([
-    html.H2("Attack Automator", className="text-success mb-3"),
+page_layout = html.Div([
+    html.H2(["Automator ",html.A(DashIconify(icon="mdi:help-circle-outline", width=18, height=18), href="https://github.com/vectra-ai-research/Halberd/wiki/UI-&-Navigation#automator-automator", target="_blank")], className="text-success mb-3"),
     
     dbc.Row([
         dbc.Col([
@@ -191,4 +191,4 @@ page_layout = dbc.Container([
     
     # Element to trigger download/export of playbooks
     dcc.Download(id="download-pb-config-file")
-], fluid=True, className="bg-dark", style={"min-height": "93vh"})
+], className="bg-dark", style={"height": "93vh", 'overflow': 'auto', "padding-right": "20px", "padding-left": "20px"})

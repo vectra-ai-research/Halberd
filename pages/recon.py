@@ -5,9 +5,10 @@ Page Description : Recon page hosts various reconnaissance dashboards providing 
 
 from dash import html
 import dash_bootstrap_components as dbc
+from dash_iconify import DashIconify
 
 page_layout = html.Div([
-    html.H2("Recon Dashboards", className="text-success mb-3"),
+    html.H2(["Recon ", html.A(DashIconify(icon="mdi:help-circle-outline", width=18, height=18), href="https://github.com/vectra-ai-research/Halberd/wiki/UI-&-Navigation#recon-recon", target="_blank")], className="text-success mb-3"),
     dbc.Tabs(
         [
             dbc.Tab(label="Roles", tab_id="tab-recon-roles", labelClassName="text-success"),
