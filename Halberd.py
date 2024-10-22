@@ -6,15 +6,15 @@ import time
 import os
 import boto3
 import uuid
-import dash_daq as daq
 import dash_bootstrap_components as dbc
-from dash import dcc, html, Patch, ALL
+from dash import dcc, html, ALL
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
+import pandas as pd
 from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.Functions import DisplayTechniqueInfo, TechniqueOptionsGenerator, TabContentGenerator, InitializationCheck, DisplayPlaybookInfo, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator
+from core.Functions import generate_technique_info, run_initialization_check, generate_playbook_info, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
 from core.playbook.playbook_error import PlaybookError
@@ -24,7 +24,6 @@ from attack_techniques.technique_registry import *
 from core.logging.logger import setup_logger,StructuredAppLog
 from pages.attack_trace import group_events,create_summary, parse_log_file
 from core.logging.report import read_log_file, analyze_log, generate_html_report
-import pandas as pd
 
 # Create Application
 app = dash.Dash(__name__,  external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP],title='Halberd', update_title='Loading...', suppress_callback_exceptions=True)
@@ -32,7 +31,6 @@ app = dash.Dash(__name__,  external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTS
 # Navigation bar layout
 navbar = dbc.NavbarSimple(
     children=[
-        dbc.NavItem(dbc.NavLink("Access", href="/access")),
         dbc.NavItem(dbc.NavLink("Attack", href="/attack")),
         dbc.NavItem(dbc.NavLink("Recon", href="/recon")),
         dbc.NavItem(dbc.NavLink("Automator", href="/automator")),
@@ -119,12 +117,9 @@ app.layout = html.Div([
 
 '''C001 - Callback to update the page content based on the URL'''
 @app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
-def display_page(pathname):
+def display_page_from_url_callback(pathname):
     if pathname == '/home':
         from pages.home import page_layout
-        return page_layout
-    elif pathname == '/access':
-        from pages.access import page_layout
         return page_layout
     elif pathname == '/attack':
         from pages.attack import page_layout
@@ -145,136 +140,37 @@ def display_page(pathname):
         from pages.home import page_layout
         return page_layout
 
-'''C002 - Callback to display tab content'''
-@app.callback(Output("tabs-content-div", "children"), Input("attack-surface-tabs", "active_tab"))
-def TabSwitcher(tab):
-    tab_content = TabContentGenerator(tab)
-    return tab_content
-
-'''C003 - Callback to display options in Attack page'''
+'''C002 - Callback to generate tactic dropdown options in Attack view'''
 @app.callback(
-        Output(component_id = "technique-options-div", component_property = "children"), 
-        State(component_id = "attack-surface-tabs", component_property = "active_tab"), 
-        Input(component_id = "tactic-dropdown", component_property = "value"))
-def DisplayAttackTechniqueOptions(tab, tactic):
-    return TechniqueOptionsGenerator(tab, tactic)
+        Output(component_id = "tactic-dropdown", component_property = "options"), 
+        Output(component_id = "tactic-dropdown", component_property = "value"), 
+        Input(component_id = "attack-surface-tabs", component_property = "active_tab")
+)
+def generate_tactic_dropdown_callback(tab):
+    tactic_dropdown_option = generate_attack_tactics_options(tab)
+    return tactic_dropdown_option, tactic_dropdown_option[0]["value"]
 
+'''C003 - Callback to generate techniques radio options in Attack page'''
+@app.callback(
+        Output(component_id = "attack-techniques-options-div", component_property = "children"), 
+        Input(component_id = "attack-surface-tabs", component_property = "active_tab"),
+        Input(component_id = "tactic-dropdown", component_property = "value")
+)
+def generate_attack_technique_options_callback(tab, tactic):
+    technique_options = generate_attack_technique_options(tab, tactic)
+    return technique_options
 
 '''C004 - Callback to display technique config'''
 @app.callback(
         Output(component_id = "attack-config-div", component_property = "children"), 
         Input(component_id = "attack-options-radio", component_property = "value"),
-        prevent_initial_call=True)
-def DisplayAttackTechniqueConfig(technique):
+        prevent_initial_call=True
+)
+def display_attack_technique_config_callback(technique):
+    technique_config = generate_attack_technique_config(technique)
+    return technique_config
 
-    technique_config = TechniqueRegistry.get_technique(technique)().get_parameters()
-
-    config_div_elements = []
-    
-    config_div_display = Patch()
-    config_div_display.clear()
-
-    # Check if technique requires input
-    if len(technique_config.keys()) > 0:
-        config_div_elements.append(html.H5("Attack Technique Config"))
-        for input_field, input_config in technique_config.items():
-            # Indicate required fields with * on GUI
-            if input_config['required']:
-                config_div_elements.append(dbc.Label(input_config['name']+" *"))
-            else:
-                config_div_elements.append(dbc.Label(input_config['name']))
-
-            if input_config['input_field_type'] in ["text", "email", "password", "number"]:
-                config_div_elements.append(dbc.Input(
-                    type = input_config['input_field_type'],
-                    # Display default values in placeholder for technique param
-                    placeholder = input_config['default'] if input_config['default'] else "",
-                    debounce = True,
-                    id = {"type": "technique-config-display", "index": input_field},
-                    className="bg-dark border",
-                ))
-            elif input_config['input_field_type'] == "bool":
-                config_div_elements.append(daq.BooleanSwitch(
-                    id = {"type": "technique-config-display-boolean-switch", "index": input_field}, 
-                    on=input_config['default'])
-                )
-            elif input_config['input_field_type'] == "upload":
-                config_div_elements.append(dcc.Upload(
-                    id = {"type": "technique-config-display-file-upload", "index": input_field}, 
-                    children=html.Div([html.A('Drag and Drop or Select a File')]), 
-                    style={'width': '100%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px'})
-                )
-                
-            config_div_elements.append(html.Br())
-
-        config_div = html.Div(config_div_elements, className='divBorder d-grid col-6 mx-auto', style={'width' : '100%'})
-        config_div_display.append(config_div)
-    else:
-        config_div_display.append(html.H5("Attack Technique Config"))
-        config_div_display.append(html.B("No config required! Hit 'Execute'"))
-
-    config_div_display.append(html.Br())
-    config_div_display.append(
-        (html.Div([
-            dbc.Button("Execute Technique", id="technique-execute-button", n_clicks=0, color="danger"),
-            html.Br(),
-        ], className="d-grid col-6 mx-auto"))
-    )
-    config_div_display.append(html.Div([
-            # opens modal and displays technique info in {app-technique-info-display-modal}
-            dbc.Button("About Technique", id="technique-info-display-button", n_clicks=0, color="primary"), 
-            html.Br(),
-            dbc.Button("Add to Playbook", id="open-add-to-playbook-modal-button", n_clicks=0, color="secondary")
-        ], style={'display': 'flex', 'justify-content': 'center', 'gap': '10px'})
-    )
-    
-    config_div_display.append(
-        html.Div(id='attack-technique-sink-hidden-div', style={'display':'none'}),
-    )
-
-    # create plabook dropdown content
-    playbook_dropdown_options = []    
-    for pb in GetAllPlaybooks():
-        playbook_dropdown_options.append(
-            {
-                "label": html.Div([Playbook(pb).name], style={'font-size': 20}, className="text-dark"),
-                "value": Playbook(pb).name,
-            }
-        )
-
-    config_div_display.append(
-        # create add to playbook modal
-        dbc.Modal(
-            [
-                dbc.ModalHeader("Add Technique to Playbook"),
-                dbc.ModalBody([
-                    dbc.Label("Select Playbook to Add Step"),
-                    dcc.Dropdown(
-                        options = playbook_dropdown_options, 
-                        value = None, 
-                        id='att-pb-selector-dropdown',
-                        placeholder="Select Playbook",
-                        ),
-                    html.Br(),
-                    dbc.Label("Add to Step # (Optional)", className="text-light"),
-                    dbc.Input(id='pb-add-step-number-input', placeholder="3", type= "number", className="bg-dark text-light"),
-                    html.Br(),
-                    dbc.Label("Wait in Seconds After Step Execution (Optional)", className="text-light"),
-                    dbc.Input(id='pb-add-step-wait-input', placeholder="120", type= "number", className="bg-dark text-light")
-                ]),
-                dbc.ModalFooter([
-                    dbc.Button("Cancel", id="close-add-to-playbook-modal-button", className="ml-auto", color="danger", n_clicks=0),
-                    dbc.Button("Add to Playbook", id="confirm-add-to-playbook-modal-button", className="ml-2", color="danger", n_clicks=0)
-                ])
-            ],
-            id="add-to-playbook-modal",
-            is_open=False,
-        )
-    )
-
-    return config_div_display
-
-'''C005 - Attack Execution Callback - Execute Technique'''
+'''C005 - Callback to execute a technqiue'''
 @app.callback(
         Output(component_id = "execution-output-div", component_property = "children"), 
         Output(component_id = "technique-output-memory-store", component_property = "data"), 
@@ -286,8 +182,9 @@ def DisplayAttackTechniqueConfig(technique):
         State({"type": "technique-config-display", "index": ALL}, "value"), 
         State({"type": "technique-config-display-boolean-switch", "index": ALL}, "on"), 
         State({"type": "technique-config-display-file-upload", "index": ALL}, "contents"), 
-        prevent_initial_call = True)
-def ExecuteTechniqueCallback(n_clicks, tactic, t_id, values, bool_on, file_content):
+        prevent_initial_call = True
+)
+def execute_technique_callback(n_clicks, tactic, t_id, values, bool_on, file_content):
     '''The input callback can handle text inputs, boolean flags and file upload content'''
     if n_clicks == 0:
         raise PreventUpdate
@@ -422,21 +319,20 @@ def update_entity_map(n_clicks, map_layout, filter_category):
 
     return GenerateEntityMappingGraph(map_layout, filter_category)
 
-'''C007 - Callback to open/close Technique Info modal'''
+'''C007 - Callback to display selected technique info in Attack view'''
 @app.callback(
-        Output(component_id = "app-technique-info-display-modal", component_property = "is_open", allow_duplicate=True),Output("app-technique-info-display-modal-body", "children", allow_duplicate = True),
-        Input(component_id= "technique-info-display-button", component_property= "n_clicks"),
-        State(component_id = "attack-options-radio", component_property = "value"), 
-        [State("app-technique-info-display-modal", "is_open")], prevent_initial_call=True
+        Output(component_id = "attack-technique-info-div", component_property = "children", allow_duplicate=True),
+        Input(component_id = "attack-options-radio", component_property = "value"), 
+        prevent_initial_call=True
 )
-def DisplayAttackTechniqueConfig(n_clicks, t_id, is_open):
-    if n_clicks == 0:
+def display_attack_technique_info_callback(t_id):
+    if t_id is None:
         raise PreventUpdate
     
-    # get technique details
-    technique_details = DisplayTechniqueInfo(t_id)
+    # Get technique details
+    technique_details = generate_technique_info(t_id)
     
-    return not is_open, technique_details
+    return technique_details
 
 '''C008 - Callback to generate trace report'''
 @app.callback(
@@ -444,7 +340,7 @@ def DisplayAttackTechniqueConfig(n_clicks, t_id, is_open):
     Input(component_id= "download-trace-report-button", component_property= "n_clicks"),
     prevent_initial_call = True
 )
-def GenerateTraceReport(n_clicks):
+def generate_trace_report_callback(n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     try:
@@ -467,7 +363,7 @@ def GenerateTraceReport(n_clicks):
     Input("download-trace-logs-button", "n_clicks"),
     prevent_initial_call=True,
 )
-def DownloadTraceLogs(n_clicks):
+def download_trace_logs_callback(n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     # Parse log file and create summary
@@ -484,104 +380,26 @@ def DownloadTraceLogs(n_clicks):
         Output(component_id = "aws-access-info-div", component_property = "children"), 
         Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"), 
         Input(component_id = "aws-session-selector-dropdown", component_property = "value"))
-def GenerateAccessInfoDivCallBack(n_interval, session_name):
-    # n_intervals will refresh the access info periodically
-    info_output_div = []
-    if session_name:
-        info_output_div.append(html.Br())
-        info_output_div.append(html.H5("Access : "))
-
-        manager = SessionManager()
-        # set default session
-        manager.set_default_session(session_name)
-        my_session = manager.get_session(session_name)
-        sts_client = my_session.client('sts')
-        
-        try:
-            session_info = sts_client.get_caller_identity()
-
-            info_output_div.append(html.H5("Valid Session", className="text-success"))
-            info_output_div.append(html.Br())
-            info_output_div.append(html.Br())
-            info_output_div.append(html.H5("User ID :"))
-            info_output_div.append(html.Div(session_info['UserId']))
-            info_output_div.append(html.Br())
-            info_output_div.append(html.Br())
-            info_output_div.append(html.H5("Account :"))
-            info_output_div.append(html.Div(session_info['Account']))
-            info_output_div.append(html.Br())
-            info_output_div.append(html.Br())
-            info_output_div.append(html.H5("ARN : "))
-            info_output_div.append(html.Div(session_info['Arn']))
-            
-            return info_output_div
-        except:
-            info_output_div.append(html.Div("No Valid Session", className="text-danger"))
-            return info_output_div
-    else:
-        info_output_div.append(html.Div("No Valid Session", className="text-danger"))
-        return info_output_div
+def generate_aws_access_info_callback(n_interval, session_name):
+    return generate_aws_access_info(session_name)
 
 '''C011 - Callback to populate EntraID access info'''
 @app.callback(
         Output(component_id = "access-info-div", component_property = "children"), 
         Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"))
-def GenerateAccessInfoDivCallBack(n_intervals):
-    info_output_div = []
-    manager = EntraTokenManager()
-    access_token = manager.get_active_token()
-    
-    if access_token:
-        try:
-            access_info = manager.decode_jwt_token(access_token)
-        except Exception as e:
-            info_output_div.append(html.Br())
-            info_output_div.append(html.Div("Failed to decode access token", className="text-danger"))
-            return info_output_div
-    else: 
-        info_output_div.append(html.Br())
-        info_output_div.append(html.Div("No Active Access Token", className="text-danger"))
-        return info_output_div
-    
-    if access_info != None:    
-        info_output_div.append(html.Br())
-        for info in access_info:
-            if info == 'Access Exp':
-                if access_info['Access Exp'] < datetime.datetime.fromtimestamp(int(time.time()), tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'):
-                    info_output_div += [
-                        html.H5(f"{info} : "),
-                        html.Div(f"{access_info[info]} UTC [Expired]", className="text-danger"),
-                        html.Br(),
-                        html.Br()
-                        ]
-                else:
-                    info_output_div += [
-                        html.H5(f"{info} : "),
-                        html.Div(f"{access_info[info]} UTC [Valid]", className="text-success"),
-                        html.Br(),
-                        html.Br()
-                        ]
-            else:
-                info_output_div += [
-                    html.H5(f"{info} : "), 
-                    html.Div(f"{access_info[info]}"), 
-                    html.Br(), 
-                    html.Br()
-                    ]
-        
-        return info_output_div
-    else:
-        return "Failed to decode access token"
+def generate_entra_access_info_callback(n_intervals):
+    return generate_entra_access_info("active")
 
-'''C012 - Callback to select Entra ID access token'''
+'''C012 - Callback to set active Entra ID access token'''
 @app.callback(
         Output(component_id = "access-info-div", component_property = "children",  allow_duplicate=True), 
         Input(component_id = "token-selector-dropdown", component_property = "value"), 
         prevent_initial_call=True)
-def UpdateInfoOnTokenSelectCallBack(value):
+def set_entra_active_token_callback(value):
 
     manager = EntraTokenManager()
 
+    # Retrieve the actual token from tokens file
     selected_token = json.loads(value)
     selected_token_entity = list(selected_token.keys())[0]
     selected_token_exp = list(selected_token.values())[0]
@@ -594,48 +412,18 @@ def UpdateInfoOnTokenSelectCallBack(value):
                 break
         else:
             pass
-
+    
+    # Set selected token as active
     manager.set_active_token(access_token)
 
-    access_info = manager.decode_jwt_token(access_token)
-    if access_info != None:
-        info_output_div = []
-        for info in access_info:
-            info_output_div = []
-        info_output_div.append(html.Br())
-        for info in access_info:
-            if info == 'Access Exp':
-                if access_info['Access Exp'] < datetime.datetime.fromtimestamp(int(time.time()), tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'):
-                    info_output_div += [
-                        html.H5(f"{info} : "),
-                        html.Div(f"{access_info[info]} UTC [Expired]", className="text-danger"),
-                        html.Br(),
-                        html.Br()
-                        ]
-                else:
-                    info_output_div += [
-                        html.H5(f"{info} : "),
-                        html.Div(f"{access_info[info]} UTC [Valid]", className="text-success"),
-                        html.Br(),
-                        html.Br()
-                        ]
-            else:
-                info_output_div += [
-                    html.H5(f"{info} : "), 
-                    html.Div(f"{access_info[info]}"), 
-                    html.Br(), 
-                    html.Br()
-                    ]
-        
-        return info_output_div
-    else:
-        return "No token selected"
+    # Update access info div with selected token info
+    return generate_entra_access_info(access_token=access_token)
 
 '''C013 - Callback to generate Entra ID token options in Access dropdown'''
 @app.callback(
         Output(component_id = "token-selector-dropdown", component_property = "options"), 
         Input(component_id = "token-selector-dropdown", component_property = "title"))
-def GenerateDropdownOptionsCallBack(title):
+def generate_entra_token_dropdown_callback(title):
     manager = EntraTokenManager()
     if title == None:
         all_tokens = []
@@ -645,7 +433,7 @@ def GenerateDropdownOptionsCallBack(title):
                 selected_value = {token_info.get('Entity') : token_info.get('Access Exp')}
                 all_tokens.append(
                     {
-                        'label': html.Div(token_info['Entity'], className="text-dark"), 'value': json.dumps(selected_value)
+                        'label': html.Div(f"{token_info['Entity']}-{token_info.get('Access Exp')}", className="text-dark"), 'value': json.dumps(selected_value)
                     }
                 )
 
@@ -655,7 +443,7 @@ def GenerateDropdownOptionsCallBack(title):
 @app.callback(
         Output("recon-content-div", "children"), 
         Input("recon-target-tabs", "active_tab"))
-def TabSwitcher(tab):
+def generate_content_from_recon_tab_callback(tab):
     if tab == "tab-recon-entity-map":
         from pages.dashboard.entity_map import page_layout
         return page_layout
@@ -679,7 +467,7 @@ def TabSwitcher(tab):
         Output(component_id = "role-description-recon-div", component_property = "children"), 
         Input(component_id= "role-recon-start-button", component_property= "n_clicks"),
         Input(component_id = "role-recon-input", component_property = "value"))
-def ExecuteRecon(n_clicks, role_name):
+def execute_recon_callback(n_clicks, role_name):
     if n_clicks == 0:
         raise PreventUpdate
     
@@ -714,7 +502,7 @@ def ExecuteRecon(n_clicks, role_name):
     Output(component_id = "user-app-recon-div", component_property = "children"), 
     Input(component_id= "user-recon-start-button", component_property= "n_clicks"),
     Input(component_id = "user-recon-input", component_property = "value"))
-def ExecuteRecon(n_clicks, user_string):
+def execute_user_recon_dashboard_callback(n_clicks, user_string):
     if n_clicks == 0:
         raise PreventUpdate
     
@@ -738,72 +526,14 @@ def ExecuteRecon(n_clicks, user_string):
         Output(component_id = "azure-access-info-div", component_property = "children"), 
         Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"), 
         Input(component_id = "azure-subscription-selector-dropdown", component_property = "value"))
-def GenerateAccessInfoDivCallBack(n_intervals, value):
-    # n_intervals will refresh the access info periodically
-    info_output_div = []
-    info_output_div.append(html.Br())
-    info_output_div.append(html.H5("Access : "))
-    
-    if value == None:
-        # If no subscription is selected, proceed with default subscription
-        pass
-    else:
-        selected_subscription = value
-        AzureAccess().set_active_subscription(selected_subscription)
-
-    # Get set subscription info
-    current_access = AzureAccess().get_current_subscription_info()
-    
-    try:
-        if current_access != None:
-            # Construct session info to display
-            info_output_div.append(html.H5("Active Session", className="text-success"))
-            info_output_div.append(html.Br())
-            info_output_div.append(html.Br())
-            info_output_div.append(html.H5("Environment Name :"))
-            info_output_div.append(html.Div(current_access.get("environmentName", "N/A")))
-            info_output_div.append(html.Br())
-            info_output_div.append(html.Br())
-            info_output_div.append(html.H5("Name : "))
-            info_output_div.append(html.Div(current_access.get("name", "N/A")))
-            info_output_div.append(html.Br())
-            info_output_div.append(html.Br())
-            info_output_div.append(html.H5("Subscription ID : "))
-            info_output_div.append(html.Div(current_access.get("id", "N/A")))
-            info_output_div.append(html.Br())
-            info_output_div.append(html.Br())
-            info_output_div.append(html.H5("Is Default : "))
-            info_output_div.append(html.Div(str(current_access.get("isDefault", "N/A"))))
-            info_output_div.append(html.Br())
-            info_output_div.append(html.Br())
-            info_output_div.append(html.H5("State : "))
-            info_output_div.append(html.Div(current_access.get("state", "N/A")))
-            info_output_div.append(html.Br())
-            info_output_div.append(html.Br())
-            info_output_div.append(html.H5("User : "))
-            info_output_div.append(html.Div(current_access.get("user", "N/A").get("name","N/A")))
-            info_output_div.append(html.Br())
-            info_output_div.append(html.Br())
-            info_output_div.append(html.H5("Tenant ID : "))
-            info_output_div.append(html.Div(current_access.get("tenantId", "N/A")))
-            info_output_div.append(html.Br())
-            info_output_div.append(html.Br())
-            info_output_div.append(html.H5("Home Tenant ID :"))
-            info_output_div.append(html.Div(current_access.get("homeTenantId", "N/A")))
-            
-            return info_output_div
-        else:
-            info_output_div.append(html.Div("No Active Session", className="text-danger"))
-            return info_output_div
-    except:
-        info_output_div.append(html.Div("No Active Session", className="text-danger"))
-        return info_output_div
+def generate_azure_access_info_callback(n_intervals, value):
+    return generate_azure_access_info(value)
 
 '''C018 - Callback to generate Azure subscription options in Access dropdown'''
 @app.callback(
         Output(component_id = "azure-subscription-selector-dropdown", component_property = "options"), 
         Input(component_id = "azure-subscription-selector-dropdown", component_property = "title"))
-def GenerateDropdownOptionsCallBack(title):
+def generate_azure_sub_dropdown_callback(title):
     if title == None:
         all_subscriptions = []
         
@@ -822,7 +552,7 @@ def GenerateDropdownOptionsCallBack(title):
         Output(component_id = "attack-automator-path-display-div", component_property = "children"), 
         Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
         prevent_initial_call=True)
-def DisplayAttackSequenceViz(selected_pb):
+def generate_attack_seq_viz_callback(selected_pb):
     if selected_pb:
         return playbook_viz_generator(selected_pb)
     else:
@@ -836,7 +566,7 @@ def DisplayAttackSequenceViz(selected_pb):
         Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True),
         State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
         Input(component_id = "execute-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
-def ExecuteAttackSequence(playbook_name, n_clicks):
+def execute_pb_callback(playbook_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     
@@ -865,7 +595,7 @@ def ExecuteAttackSequence(playbook_name, n_clicks):
         [Input("toggle-scheduler-modal-open-button", "n_clicks"), 
         Input("toggle-scheduler-modal-close-button", "n_clicks")], 
         [State("scheduler-modal", "is_open")])
-def toggle_modal(open_trigger, close_trigger, is_open):
+def toggle_scheduler_modal_callback(open_trigger, close_trigger, is_open):
     if open_trigger or close_trigger:
         return not is_open
     return is_open
@@ -884,7 +614,7 @@ def toggle_modal(open_trigger, close_trigger, is_open):
         Input(component_id = "schedule-name-input", component_property = "value"), 
         Input(component_id = "schedule-sequence-button", component_property = "n_clicks"), 
         prevent_initial_call=True)
-def CreateNewAutomatorSchedule(playbook_id, execution_time, start_date, end_date, repeat_flag, repeat_frequency, schedule_name, n_clicks):
+def create_new_schedule_callback(playbook_id, execution_time, start_date, end_date, repeat_flag, repeat_frequency, schedule_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     
@@ -910,7 +640,7 @@ def CreateNewAutomatorSchedule(playbook_id, execution_time, start_date, end_date
         State(component_id = "export-playbook-filename-text-input", component_property = "value"),
         Input(component_id = "export-playbook-button", component_property = "n_clicks"), 
         prevent_initial_call=True)
-def ExportAttackPlaybook(playbook_name, mask_param, export_file_name, n_clicks):
+def export_playbook_callback(playbook_name, mask_param, export_file_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
         
@@ -943,7 +673,7 @@ def ExportAttackPlaybook(playbook_name, mask_param, export_file_name, n_clicks):
         Input(component_id = 'import-pb-button', component_property = 'n_clicks'), 
         Input(component_id = 'upload-playbook', component_property = 'contents'), 
         prevent_initial_call=True)
-def UploadHalberdPlaybook(n_clicks, file_contents):
+def import_playbook_callback(n_clicks, file_contents):
     if n_clicks == 0:
         raise PreventUpdate
 
@@ -974,7 +704,7 @@ def UploadHalberdPlaybook(n_clicks, file_contents):
         State(component_id = {"type": "technique-config-display-file-upload", "index": ALL}, component_property = "contents"),
         prevent_initial_call=True
     )
-def AddTechniqueToPlaybook(n_clicks, selected_pb, step_no, wait, t_id, values, bool_on, file_content):
+def add_technique_to_pb_callback(n_clicks, selected_pb, step_no, wait, t_id, values, bool_on, file_content):
     if n_clicks == 0:
         raise PreventUpdate
     
@@ -1046,7 +776,7 @@ def AddTechniqueToPlaybook(n_clicks, selected_pb, step_no, wait, t_id, values, b
         Output(component_id = "playbook-creator-modal", component_property = "is_open"), 
         [Input("pb-creator-modal-open-button", "n_clicks"), Input("pb-creator-modal-close-button", "n_clicks")], 
         [State("playbook-creator-modal", "is_open")])
-def toggle_modal(open_trigger, close_trigger, is_open):
+def toggle_pb_create_modal_callback(open_trigger, close_trigger, is_open):
     if open_trigger or close_trigger:
         return not is_open
     return is_open
@@ -1064,7 +794,7 @@ def toggle_modal(open_trigger, close_trigger, is_open):
         State(component_id = "pb-refs-input", component_property = "value"), 
         Input(component_id = "create-playbook-button", component_property = "n_clicks"), prevent_initial_call=True
     )
-def CreateNewPlaybookCallback(pb_name, pb_desc, pb_author, pb_references, n_clicks):
+def create_new_pb_callback(pb_name, pb_desc, pb_author, pb_references, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     
@@ -1087,7 +817,7 @@ def CreateNewPlaybookCallback(pb_name, pb_desc, pb_author, pb_references, n_clic
         [State(component_id = "app-technique-info-display-modal", component_property = "is_open")], 
         prevent_initial_call=True
     )
-def DisplayPlaybookNodeData(data, is_open):
+def toggle_t_info_modal_callback(data, is_open):
     if data:
         # Extract module_id from node label
         if data['label'] != "None":
@@ -1104,7 +834,7 @@ def DisplayPlaybookNodeData(data, is_open):
             pb_step_info = data['info']
             step_data = next(iter(pb_step_info.items()))
             module_id = step_data[1]['Module']
-            return DisplayTechniqueInfo(module_id), not is_open
+            return generate_technique_info(module_id), not is_open
     else:
         raise PreventUpdate
         
@@ -1115,7 +845,7 @@ def DisplayPlaybookNodeData(data, is_open):
         State(component_id="automator-pb-selector-dropdown", component_property="value"),
         prevent_initial_call=True
     )
-def DisplayPlaybookNodeData(node_data, value):
+def display_pb_node_data_callback(node_data, value):
     if node_data:
         # Extract module_id from node label
         if node_data['label'] != "None":
@@ -1209,7 +939,7 @@ def DisplayPlaybookNodeData(node_data, value):
     [State(component_id = "add-to-playbook-modal", component_property = "is_open")],
     prevent_initial_call=True
 )
-def toggle_modal(n1, n2, n3, is_open):
+def toggle_add_to_pb_modal_callback(n1, n2, n3, is_open):
     if n1 or n2 or n3:
         return not is_open
     return is_open
@@ -1218,7 +948,7 @@ def toggle_modal(n1, n2, n3, is_open):
 @app.callback(
         Output(component_id = "automator-pb-selector-dropdown", component_property = "options"), 
         Input(component_id = "automator-pb-selector-dropdown", component_property = "title"))
-def GenerateDropdownOptionsCallBack(title):
+def generate_pb_dropdown_options_callback(title):
     if title == None:
         playbook_dropdown_option = []    
         for pb in GetAllPlaybooks():
@@ -1240,7 +970,7 @@ def GenerateDropdownOptionsCallBack(title):
         Input(component_id = "delete-pb-button", component_property = "n_clicks"), 
         State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
         prevent_initial_call=True)
-def DeleteAttackPlaybook(n_clicks, playbook_name):
+def delete_pb_callback(n_clicks, playbook_name):
     if n_clicks == 0:
         raise PreventUpdate
         
@@ -1268,7 +998,7 @@ def DeleteAttackPlaybook(n_clicks, playbook_name):
     State("app-technique-info-display-modal", "is_open"),
     prevent_initial_call=True
 )
-def ToggleAppModalFromHomeMatrix(n_clicks, is_open):
+def toggle_app_modal_from_home_matrix_callback(n_clicks, is_open):
     # Prevent call back on page load
     if any(item is not None for item in n_clicks):
         if not dash.callback_context.triggered:
@@ -1279,7 +1009,7 @@ def ToggleAppModalFromHomeMatrix(n_clicks, is_open):
         technique_id = eval(triggered_id.split(".")[0])["index"]
 
         # Generate technique information
-        technique_details = DisplayTechniqueInfo(technique_id)
+        technique_details = generate_technique_info(technique_id)
         
         return not is_open, technique_details
     else:
@@ -1292,7 +1022,7 @@ def ToggleAppModalFromHomeMatrix(n_clicks, is_open):
     State("app-technique-info-display-modal", "is_open"),
     prevent_initial_call=True
 )
-def CloseAppModal(n_clicks, is_open):
+def close_app_t_info_modal_callback(n_clicks, is_open):
     if n_clicks:
         return False
     return is_open
@@ -1303,7 +1033,7 @@ def CloseAppModal(n_clicks, is_open):
     Input("generate-report-button", "n_clicks"),
     prevent_initial_call=True,
 )
-def DownloadReport(n_clicks):
+def download_report_callback(n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     # Parse log file and create summary
@@ -1320,7 +1050,7 @@ def DownloadReport(n_clicks):
     Output("entity-map-node-info-div", "children"),
     Input("entity-detection-cytoscape-nodes", "tapNodeData"),
 )
-def DisplayEntityMapNodeInfo(data):
+def display_entity_map_node_info_callback(data):
     if not data:
         return "Click on a node to see more information."
     return f"Selected Node: {data['label']}"
@@ -1333,7 +1063,7 @@ def DisplayEntityMapNodeInfo(data):
         State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
         prevent_initial_call=True
 )
-def ShowPlaybookInfo(n_clicks, selected_pb):
+def display_pb_info_in_modal_callback(n_clicks, selected_pb):
     if n_clicks == 0:
         raise PreventUpdate
     
@@ -1341,7 +1071,7 @@ def ShowPlaybookInfo(n_clicks, selected_pb):
     if selected_pb == None:
         raise PreventUpdate
     
-    return True, DisplayPlaybookInfo(selected_pb)
+    return True, generate_playbook_info(selected_pb)
 
 '''C038 - Callback to close the playbook information modal'''
 @app.callback(
@@ -1350,7 +1080,7 @@ def ShowPlaybookInfo(n_clicks, selected_pb):
     State("automator-playbook-info-display-modal", "is_open"),
     prevent_initial_call=True
 )
-def ClosePbInfoModal(n_clicks, is_open):
+def close_pb_info_modal_callback(n_clicks, is_open):
     if n_clicks:
         return False
     return is_open
@@ -1362,7 +1092,7 @@ def ClosePbInfoModal(n_clicks, is_open):
     State("technique-output-memory-store", "data"),
     prevent_initial_call=True
 )
-def DownloadTechniqueRawResponse(n_clicks, data):
+def download_technique_raw_response_callback(n_clicks, data):
     if n_clicks is None or data is None:
         raise PreventUpdate
     
@@ -1384,7 +1114,7 @@ def DownloadTechniqueRawResponse(n_clicks, data):
             Input("toggle-export-playbook-modal-close-button", "n_clicks")
         ], 
         [State("export-playbook-modal", "is_open")])
-def ToggleModal(open_trigger, close_trigger, is_open):
+def toggle_pb_export_modal_callback(open_trigger, close_trigger, is_open):
     if open_trigger or close_trigger:
         return not is_open
     return is_open
@@ -1396,14 +1126,14 @@ def ToggleModal(open_trigger, close_trigger, is_open):
     State("app-error-display-modal", "is_open"),
     prevent_initial_call=True
 )
-def CloseAppErrorModal(n_clicks, is_open):
+def close_app_error_modal_callback(n_clicks, is_open):
     if n_clicks:
         return False
     return is_open
 
 '''C042 - Callback to generate AWS session options in AWS sessions dropdown'''
 @app.callback(Output(component_id = "aws-session-selector-dropdown", component_property = "options"), Input(component_id = "aws-session-selector-dropdown", component_property = "title"))
-def GenerateDropdownOptionsCallBack(session_name):
+def generate_aws_session_options_dropdown_callback(session_name):
     manager = SessionManager()
     if session_name == None:
         all_sessions = []
@@ -1425,7 +1155,7 @@ def GenerateDropdownOptionsCallBack(session_name):
         Input(component_id = "del-entra-token-button", component_property = "n_clicks"),
         prevent_initial_call=True
     )
-def DeleteEntraTokenCallback(value, n_clicks):
+def delete_entra_token_callback(value, n_clicks):
     if n_clicks is None or value is None:
         raise PreventUpdate
     
@@ -1459,7 +1189,7 @@ def DeleteEntraTokenCallback(value, n_clicks):
         Input(component_id = "del-aws-session-button", component_property = "n_clicks"),
         prevent_initial_call=True
     )
-def DeleteAWSSessionCallback(session_name, n_clicks):
+def delete_aws_session_callback(session_name, n_clicks):
     if n_clicks is None or session_name is None:
         raise PreventUpdate
     
@@ -1477,7 +1207,7 @@ def DeleteAWSSessionCallback(session_name, n_clicks):
         Input(component_id = "del-az-session-button", component_property = "n_clicks"),
         prevent_initial_call=True
     )
-def DeleteAzureSessionCallback(n_clicks):
+def delete_azure_session_callback(n_clicks):
     if n_clicks is None:
         raise PreventUpdate
     
@@ -1487,10 +1217,113 @@ def DeleteAzureSessionCallback(n_clicks):
     logout = manager.logout()
     if logout:
         return True, "Azure Session Closed"
+
+'''C046 - Callback to display access info button dynamically'''
+@app.callback(
+    Output(component_id = "attack-access-info-dynamic-btn", component_property = "children"),
+    Output(component_id = "attack-access-info-dynamic-btn", component_property = "color"),
+    Input(component_id = "attack-surface-tabs", component_property = "active_tab"),
+    Input(component_id="attack-access-info-display-modal", component_property="is_open") # refresh button status automatically
+)
+def update_access_button_callback(active_tab, is_open):
+    if active_tab is None:
+        return "No Access", "danger"
+    
+    if active_tab in ["tab-attack-EntraID", "tab-attack-M365"]:
+        manager = EntraTokenManager()
+        access_token = manager.get_active_token()
+        # Check if tokens available
+        if access_token:
+        # Check if token valid
+            access_info = manager.decode_jwt_token(access_token)
+            if access_info != None:
+                if access_info['Access Exp'] < datetime.datetime.fromtimestamp(int(time.time()), tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'):
+                    return "Access Expired", "danger"
+                else:
+                    return access_info['Entity'], "success"
+        else: 
+            # No valid token
+            return "No EntraID / M365 Access", "danger"
+        
+    elif active_tab == "tab-attack-AWS":
+        try:
+            aws_manager = SessionManager()
+            active_aws_session = aws_manager.get_active_session()
+            if active_aws_session:
+                user = aws_manager.get_user_details()
+                user_id = user['user_id']
+
+                return user_id, "success"
+            else:
+                return "No AWS Access", "danger"
+        except:
+            return "No AWS Access", "danger"
+    elif active_tab == "tab-attack-Azure":
+        current_access = AzureAccess().get_current_subscription_info()
+        try:
+            if current_access != None:
+                user = current_access.get("user").get("name")
+                subscription = current_access.get("name")
+                return f"{user} [{subscription}]", "success"
+            else:
+                return "No Access", "danger"
+        except:
+            return "No Azure Access", "danger"
+
+'''C046 - Callback to display access info in modal'''
+@app.callback(
+        Output("attack-access-info-display-modal", "is_open", allow_duplicate=True),
+        Output("attack-access-info-display-modal-body", "children", allow_duplicate = True),
+        Input(component_id = "attack-access-info-dynamic-btn", component_property = "n_clicks"),
+        State(component_id = "attack-surface-tabs", component_property = "active_tab"),
+        prevent_initial_call=True
+)
+def display_access_info_in_modal_callback(n_clicks, active_tab):
+    if n_clicks is None:
+        raise PreventUpdate
+    
+    def create_access_section(dropdown_id, remove_button_id, info_div_id):
+        """Dynamically creates access info sections on Access page"""
+        return html.Div(
+            [
+                dbc.Row([
+                    dbc.Col([
+                        html.H4("Set Access", className="mt-2 mb-2"),    
+                    ], md=4),
+                    dbc.Col([
+                        dcc.Dropdown(id=dropdown_id, className="mb-2")
+                    ], md=8),
+                ]),
+                dcc.Loading(
+                    id=f"{info_div_id}-loading",
+                    type="default",
+                    children=html.Div(id=info_div_id, className="p-3")
+                ),
+                dbc.Button("Remove Access", id=remove_button_id, color="danger", size="sm", className="mt-2")
+            ],className="mb-4")
+            
+    if active_tab in ["tab-attack-EntraID", "tab-attack-M365"]:    
+        return True, create_access_section(
+            "token-selector-dropdown",
+            "del-entra-token-button",
+            "access-info-div"
+        )
+    elif active_tab == "tab-attack-AWS":    
+        return True, create_access_section(
+            "aws-session-selector-dropdown",
+            "del-aws-session-button",
+            "aws-access-info-div"
+        )
+    elif active_tab == "tab-attack-Azure":    
+        return True, create_access_section(
+            "azure-subscription-selector-dropdown",
+            "del-az-session-button",
+            "azure-access-info-div"
+        )
     
 if __name__ == '__main__':
     # Run Initialization check
-    InitializationCheck()
+    run_initialization_check()
     #Initialize logger
     logger = setup_logger() 
     # Start application
