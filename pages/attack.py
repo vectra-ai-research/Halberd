@@ -113,5 +113,3 @@ page_layout = html.Div([
         backdrop="static"
     ),
 ], className="bg-dark", style={"height": "100vh", 'overflow': 'auto', "padding-right": "20px", "padding-left": "20px"})
-
-    
