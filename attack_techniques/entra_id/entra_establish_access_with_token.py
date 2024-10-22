@@ -52,7 +52,7 @@ class EntraEstablishAccessWithToken(BaseTechnique):
 
             # Set token active if selected
             if set_as_active_token:
-                EntraTokenManager.set_active_token(access_token)
+                EntraTokenManager().set_active_token(access_token)
             
             return ExecutionStatus.SUCCESS, {
                 "message": f"Successfully added access to app",
