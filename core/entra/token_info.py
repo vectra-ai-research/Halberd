@@ -9,13 +9,13 @@ class Msft_Token:
     def __init__(self, token_value: str):
         self.token_value = token_value
         self.decoded_token = self._decode_token()
-        self.app_name = self.decoded_token['app_displayname']
         self.target_tenant = self.decoded_token['tid']
         self.entity_type = self.decoded_token['idtyp']
         self.expiration = self._convert_expiration(self.decoded_token['exp'])
         self.authenticated_entity = self._get_authenticated_entity()
         self.scope = self._get_scope()
         self.access_type = "Delegated" if self.entity_type == "user" else "App-only"
+        self.app_name = self._get_app_name()
 
     def _decode_token(self) -> dict:
         """
@@ -32,9 +32,20 @@ class Msft_Token:
 
     def _get_authenticated_entity(self) -> str:
         return self.decoded_token['upn'] if self.entity_type == "user" else self.decoded_token['app_displayname']
+    
+    def _get_app_name(self) -> str:
+        if 'app_displayname' in self.decoded_token.keys():
+            return self.decoded_token['app_displayname']
 
     def _get_scope(self) -> Union[str, list]:
-        return self.decoded_token['scp'] if self.entity_type == "user" else self.decoded_token['roles']
+        if self.entity_type == "user":
+            if isinstance(self.decoded_token['scp'], list):
+                return self.decoded_token['scp']
+            return self.decoded_token['scp'].split()
+        else:
+            if isinstance(self.decoded_token['roles'], list):
+                return self.decoded_token['roles']
+            return self.decoded_token['roles'].split()
     
     def _get_access_type(self) -> str:
         return "Delegated" if self.entity_type == "user" else "App-only"
