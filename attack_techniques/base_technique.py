@@ -31,11 +31,28 @@ class AzureTRMTechnique:
         else:
             self.azure_trm_url = f"https://microsoft.github.io/Azure-Threat-Research-Matrix/{tactics[0]}/{technique_id.split('.')[0]}/"
 
+class TechniqueReferences:
+    """
+    List of reference links related to the technique
+    """
+    def __init__(self, references: List[str]):
+        self.references = references
+
+class TechniqueNotes:
+    """
+    List of notes and any additional information related to the technique
+    """
+    def __init__(self, notes: List[str]):
+        self.notes = notes
+
 class BaseTechnique(ABC):
-    def __init__(self, name: str, description: str, mitre_techniques: List[MitreTechnique]):
+    def __init__(self, name: str, description: str, mitre_techniques: List[MitreTechnique], azure_trm_techniques: List[AzureTRMTechnique] = None, references: List[TechniqueReferences] = None, notes: List[TechniqueNotes] = None):
         self.name = name
         self.description = description
         self.mitre_techniques = mitre_techniques
+        self.azure_trm_techniques = azure_trm_techniques
+        self.references = references
+        self.notes = notes
 
     @abstractmethod
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
@@ -86,4 +103,16 @@ class BaseTechnique(ABC):
                 "sub_technique_name": tech.sub_technique_name,
                 "mitre_url": tech.mitre_url
             } for tech in self.mitre_techniques
+        ]
+    
+    def get_azure_trm_info(self) -> List[Dict[str, Any]]:
+        """Returns a list of dictionaries containing Azure Threat Research Matrix information for all associated techniques"""
+        return [
+            {
+                "technique_id": tech.technique_id,
+                "technique_name": tech.technique_name,
+                "tactics": tech.tactics,
+                "sub_technique_name": tech.sub_technique_name,
+                "mitre_url": tech.azure_trm_url
+            } for tech in self.azure_trm_techniques
         ]
