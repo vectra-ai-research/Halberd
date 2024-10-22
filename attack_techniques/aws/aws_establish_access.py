@@ -2,9 +2,7 @@ from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique
 from ..technique_registry import TechniqueRegistry
 from typing import Dict, Any, Tuple
 from core.aws.aws_session_manager import SessionManager
-import boto3
 from botocore.exceptions import ClientError
-import boto3.session
 
 @TechniqueRegistry.register
 class AWSEstablishAccess(BaseTechnique):
@@ -40,9 +38,9 @@ class AWSEstablishAccess(BaseTechnique):
 
             manager = SessionManager()
             if session_token:
-                new_session = manager.create_session(name=session_name, aws_access_key_id=access_key, aws_secret_access_key=secret, region_name = aws_region, aws_session_token = session_token)
+                new_session = manager.create_session(session_name=session_name, aws_access_key_id=access_key, aws_secret_access_key=secret, region_name = aws_region, aws_session_token = session_token)
             else:
-                new_session = manager.create_session(name=session_name, aws_access_key_id=access_key, aws_secret_access_key=secret, region_name = aws_region)
+                new_session = manager.create_session(session_name=session_name, aws_access_key_id=access_key, aws_secret_access_key=secret, region_name = aws_region)
 
             my_session = manager.get_session(new_session["name"])
             sts = my_session.client('sts')
@@ -57,7 +55,7 @@ class AWSEstablishAccess(BaseTechnique):
 
             if set_as_active_session:
                 # Set new session as default active session to use
-                manager.set_default_session(new_session["name"])
+                manager.set_active_session(new_session["name"])
                 caller_info_output['active_session'] = True
 
             return ExecutionStatus.SUCCESS, {
