@@ -16,7 +16,7 @@ Halberd lets you:
 - Do it all through a slick web interface that won't make your eyes bleed
 
 <p align="center">
-  <img src="assets/Halberd_Attack_View.png" width=100% align="center"/>
+  <img src="assets/Halberd_Attack_View_v2.png" width=100% align="center"/>
 </p>
 
 ## Features that make Halberd awesome! 😮
@@ -55,12 +55,12 @@ Halberd lets you:
 5. Point your browser to `http://127.0.0.1:8050/` and start testing
 
 ## Using Halberd: Choose Your Own Adventure 🗺️
-
-1. **Access**: Manage your tokens and sessions like a digital locksmith.
-2. **Attack**: Pick your poison – surface, tactic, technique – and start your testing!
-3. **Recon**: Gather intel with visual dashboards. Try the "Entity Map" for a nice visualization!
-4. **Automator**: Chain attacks together like a mastermind.
-5. **Trace**: Review your handiwork and generate reports.
+ 
+1. **Attack**: Pick your poison – surface, tactic, technique – and start your testing! 
+- **Access**: Manage your tokens and sessions like a digital locksmith.
+2. **Recon**: Gather intel with visual dashboards. Try the "Entity Map" for a nice visualization!
+3. **Automator**: Chain attacks together like a mastermind.
+4. **Trace**: Review your handiwork and generate reports.
 
 Checkout [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) for more information on testing with Halberd. 
 
