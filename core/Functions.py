@@ -5,19 +5,24 @@ import sys
 import shutil
 import json
 from typing import Union, Any, Optional
-from datetime import datetime
+import datetime
 from pathlib import Path
-from dash import html, dcc
+from dash import html, dcc, Patch
+import dash_daq as daq
 import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
-from core.Constants import *
 from dash_iconify import DashIconify
+from core.Constants import *
 from core.playbook.playbook import Playbook
+from core.entra.entra_token_manager import EntraTokenManager
+from core.aws.aws_session_manager import SessionManager
+from core.azure.azure_access import AzureAccess
 from attack_techniques.technique_registry import TechniqueRegistry
 
-def DisplayTechniqueInfo(technique_id):
+def generate_technique_info(technique_id)-> list:
     """
-    Generates Technique information and displays it in the offcanvas on the attack page. The offcanvas is triggered by the About Technique button
+    Generates list of elements containing technique information that can be displayed inside any other html element. 
+    Used to generate technique info on attack page and in modals.
     """
     def create_mitre_info_cards(mitre_techniques):
         """Create dbc.cards with technique MITRE info"""
@@ -34,166 +39,83 @@ def DisplayTechniqueInfo(technique_id):
             mitre_cards.append(mitre_card)
         return html.Div(mitre_cards)
     
+    def create_azure_trm_info_cards(azure_trm_techniques):
+        """Create dbc.cards with technique Azure Threat Research Matrix info"""
+        mitre_cards = []
+        for azure_trm_info in azure_trm_techniques:
+            mitre_card = dbc.Card([
+                dbc.CardBody([
+                    html.P(f"Technique: {azure_trm_info.technique_name}", className="card-text"),
+                    html.P(f"Sub-technique: {azure_trm_info.sub_technique_name}", className="card-text"),
+                    html.P(f"Tactic: {', '.join(azure_trm_info.tactics)}", className="card-text"),
+                    dcc.Link("Visit MITRE", href=azure_trm_info.azure_trm_url if azure_trm_info.azure_trm_url not in [None, "#"] else "#", target="_blank", className="card-link")
+                ])
+            ], className="mb-2")
+            mitre_cards.append(mitre_card)
+        return html.Div(mitre_cards)
+    
     # Get technique information from technique registry
     technique = TechniqueRegistry.get_technique(technique_id)()
+    technique_category = TechniqueRegistry.get_technique_category(technique_id)
     
     # Main technique information card
     main_info_card = dbc.Card([
         dbc.CardHeader(html.H4(f"Technique: {technique.name}", className="mb-0")),
+        
         dbc.CardBody([
-            html.H5(f"Attack Surface: {TechniqueRegistry.get_technique_category(technique_id)}", className="mb-3"),
+            html.H5(f"Attack Surface: {technique_category}", className="mb-3"),
+            html.H5("Technique Description:", className="mb-2"),
+            html.P(technique.description, className="mb-3"),
             html.H5("MITRE ATT&CK Reference:", className="mb-2"),
             create_mitre_info_cards(technique.mitre_techniques)
         ])
     ], className="mb-3")
 
-    # Additional information accordion
-    additional_info_accordion = dbc.Accordion([
-        dbc.AccordionItem([
-            html.H5("Technique Description:", className="text-muted mb-2"),
-            html.P(technique.description, className="text-muted")
-        ], title="Additional Information / Resources")
-    ], start_collapsed=True, className="mb-3")
+    modal_content = [main_info_card]
+    
+    # Display Azure threat research matrix info - only for Azure techniques
+    if technique_category == "azure":
+        if technique.azure_trm_techniques:
+            modal_content.append(
+                dbc.Accordion([
+                    dbc.AccordionItem(create_azure_trm_info_cards(technique.azure_trm_techniques), title="Azure Threat Research Matrix Reference")
+                ], start_collapsed=True, className="mb-3")
+            )
+    # Technique references
+    if technique.references:
+        modal_content.append(
+            dbc.Accordion([
+                dbc.AccordionItem(
+                    [dcc.Link("Visit Ref", href=ref if ref not in [None, "#"] else "#", target="_blank", className="card-link") for ref in technique.references],
+                    title="Technique References"
+                )
+            ], start_collapsed=True, className="mb-3")
+        )  
+    
+    # Technique notes
+    if technique.notes:
+        modal_content.append(
+            dbc.Accordion([
+                dbc.AccordionItem(technique.notes, title="Technique Notes")
+            ], start_collapsed=True, className="mb-3")
+        )
 
     # Return final modal body content
-    modal_content = [
-        main_info_card,
-        additional_info_accordion
-    ]
-
     return modal_content
-
-def TechniqueOptionsGenerator(tab: str, tactic: str) -> list[str]:
-    """
-    Function generates list of available techniques as dropdown options dynamically based on the attack surface(tab) and the tactic selected.
-    """
-    
-    technique_registry = TechniqueRegistry()
-    attack_surface_techniques ={}
-    
-    if tab == "tab-attack-Azure":
-        attack_surface_techniques = technique_registry.list_techniques("azure")
-    elif tab == "tab-attack-AWS":
-        attack_surface_techniques = technique_registry.list_techniques("aws")
-    elif tab == "tab-attack-M365":
-        attack_surface_techniques = technique_registry.list_techniques("m365")
-    elif tab == "tab-attack-EntraID":
-        attack_surface_techniques = technique_registry.list_techniques("entra_id")
-        
-    technique_options_list = []
-    # tracker list to avoid duplicate entry
-    technique_tracker = []
-    for technique_module, technique in attack_surface_techniques.items():
-        for mitre_technique in technique().get_mitre_info():
-            if tactic in mitre_technique['tactics']:
-                if technique_module not in technique_tracker:
-                    technique_tracker.append(technique_module)
-                    technique_options_list.append(
-                        {
-                            "label": html.Div([technique().name], style={"padding-left": "10px","padding-top": "5px", "padding-bottom": "5px", "font-size": 20}, className="bg-dark text-body"),
-                            "value": technique_module,
-                        }
-                    )
-
-    technique_options_element = [
-        html.H2(tactic),
-        dcc.RadioItems(id = "attack-options-radio", options = technique_options_list, value = technique_options_list[0]["value"], labelStyle={"display": "flex", "align-items": "center"}),
-        ]
-
-    return technique_options_element
-
-def TabContentGenerator(tab):
-    """
-    Function generates content dynamically based on the attack tab selected.
-    """
-
-    # Load all technique information from registry
-    technique_registry = TechniqueRegistry()
-
-    # From tab selected, create tactics dropdown list from the available tactics in the selected attack surface
-    if tab == "tab-attack-M365":
-        tactics_options = technique_registry.list_tactics("m365")
-    if tab == "tab-attack-EntraID":
-        tactics_options = technique_registry.list_tactics("entra_id")
-    if tab == "tab-attack-Azure":
-        tactics_options = technique_registry.list_tactics("azure")
-    if tab == "tab-attack-AWS":
-        tactics_options = technique_registry.list_tactics("aws")
-    
-    # Create the dropdown element
-    tactic_dropdown_option = []    
-    for tactic in tactics_options:
-        tactic_dropdown_option.append(
-            {
-                "label": html.Div([tactic], style={'font-size': 20}, className="text-dark"),
-                "value": tactic,
-            }
-        )    
-
-    tab_content_elements = []
-
-    tab_content_elements.append(dcc.Dropdown(options = tactic_dropdown_option, value = tactic_dropdown_option[0]["value"], id='tactic-dropdown'))
-    tab_content_elements.append(html.Br())
-
-    # Add element to display technique options under each tactic
-    tab_content_elements.append(
-        html.Div([
-            dbc.Row([
-                dbc.Col([
-                    html.Div(id = "technique-options-div", className= "bg-dark"),
-                ], width = 3, md=3, className="bg-dark border-end border-success"),
-                dbc.Col([
-                    html.Div(id= "attack-config-div",className='bg-dark divBorder d-grid col-6 mx-auto', style={'width' : '100%'}),
-                ], width = 7,  className="mb-3"),
-            ])  
-        ], className="bg-dark p-3 border border-success rounded")
-    )
-    tab_content_elements.append(html.Br())
-    tab_content_elements.append(html.Br())
-
-    tab_content_elements.append(
-        dbc.Row([
-            dbc.Col(
-                html.H4("Response")
-            ),
-            dbc.Col(
-                dbc.Button([
-                    DashIconify(icon="mdi:download"),
-                ], id="download-technique-response-button", color="primary", style={'float': 'right', 'margin-left': '10px'}),
-            )
-        ])
-    )
-    # Response loading element
-    tab_content_elements.append(
-        dcc.Loading(
-            id="attack-output-loading",
-            type="default",
-            children=html.Div(id= "execution-output-div",style={"height":"40vh", "overflowY": "auto", "border":"1px solid #ccc", "padding-right": "10px", "padding-left": "10px", "padding-top": "10px", "padding-bottom": "10px"}, className = "rounded")
-        )
-    )
-
-    # Final tab div to return
-    tab_content = html.Div(
-        tab_content_elements,
-        style={"height":"87vh", "padding-right": "20px", "padding-left": "20px", "padding-top": "20px", "padding-bottom": "20px"}, 
-        className="bg-dark"
-    )
-
-    return tab_content
 
 def WriteAppLog(action, result = "success"):
     log_file = APP_LOG_FILE
     f = open(log_file,"a")
 
     fields = ["date_time", "action","result"]
-    log_input = {"date_time": str(datetime.today()), "action":action, "result":result}
+    log_input = {"date_time": str(datetime.datetime.today()), "action":action, "result":result}
 
     write_log = csv.DictWriter(f, fieldnames= fields)
     write_log.writerow(log_input)
 
     return True
 
-def CheckAzureCLIInstall():
+def check_azure_cli_install():
     """
     Function checks for installation of Azure cli on host
     """
@@ -222,7 +144,7 @@ def CheckAzureCLIInstall():
     # If az installation not found on host,return None
     return None
 
-def InitializationCheck():
+def run_initialization_check():
     # Check for local folder
     if Path(APP_LOCAL_DIR).exists():
         pass
@@ -305,7 +227,7 @@ def InitializationCheck():
         print("[*] Automator files created")
 
     # Check az cli installation
-    if CheckAzureCLIInstall():
+    if check_azure_cli_install():
         pass
     else:
         # print warning on terminal
@@ -358,7 +280,7 @@ def AddNewSchedule(schedule_name, playbook_id, start_date, end_date, execution_t
 
     # input handling
     if schedule_name in [None, ""]:
-        sched_create_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        sched_create_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         schedule_name = f"schedule-{sched_create_time}"
 
     schedules[schedule_name] = {"Playbook_Id" : playbook_id, "Start_Date" : start_date, "End_Date" : end_date, "Execution_Time" : execution_time, "Repeat" : str(repeat), "Repeat_Frequency" : repeat_frequency}
@@ -386,7 +308,12 @@ def GetAllPlaybooks():
     except:
         return "Error"
 
-def DisplayPlaybookInfo(selected_pb):
+def generate_playbook_info(selected_pb):
+    """
+    Generates a display element with dbc.Cards containing playbook details that can be displayed in HTML elements like div, modal, etc. 
+
+    :param selected_pb: Name of a playbook (from playbook config)
+    """
     for pb in GetAllPlaybooks():
         playbook = Playbook(pb)
         if  playbook.name == selected_pb:
@@ -506,6 +433,8 @@ def DisplayPlaybookInfo(selected_pb):
 def ParseTechniqueResponse(technique_response):
     """
     Function to parse the technique execution response and display it structured
+
+    :param technique_response: Raw output from a Halberd technique execution
     """
     # Check if technique output is in the expected tuple format (success, raw_response, pretty_response)
     if isinstance(technique_response, tuple) and len(technique_response) == 3:
@@ -750,3 +679,488 @@ def playbook_viz_generator(playbook_name: Optional[str]) -> cyto.Cytoscape:
                     }
                 ]
                 )
+
+def generate_attack_tactics_options(tab):
+    """
+    Function dynamically generates tatics options in the Tactics Dropdown element on Attack page. 
+    Fetches the available tactics in a given attack surface.
+
+    :param tab: attack surface name from the tab selected on Attack page
+    """
+
+    # Load all technique information from registry
+    technique_registry = TechniqueRegistry()
+
+    # From tab selected, create tactics dropdown list from the available tactics in the selected attack surface
+    if tab == "tab-attack-M365":
+        tactics_options = technique_registry.list_tactics("m365")
+    if tab == "tab-attack-EntraID":
+        tactics_options = technique_registry.list_tactics("entra_id")
+    if tab == "tab-attack-Azure":
+        tactics_options = technique_registry.list_tactics("azure")
+    if tab == "tab-attack-AWS":
+        tactics_options = technique_registry.list_tactics("aws")
+    
+    # Create the dropdown element
+    tactic_dropdown_option = []    
+    for tactic in tactics_options:
+        tactic_dropdown_option.append(
+            {
+                "label": html.Div([tactic], style={'font-size': 20}, className="text-dark"),
+                "value": tactic,
+            }
+        )
+
+    return tactic_dropdown_option
+
+def generate_attack_technique_options(tab, tactic):
+    """
+    Function dynamically generates technique radio options on attack page. 
+    Fetches the available techniques in a given attack surface and tactic.
+
+    :param tab: attack surface name from the tab selected on Attack page
+    :param tactic: Mitre tactic name from the option selected in Tactics Dropdown
+    """
+    # Load all technique information from registry
+    technique_registry = TechniqueRegistry()
+    attack_surface_techniques ={}
+    
+    if tab == "tab-attack-Azure":
+        attack_surface_techniques = technique_registry.list_techniques("azure")
+    elif tab == "tab-attack-AWS":
+        attack_surface_techniques = technique_registry.list_techniques("aws")
+    elif tab == "tab-attack-M365":
+        attack_surface_techniques = technique_registry.list_techniques("m365")
+    elif tab == "tab-attack-EntraID":
+        attack_surface_techniques = technique_registry.list_techniques("entra_id")
+        
+    technique_options_list = []
+    # tracker list to avoid duplicate entry
+    technique_tracker = []
+    for technique_module, technique in attack_surface_techniques.items():
+        for mitre_technique in technique().get_mitre_info():
+            if tactic in mitre_technique['tactics']:
+                if technique_module not in technique_tracker:
+                    technique_tracker.append(technique_module)
+                    technique_options_list.append(
+                        {
+                            "label": html.Div([technique().name], style={"padding-left": "10px","padding-top": "5px", "padding-bottom": "5px", "font-size": 20}, className="bg-dark text-body"),
+                            "value": technique_module,
+                        }
+                    )
+
+    technique_options_element = [
+        dcc.RadioItems(id = "attack-options-radio", options = technique_options_list, value = technique_options_list[0]["value"], labelStyle={"display": "flex", "align-items": "center"})
+    ]
+    
+    return technique_options_element
+
+def generate_attack_technique_config(technique):
+    """
+    Function generates the technique configuration view in attack page. 
+    Converts technique inputs into UI input fields. Also, adds 'Technique Execute' and 'Add to Playbook' buttons. 
+
+    :param technique: Exact name of technique in Halberd technique registry
+    """
+    technique_config = TechniqueRegistry.get_technique(technique)().get_parameters()
+
+    config_div_display = Patch()
+    config_div_display.clear()
+
+    # Check if technique requires input
+    if len(technique_config.keys()) > 0:
+        config_div_elements = []
+
+        for input_field, input_config in technique_config.items():
+            # Indicate required fields with * on GUI
+            if input_config['required']:
+                config_div_elements.append(dbc.Label(input_config['name']+" *"))
+            else:
+                config_div_elements.append(dbc.Label(input_config['name']))
+
+            if input_config['input_field_type'] in ["text", "email", "password", "number"]:
+                config_div_elements.append(dbc.Input(
+                    type = input_config['input_field_type'],
+                    # Display default values in placeholder for technique param
+                    placeholder = input_config['default'] if input_config['default'] else "",
+                    debounce = True,
+                    id = {"type": "technique-config-display", "index": input_field},
+                    className="bg-dark border text-light",
+                ))
+            elif input_config['input_field_type'] == "bool":
+                config_div_elements.append(daq.BooleanSwitch(
+                    id = {"type": "technique-config-display-boolean-switch", "index": input_field}, 
+                    on=input_config['default'])
+                )
+            elif input_config['input_field_type'] == "upload":
+                config_div_elements.append(dcc.Upload(
+                    id = {"type": "technique-config-display-file-upload", "index": input_field}, 
+                    children=html.Div([html.A('Select a file or Drag one here')]), 
+                    className="bg-dark",
+                    style={'width': '50%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px'})
+                )
+                
+            config_div_elements.append(html.Br())
+
+        config_div = html.Div(config_div_elements, className='d-grid col-6 mx-auto', style={'width' : '100%'})
+        config_div_display.append(config_div)
+    else:
+        config_div_display.append(
+            html.Div(html.B("No config required! Hit 'Execute'"), className='d-grid col-6 mx-auto', style={'width' : '100%'})
+        )
+
+    config_div_display.append(html.Br())
+
+    # Add technique execute button
+    config_div_display.append(
+        (html.Div([
+            dbc.Button("Execute Technique", id="technique-execute-button", n_clicks=0, color="danger"),
+            html.Br(),
+        ], className="d-grid col-3 mx-auto"))
+    )
+
+    # Add add to playbook button
+    config_div_display.append(
+        html.Div([
+            dbc.Button("+ Add to Playbook", id="open-add-to-playbook-modal-button", n_clicks=0, color="secondary")
+        ], style={'display': 'flex', 'justify-content': 'center', 'gap': '10px'})
+    )
+    
+    # Create plabook modal dropdown content
+    playbook_dropdown_options = []    
+    for pb in GetAllPlaybooks():
+        playbook_dropdown_options.append(
+            {
+                "label": html.Div([Playbook(pb).name], style={'font-size': 20}, className="text-dark"),
+                "value": Playbook(pb).name,
+            }
+        )
+
+    # Add add to playbook modal
+    config_div_display.append(
+        dbc.Modal(
+            [
+                dbc.ModalHeader("Add Technique to Playbook"),
+                dbc.ModalBody([
+                    dbc.Label("Select Playbook to Add Step"),
+                    dcc.Dropdown(
+                        options = playbook_dropdown_options, 
+                        value = None, 
+                        id='att-pb-selector-dropdown',
+                        placeholder="Select Playbook",
+                        ),
+                    html.Br(),
+                    dbc.Label("Add to Step # (Optional)", className="text-light"),
+                    dbc.Input(id='pb-add-step-number-input', placeholder="3", type= "number", className="bg-dark text-light"),
+                    html.Br(),
+                    dbc.Label("Wait in Seconds After Step Execution (Optional)", className="text-light"),
+                    dbc.Input(id='pb-add-step-wait-input', placeholder="120", type= "number", className="bg-dark text-light")
+                ]),
+                dbc.ModalFooter([
+                    dbc.Button("Cancel", id="close-add-to-playbook-modal-button", className="ml-auto", color="danger", n_clicks=0),
+                    dbc.Button("Add to Playbook", id="confirm-add-to-playbook-modal-button", className="ml-2", color="danger", n_clicks=0)
+                ])
+            ],
+            id="add-to-playbook-modal",
+            is_open=False,
+        )
+    )
+    return config_div_display
+
+def generate_entra_access_info(access_token):
+    def create_scope_badges(scopes):
+        return [dbc.Badge(scope, color="dark", className="me-1 mb-1 small") for scope in scopes]
+
+    def get_entity_type_icon(entity_type):
+        if entity_type.lower() == "user":
+            return "mdi:account"
+        elif entity_type.lower() == "app":
+            return "mdi:application"
+        else:
+            return "mdi:help-circle"  # Default icon for unknown types
+        
+    if not access_token:
+        return dbc.Card(
+            dbc.CardBody([
+                html.H4("Access Token Status", className="card-title"),
+                html.P("No Active Access Token", className="text-danger")
+            ]),
+            className="mb-3 text-white"
+        )
+    
+    # Halberd entra token manager
+    manager = EntraTokenManager()
+
+    # Fetch currently active token if token value is "active"
+    if access_token == "active":
+        access_token = manager.get_active_token()
+    
+    # Decode token using Halberd EntraTokenManager
+    try:
+        access_info = manager.decode_jwt_token(access_token)
+    except Exception as e:
+        return dbc.Card(
+            dbc.CardBody([
+                html.H4("Access Token Status", className="card-title"),
+                html.P("Failed to decode access token", className="text-danger")
+            ]),
+            className="mb-3 text-white"
+        )
+    
+    # Handle corrupt tokens
+    if access_info is None:
+        return dbc.Card(
+            dbc.CardBody([
+                html.H4("Access Token Status", className="card-title"),
+                html.P("Failed to decode access token", className="text-danger")
+            ]),
+            className="mb-3 text-white"
+        )
+    
+    # Parse token and create ui elements
+    entity_type = access_info.get('Entity Type', '').lower()
+    entity_type_icon = get_entity_type_icon(entity_type)
+
+    card_content = [
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    DashIconify(icon="mdi:identifier", className="me-2"),  # Icon for entity
+                    html.Strong("Entity:"),
+                    html.Span(access_info.get('Entity', ''), className="ms-2 text-info")
+                ], className="mb-2"),
+                html.Div([
+                    DashIconify(icon=entity_type_icon, className="me-2"),  # Dynamic icon based on entity type
+                    html.Strong("Entity Type:"),
+                    html.Span(access_info.get('Entity Type', ''), className="ms-2")
+                ], className="mb-2"),
+                html.Div([
+                    DashIconify(icon="mdi:key-variant", className="me-2"), # Key icon
+                    html.Strong("Access Type:"),
+                    html.Span(access_info.get('Access Type', ''), className="ms-2")
+                ], className="mb-2"),
+            ], width=6),
+            dbc.Col([
+                html.Div([
+                    DashIconify(icon="mdi:clock-outline", className="me-2"), # Clock icon for token expiration time
+                    html.Strong("Access Exp:"),
+                    html.Span(f"{access_info.get('Access Exp', '')} UTC", className="ms-2"),
+                    html.Span("Expired", className="ms-2 text-danger") if access_info.get('Access Exp', '') < datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ') else html.Span("Valid", className="ms-2 text-success")
+                ], className="mb-2"),
+                html.Div([
+                    DashIconify(icon="mdi:domain", className="me-2"),  # Icon for tenant identifier
+                    html.Strong("Target Tenant:"),
+                    html.Span(access_info.get('Target Tenant', ''), className="ms-2")
+                ], className="mb-2"),
+                html.Div([
+                    DashIconify(icon="mdi:settings-applications", className="me-2"),  # Icon for tenant identifier
+                    html.Strong("Target App:"),
+                    html.Span(access_info.get('Target App Name', ''), className="ms-2")
+                ], className="mb-2"),
+            ], width=6)
+        ]),
+        dbc.Row([
+            dbc.Col([
+                html.Div([
+                    DashIconify(icon="mdi:shield-check", className="me-2"), # Shield icon for access scope
+                    html.Strong("Access scope:")
+                ], className="mb-2"),
+                html.Div(create_scope_badges(access_info.get('Access scope', '')), className="d-flex flex-wrap")
+            ], width=12)
+        ], className="mt-3")
+    ]
+    
+    return dbc.Card(
+        dbc.CardBody([
+            html.H4([DashIconify(icon="mdi:key-chain", className="me-2"), "Access Token Information"], className="card-title mb-3"),
+            *card_content
+        ]),
+        className="mb-3 text-white"
+    )
+
+def generate_aws_access_info(session_name):
+    info_output_div = []
+
+    if session_name:
+        info_output_div.append(html.Br())
+        info_output_div.append(html.H5("Access : "))
+
+        manager = SessionManager()
+        # set default session
+        manager.set_active_session(session_name)
+        my_session = manager.get_session(session_name)
+        sts_client = my_session.client('sts')
+
+        try:
+            session_info = sts_client.get_caller_identity()
+            
+            card_content = [
+                dbc.Row([
+                    dbc.Col([
+                        html.Div([
+                            DashIconify(icon="mdi:account-key", className="me-2"),
+                            html.Strong("User ID:"),
+                            html.Span(session_info['UserId'], className="ms-2 text-info")
+                        ], className="mb-3"),
+                        html.Div([
+                            DashIconify(icon="mdi:account-cash", className="me-2"),
+                            html.Strong("Account:"),
+                            html.Span(session_info['Account'], className="ms-2")
+                        ], className="mb-3"),
+                        html.Div([
+                            DashIconify(icon="mdi:identifier", className="me-2"),
+                            html.Strong("ARN:"),
+                            html.Span(session_info['Arn'], className="ms-2")
+                        ], className="mb-3"),
+                    ], width=12)
+                ])
+            ]
+            
+            info_output_div.append(
+                dbc.Card(
+                    dbc.CardBody([
+                        html.H4([
+                            DashIconify(icon="mdi:aws", className="me-2"),
+                            "Access: ",
+                            html.Span("VALID SESSION", className="text-success")
+                        ], className="card-title mb-3"),
+                        *card_content
+                    ]),
+                    className="mb-3 text-white"
+                )
+            )
+        except:
+            info_output_div.append(
+                dbc.Card(
+                    dbc.CardBody([
+                        html.H4([
+                            DashIconify(icon="mdi:aws", className="me-2"),
+                            "Access: ",
+                            html.Span("NO VALID SESSION", className="text-danger")
+                        ], className="card-title")
+                    ]),
+                    className="mb-3 text-white"
+                )
+            )
+    else:
+        info_output_div.append(
+            dbc.Card(
+                dbc.CardBody([
+                    html.H4([
+                        DashIconify(icon="mdi:aws", className="me-2"),
+                        "Access: ",
+                        html.Span("NO VALID SESSION", className="text-danger")
+                    ], className="card-title")
+                ]),
+                className="mb-3 text-white"
+            )
+        )
+
+    return info_output_div
+
+def generate_azure_access_info(subscription):
+    info_output_div = []
+
+    if subscription is None:
+        # If no subscription is selected, proceed with default subscription
+        pass
+    else:
+        selected_subscription = subscription
+        AzureAccess().set_active_subscription(selected_subscription)
+
+    # Get set subscription info
+    current_access = AzureAccess().get_current_subscription_info()
+
+    try:
+        if current_access is not None:
+            # Construct session info to display
+            card_content = [
+                dbc.Row([
+                    dbc.Col([
+                        html.Div([
+                            DashIconify(icon="mdi:cloud", className="me-2"),
+                            html.Strong("Environment Name:"),
+                            html.Span(current_access.get("environmentName", "N/A"), className="ms-2 text-info")
+                        ], className="mb-2"),
+                        html.Div([
+                            DashIconify(icon="mdi:tag", className="me-2"),
+                            html.Strong("Name:"),
+                            html.Span(current_access.get("name", "N/A"), className="ms-2")
+                        ], className="mb-2"),
+                        html.Div([
+                            DashIconify(icon="mdi:identifier", className="me-2"),
+                            html.Strong("Subscription ID:"),
+                            html.Span(current_access.get("id", "N/A"), className="ms-2")
+                        ], className="mb-2"),
+                        html.Div([
+                            DashIconify(icon="mdi:flag-variant", className="me-2"),
+                            html.Strong("Is Default:"),
+                            html.Span(str(current_access.get("isDefault", "N/A")), className="ms-2")
+                        ], className="mb-2"),
+                    ], width=6),
+                    dbc.Col([
+                        html.Div([
+                            DashIconify(icon="mdi:state-machine", className="me-2"),
+                            html.Strong("State:"),
+                            html.Span(current_access.get("state", "N/A"), className="ms-2 text-success")
+                        ], className="mb-2"),
+                        html.Div([
+                            DashIconify(icon="mdi:account", className="me-2"),
+                            html.Strong("User:"),
+                            html.Span(current_access.get("user", {}).get("name", "N/A"), className="ms-2")
+                        ], className="mb-2"),
+                        html.Div([
+                            DashIconify(icon="mdi:domain", className="me-2"),
+                            html.Strong("Tenant ID:"),
+                            html.Span(current_access.get("tenantId", "N/A"), className="ms-2")
+                        ], className="mb-2"),
+                        html.Div([
+                            DashIconify(icon="mdi:home", className="me-2"),
+                            html.Strong("Home Tenant ID:"),
+                            html.Span(current_access.get("homeTenantId", "N/A"), className="ms-2")
+                        ], className="mb-2"),
+                    ], width=6)
+                ]),
+            ]
+            
+            info_output_div.append(
+                dbc.Card(
+                    dbc.CardBody([
+                        html.H4([
+                            DashIconify(icon="mdi:microsoft-azure", className="me-2"),
+                            "Access: ",
+                            html.Span("ACTIVE SESSION", className="text-success")
+                        ], className="card-title mb-3"),
+                        *card_content
+                    ]),
+                    className="mb-3 text-white"
+                )
+            )
+        else:
+            info_output_div.append(
+                dbc.Card(
+                    dbc.CardBody([
+                        html.H4([
+                            DashIconify(icon="mdi:microsoft-azure", className="me-2"),
+                            "Access: ",
+                            html.Span("NO ACTIVE SESSION", className="text-danger")
+                        ], className="card-title")
+                    ]),
+                    className="mb-3 text-white"
+                )
+            )
+    except:
+        info_output_div.append(
+            dbc.Card(
+                dbc.CardBody([
+                    html.H4([
+                        DashIconify(icon="mdi:microsoft-azure", className="me-2"),
+                        "Access: ",
+                        html.Span("NO ACTIVE SESSION", className="text-danger")
+                    ], className="card-title")
+                ]),
+                className="mb-3 text-white"
+            )
+        )
+
+    return info_output_div
