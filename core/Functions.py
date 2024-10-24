@@ -22,7 +22,6 @@ from attack_techniques.technique_registry import TechniqueRegistry
 def generate_technique_info(technique_id)-> list:
     """
     Generates list of elements containing technique information that can be displayed inside any other html element. 
-    Used to generate technique info on attack page and in modals.
     """
     def create_mitre_info_cards(mitre_techniques):
         """Create dbc.cards with technique MITRE info"""
@@ -48,7 +47,7 @@ def generate_technique_info(technique_id)-> list:
                     html.P(f"Technique: {azure_trm_info.technique_name}", className="card-text"),
                     html.P(f"Sub-technique: {azure_trm_info.sub_technique_name}", className="card-text"),
                     html.P(f"Tactic: {', '.join(azure_trm_info.tactics)}", className="card-text"),
-                    dcc.Link("Visit MITRE", href=azure_trm_info.azure_trm_url if azure_trm_info.azure_trm_url not in [None, "#"] else "#", target="_blank", className="card-link")
+                    dcc.Link("Visit Azure Threat Research Matrix", href=azure_trm_info.azure_trm_url if azure_trm_info.azure_trm_url not in [None, "#"] else "#", target="_blank", className="card-link")
                 ])
             ], className="mb-2")
             mitre_cards.append(mitre_card)
@@ -145,6 +144,9 @@ def check_azure_cli_install():
     return None
 
 def run_initialization_check():
+    """
+    Checks for app directories and creates missing directories on app initialization
+    """
     # Check for local folder
     if Path(APP_LOCAL_DIR).exists():
         pass
