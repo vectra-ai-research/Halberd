@@ -31,7 +31,7 @@ class AzureDumpKeyVault(BaseTechnique):
                 sub_technique_name=None
             )
         ]
-        super().__init__("Dump Key Vault", "Access and extract secrets, keys or certificates from Azure Key Vaults after gaining the necessary permissions", mitre_techniques)
+        super().__init__("Dump Key Vault", "Access and extract secrets, keys or certificates from Azure Key Vaults after gaining the necessary permissions", mitre_techniques, azure_trm_technique)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
