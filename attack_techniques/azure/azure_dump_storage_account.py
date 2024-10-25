@@ -24,7 +24,7 @@ class AzureDumpStorageAccount(BaseTechnique):
                 sub_technique_name="Storage Account Access Key Dumping"
             )
         ]
-        super().__init__("Dump Storage Account", "Extract keys from Azure Storage Accounts", mitre_techniques)
+        super().__init__("Dump Storage Account", "Extracts access keys and connection strings from Azure Storage accounts to gain persistent access to storage resources. This technique allows to bypass typical authentication controls by obtaining storage account keys that provide full administrative access to all blobs, queues, tables and files within the storage account. The extracted keys can be used to directly access storage data from anywhere, potentially leading to data exfiltration or manipulation. The technique enumerates through all storage accounts in accessible resource groups and dumps both primary and secondary access keys along with their corresponding connection strings.", mitre_techniques, azure_trm_technique)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
