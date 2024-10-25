@@ -23,7 +23,7 @@ class AzureElevateAccessFromEntraId(BaseTechnique):
                 sub_technique_name=None
             )
         ]
-        super().__init__("Elevate Access From EntraID", "Enables configuration in Entra ID that grants 'User Access Administrator' role in Azure to a global admin in Entra ID", mitre_techniques)
+        super().__init__("Elevate Access From EntraID", "Escalates privileges by exploiting the built-in Global Administrator elevation capability in Microsoft Entra ID (formerly Azure AD). This technique activates a feature that automatically grants a Global Administrator the 'User Access Administrator' role at the root scope (/), providing full RBAC control across all subscriptions in the tenant. Once executed, the Global Administrator can assign any role including Owner to any identity at any scope, effectively gaining complete control over all Azure resources. This elevation persists until explicitly disabled and bypasses standard role assignment procedures and approval workflows. The technique is particularly dangerous as it enables silent privilege elevation without generating standard role assignment alerts, and the elevated access can be used to establish multiple persistence paths through additional role assignments. This is a common privilege escalation path used in real-world attacks when initial access to a Global Administrator account is obtained.", mitre_techniques, azure_trm_technique)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
