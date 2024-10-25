@@ -31,7 +31,7 @@ class AzureDumpKeyVault(BaseTechnique):
                 sub_technique_name=None
             )
         ]
-        super().__init__("Dump Key Vault", "Access and extract secrets, keys or certificates from Azure Key Vaults after gaining the necessary permissions", mitre_techniques, azure_trm_technique)
+        super().__init__("Dump Key Vault", "Extracts secrets, keys, and certificates from Azure Key Vaults through legitimate management APIs. This technique allows to systematically enumerate and dump all accessible Key Vault content, potentially exposing sensitive credentials and cryptographic material. For certificates, the technique saves PKCS12 format certificates to disk for later use. The technique handles both RSA and EC keys, converting them to PEM format for easier reuse. This technique is particularly impactful as Key Vaults often store high-value secrets like application credentials, encryption keys, and service connection strings used across an organization's Azure infrastructure.", mitre_techniques, azure_trm_technique)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
