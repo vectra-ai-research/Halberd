@@ -1,4 +1,4 @@
-from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique
+from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, AzureTRMTechnique
 from ..technique_registry import TechniqueRegistry
 from typing import Dict, Any, Tuple
 from core.azure.azure_access import AzureAccess
@@ -16,7 +16,16 @@ class AzureEstablishAccessAsUser(BaseTechnique):
                 sub_technique_name="Cloud Accounts"
             )
         ]
-        super().__init__("Establish Access As User", "Establishes access to Azure tenant using username & password", mitre_techniques)
+        azure_trm_technique = [
+            AzureTRMTechnique(
+                technique_id="AZT201.1",
+                technique_name="Valid Credentials",
+                tactics=["Initial Access"],
+                sub_technique_name="User Account"
+            )
+        ]
+        super().__init__("Establish Access As User", "Authenticates to an Azure tenant using username and password credentials. The technique attempts programmatic authentication via the Azure CLI and falls back to interactive browser login if initial authentication fails. This supports scenarios where additional authentication prompts may be required. Successfully authenticated sessions return information about accessible subscriptions including subscription IDs, account details, and tenant associations. Commonly used during initial access after credential theft or phishing attacks.", mitre_techniques, azure_trm_technique)
+        
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)

@@ -55,7 +55,7 @@ class AzureEnumerateVMInVMSS(BaseTechnique):
 
             if vmss_vms:
                 return ExecutionStatus.SUCCESS, {
-                    "message": f"Successfully enumerated {len(vmss)} VM in {vmss_name} VMSS",
+                    "message": f"Successfully enumerated {len(vmss_vms)} VM in {vmss_name} VMSS",
                     "value": vmss_vms
                 }
             else:

@@ -1,4 +1,4 @@
-from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique
+from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, AzureTRMTechnique
 from ..technique_registry import TechniqueRegistry
 from typing import Dict, Any, Tuple
 from core.azure.azure_access import AzureAccess
@@ -16,8 +16,16 @@ class AzureEstablishAccessAsApp(BaseTechnique):
                 sub_technique_name="Cloud Accounts"
             )
         ]
-        super().__init__("Establish Access As App", "Establishes access to Azure tenant as application", mitre_techniques)
-
+        azure_trm_technique = [
+            AzureTRMTechnique(
+                technique_id="AZT201.2",
+                technique_name="Valid Credentials",
+                tactics=["Initial Access"],
+                sub_technique_name="Service Principal"
+            )
+        ]
+        super().__init__("Establish Access As App", "Authenticates to an Azure tenant using service principal credentials (client ID and client secret) to establish programmatic access. The technique can attempt authentication with or without subscription access and returns information about accessible subscriptions. Successfully authenticated service principal credentials can be used for subsequent automated interactions with Azure resources.", mitre_techniques, azure_trm_technique)
+        
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
         try:

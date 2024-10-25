@@ -27,9 +27,9 @@ class AzureTRMTechnique:
         self.tactics = tactics
         self.sub_technique_name = sub_technique_name
         if sub_technique_name:
-            self.azure_trm_url = f"https://microsoft.github.io/Azure-Threat-Research-Matrix/{tactics[0]}/{technique_id.split('.')[0]}/{technique_id.replace('.','-')}/"
+            self.azure_trm_url = f"https://microsoft.github.io/Azure-Threat-Research-Matrix/{tactics[0].replace(' ', '')}/{technique_id.split('.')[0]}/{technique_id.replace('.','-')}/"
         else:
-            self.azure_trm_url = f"https://microsoft.github.io/Azure-Threat-Research-Matrix/{tactics[0]}/{technique_id.split('.')[0]}/"
+            self.azure_trm_url = f"https://microsoft.github.io/Azure-Threat-Research-Matrix/{tactics[0].replace(' ', '')}/{technique_id.split('.')[0]}/{technique_id.split('.')[0]}/"
 
 class TechniqueReferences:
     """
