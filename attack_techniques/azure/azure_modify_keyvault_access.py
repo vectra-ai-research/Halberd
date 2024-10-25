@@ -31,7 +31,7 @@ class AzureModifyKeyVaultAccess(BaseTechnique):
                 sub_technique_name=None
             )
         ]
-        super().__init__("Modify Key Vault Access", "Loops through Key Vaults, checks permissions and assigns necessary permissions to access the Key Vault", mitre_techniques)
+        super().__init__("Modify Key Vault Access", "Modifies access controls for Azure Key Vaults by attempting to grant the attacker access through both access policies and RBAC roles. If access is denied to a Key Vault, the technique attempts to either add an access policy granting permissions for keys, secrets, and certificates, or attempts to assign the KeyVault Administrator role. This dual-approach technique can be used for privilege escalation and persistence by ensuring continued access to sensitive Key Vault data. The technique systematically enumerates all Key Vaults in the subscription and attempts access modifications on each one, making it effective for discovering and exploiting Key Vaults that may have misconfured permissions.", mitre_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
@@ -50,11 +50,11 @@ class AzureModifyKeyVaultAccess(BaseTechnique):
             user_response = requests.get('https://graph.microsoft.com/v1.0/me', headers=headers)
             tenant_response = requests.get('https://graph.microsoft.com/v1.0/organization', headers=headers)
             
-            # get user id
+            # Get user id
             user = user_response.json()
             user_object_id = user['id']
             
-            # get tenant id
+            # Get tenant id
             tenant = tenant_response.json()
             tenant_id = tenant['value'][0]['id']
             
