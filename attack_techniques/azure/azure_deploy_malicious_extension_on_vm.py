@@ -23,7 +23,7 @@ class AzureDeployMaliciousExtensionOnVM(BaseTechnique):
                 sub_technique_name="CustomScriptExtension"
             )
         ]
-        super().__init__("VM - Deploy Malicious Extension", "Deploy malicious extensions across all VMs within scale set by exploiting the extension update feature on a Virtual Machine Scale Set (VMSS). This allows to gain unauthorized access, execute arbitrary commands, or install backdoors, potentially compromising the entire VMSS and its operations.", mitre_techniques)
+        super().__init__("VM - Deploy Malicious Extension", "Deploy malicious extensions across all VMs within scale set by exploiting the extension update feature on a Virtual Machine Scale Set (VMSS). This allows to gain unauthorized access, execute arbitrary commands, or install backdoors, potentially compromising the entire VMSS and its operations.", mitre_techniques, azure_trm_technique)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
