@@ -83,18 +83,38 @@ page_layout = html.Div([
                     html.H4("Response")
                 ),
                 dbc.Col(
-                    dbc.Button([
-                        DashIconify(icon="mdi:download"),
-                    ], id="download-technique-response-button", color="primary", style={'float': 'right', 'margin-left': '10px'}),
+                    html.A(
+                        dbc.Button(
+                            [
+                                DashIconify(
+                                    icon="mdi:history",
+                                    width=20,
+                                    className="me-1"
+                                ),
+                                "View Attack History"
+                            ],
+                            n_clicks=0,
+                            color="primary",
+                            className="ms-2",
+                            id="history-button",
+                        ),
+                        href="/attack-history", 
+                        target="_blank", 
+                        style={'float': 'right', 'margin-left': '10px'}
+                    )
                 )
             ]
         ),
         dbc.Row(
-            dcc.Loading(
-                id="attack-output-loading",
-                type="default",
-                children=html.Div(id= "execution-output-div", style={"height":"40vh", "overflowY": "auto", "border":"1px solid #ccc", "padding-right": "10px", "padding-left": "10px", "padding-top": "10px", "padding-bottom": "10px"})
-            )
+            [
+                dbc.Col(
+                    dcc.Loading(
+                        id="attack-output-loading",
+                        type="default",
+                        children=html.Div(id= "execution-output-div", style={"height":"40vh", "overflowY": "auto", "border":"1px solid #ccc", "padding-right": "10px", "padding-left": "10px", "padding-top": "10px", "padding-bottom": "10px"})
+                    )
+                )
+            ]
         )
     ]),
     
@@ -112,4 +132,11 @@ page_layout = html.Div([
         scrollable=True,
         backdrop="static"
     ),
-], className="bg-dark", style={"height": "100vh", 'overflow': 'auto', "padding-right": "20px", "padding-left": "20px"})
+],
+className="bg-dark",
+style={
+    'minHeight': '100vh',
+    "padding-right": "20px", 
+    "padding-left": "20px"
+    }
+)

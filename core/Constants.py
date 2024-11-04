@@ -7,6 +7,7 @@ AUTOMATOR_EXPORTS_DIR = AUTOMATOR_DIR+"/Exports"
 APP_LOCAL_DIR = "./local"
 APP_LOG_FILE = APP_LOCAL_DIR+"/app.log"
 MSFT_TOKENS_FILE = APP_LOCAL_DIR+"/MSFT_Graph_Tokens.yml"
+TECHNIQUE_OUTPUT_DIR = APP_LOCAL_DIR+"/technique_output"
 
 OUTPUT_DIR = "./output"
 REPORT_DIR = "./report"

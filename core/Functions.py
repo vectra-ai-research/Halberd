@@ -7,11 +7,12 @@ import json
 from typing import Union, Any, Optional
 import datetime
 from pathlib import Path
-from dash import html, dcc, Patch
+from dash import html, dcc, Patch, dash_table
 import dash_daq as daq
 import dash_cytoscape as cyto
 import dash_bootstrap_components as dbc
 from dash_iconify import DashIconify
+import pandas as pd
 from core.Constants import *
 from core.playbook.playbook import Playbook
 from core.entra.entra_token_manager import EntraTokenManager
@@ -1166,3 +1167,92 @@ def generate_azure_access_info(subscription):
         )
 
     return info_output_div
+
+def parse_app_log_file(file_path):
+    """Function to parse the app log file"""
+    events = []
+    with open(file_path, 'r') as file:
+        next(file)  # Skip the header line
+        for line in file:
+            if "Technique Execution" in line:
+                parts = line.split(" - INFO - Technique Execution ")
+                timestamp = parts[0].split(',')[0]
+                event_data = json.loads(parts[1])
+                event_data['log_timestamp'] = timestamp
+                events.append(event_data)
+    return events[::-1]  # Reverse the list to show newest first
+
+def group_app_log_events(events):
+    """Function to group multiple logs linked to an event"""
+    grouped = {}
+    for event in events:
+        event_id = event['event_id']
+        if event_id not in grouped:
+            grouped[event_id] = []
+        grouped[event_id].append(event)
+    return grouped
+
+def create_app_log_event_summary(grouped_events):
+    """Function to create summary of events from multiple log lines"""
+    summary = []
+    for event_id, events in grouped_events.items():
+        start_event = next((e for e in events if e['status'] == 'started'), None)
+        end_event = next((e for e in events if e['status'] in ['completed', 'failed']), None)
+        
+        if start_event and end_event:
+            summary.append({
+                'Technique': start_event.get('technique', 'N/A'),
+                'Source': start_event.get('source', 'Unknown'),
+                'Start Time': start_event['log_timestamp'],
+                'Result': end_event.get('result', 'N/A'),
+                'Tactic': start_event.get('tactic', 'N/A'),
+                'Event ID': event_id    
+            })
+    return summary
+
+def generate_attack_trace_table():
+    """Function to generate the attack trace table view"""
+    
+    # Parse log file and create summary
+    events = parse_app_log_file(APP_LOG_FILE)
+    grouped_events = group_app_log_events(events)
+    summary = create_app_log_event_summary(grouped_events)
+
+    # Create DataFrame
+    df = pd.DataFrame(summary)
+
+    # Return app layout
+    return html.Div([
+        dash_table.DataTable(
+            id='trace-table',
+            columns=[{"name": i, "id": i, "presentation": "markdown" if i == "Output" else None} for i in df.columns],
+            data=df.to_dict('records'),
+            style_table={
+                'overflowX': 'auto',
+                'backgroundColor': '#2F4F4F'
+            },
+            style_cell={
+                'textAlign': 'left',
+                'backgroundColor': '#2F4F4F',
+                'color': 'white',
+                'border': '1px solid #3a3a3a'
+            },
+            style_header={
+                'backgroundColor': '#000000',
+                'fontWeight': 'bold',
+                'border': '1px solid #3a3a3a'
+            },
+            style_data_conditional=[
+                {
+                    'if': {'row_index': 'odd'},
+                    'backgroundColor': '#3D5C5C'
+                }
+            ],
+            sort_action='native',
+            row_selectable='single',
+            filter_action = 'native',
+            page_size=5,
+            markdown_options={"html": True}  # Allow HTML in markdown
+        ),
+    ], 
+    className="bg-dark")

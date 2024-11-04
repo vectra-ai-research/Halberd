@@ -14,7 +14,7 @@ import pandas as pd
 from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.Functions import generate_technique_info, run_initialization_check, generate_playbook_info, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info
+from core.Functions import generate_technique_info, run_initialization_check, generate_playbook_info, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
 from core.playbook.playbook_error import PlaybookError
@@ -22,19 +22,21 @@ from core.Constants import *
 from core.aws.aws_session_manager import SessionManager
 from attack_techniques.technique_registry import *
 from core.logging.logger import setup_logger,StructuredAppLog
-from pages.attack_trace import group_events,create_summary, parse_log_file
 from core.logging.report import read_log_file, analyze_log, generate_html_report
+from core.output_manager.output_manager import OutputManager
+from pages.attack_analyse import process_attack_data, create_metric_card, create_df_from_attack_logs, create_bar_chart, create_pie_chart, create_timeline_graph
 
 # Create Application
 app = dash.Dash(__name__,  external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP],title='Halberd', update_title='Loading...', suppress_callback_exceptions=True)
 
 # Navigation bar layout
 navbar = dbc.NavbarSimple(
+    id = "halberd-main-navbar",
     children=[
         dbc.NavItem(dbc.NavLink("Attack", href="/attack")),
         dbc.NavItem(dbc.NavLink("Recon", href="/recon")),
         dbc.NavItem(dbc.NavLink("Automator", href="/automator")),
-        dbc.NavItem(dbc.NavLink("Trace", href="/attack-trace")),
+        dbc.NavItem(dbc.NavLink("Analyse", href="/attack-analyse")),
     ],
     brand= html.Div([
         dbc.Row(
@@ -47,6 +49,7 @@ navbar = dbc.NavbarSimple(
     brand_href="/home",
     color="dark",
     dark=True,
+    sticky= "top",
 )
 
 # App layout
@@ -62,9 +65,9 @@ app.layout = html.Div([
         header="Welcome to Halberd",
         is_open=True,
         dismissable=True,
-        duration=5000,
+        duration=3000,
         color="primary",
-        style={"position": "fixed", "top": 66, "right": 10, "width": 350},
+        style={"position": "fixed", "top": 92, "right": 10, "width": 350},
     ),
     dbc.Toast(
         children = "",
@@ -74,7 +77,7 @@ app.layout = html.Div([
         dismissable=True,
         duration=5000,
         color="primary",
-        style={"position": "fixed", "top": 66, "right": 10, "width": 350},
+        style={"position": "fixed", "top": 92, "right": 10, "width": 350},
     ),
     dcc.Download(id="app-download-sink"),
     dbc.Modal(
@@ -127,15 +130,18 @@ def display_page_from_url_callback(pathname):
     elif pathname == '/recon':
         from pages.recon import page_layout
         return page_layout
-    elif pathname == '/attack-trace':
-        from pages.attack_trace import generate_attack_trace_view
-        return generate_attack_trace_view()
     elif pathname == '/automator':
         from pages.automator import page_layout
         return page_layout
     elif pathname == '/schedules':
-        from pages.schedules import GenerateAutomatorSchedulesView
-        return GenerateAutomatorSchedulesView()
+        from pages.schedules import generate_automator_schedules_view
+        return generate_automator_schedules_view()
+    elif pathname == '/attack-history':
+        from pages.attack_history import generate_attack_history_page
+        return generate_attack_history_page()
+    elif pathname == '/attack-analyse':
+        from pages.attack_analyse import create_layout
+        return create_layout()
     else:
         from pages.home import page_layout
         return page_layout
@@ -173,9 +179,8 @@ def display_attack_technique_config_callback(technique):
 '''C005 - Callback to execute a technqiue'''
 @app.callback(
         Output(component_id = "execution-output-div", component_property = "children"), 
-        Output(component_id = "technique-output-memory-store", component_property = "data"), 
         Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
-        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True),
         Input(component_id= "technique-execute-button", component_property= "n_clicks"), 
         State(component_id = "tactic-dropdown", component_property = "value"),
         State(component_id = "attack-options-radio", component_property = "value"), 
@@ -272,35 +277,54 @@ def execute_technique_callback(n_clicks, tactic, t_id, values, bool_on, file_con
     if isinstance(output, tuple) and len(output) == 2:
         result, response = output
 
-    if result.value == "success":
-        # Log technique execution success
+        # Initialize output manager
+        output_manager = OutputManager()
+
+        if result.value == "success":
+            # Log technique execution success
+            logger.info(StructuredAppLog("Technique Execution",
+                event_id = event_id,
+                source = active_entity,
+                status = "completed",
+                result = "success",
+                technique = t_id,
+                target = None,
+                tactic=tactic,
+                timestamp=datetime.datetime.now().isoformat())
+            )
+
+            # Save output to file
+            output_manager.store_technique_output(
+                data=response['value'], 
+                technique_name=t_id, 
+                event_id=event_id
+            )
+
+            # Return results
+            return ParseTechniqueResponse(response['value']), True, "Technique Execution Successful"
+        
+        # Log technique execution failure
         logger.info(StructuredAppLog("Technique Execution",
             event_id = event_id,
             source = active_entity,
             status = "completed",
-            result = "success",
+            result = "failed",
             technique = t_id,
             target = None,
             tactic=tactic,
             timestamp=datetime.datetime.now().isoformat())
         )
-
+        # Save output to file
+        output_manager.store_technique_output(
+            data=response['error'], 
+            technique_name=t_id, 
+            event_id=event_id
+        )
         # Return results
-        return ParseTechniqueResponse(response['value']), response['value'], True, "Technique Execution Successful"
+        return ParseTechniqueResponse(response['error']), True, "Technique Execution Failed"
     
-    # Log technique execution failure
-    logger.info(StructuredAppLog("Technique Execution",
-        event_id = event_id,
-        source = active_entity,
-        status = "completed",
-        result = "failed",
-        technique = t_id,
-        target = None,
-        tactic=tactic,
-        timestamp=datetime.datetime.now().isoformat())
-    )
-    
-    return ParseTechniqueResponse(response['error']), response['error'], True, "Technique Execution Failed"
+    # Unexpected technique output
+    return ParseTechniqueResponse(""), True, "Technique Execution Failed"
     
 '''C006 - Entity Map - Generate Map'''
 @app.callback(
@@ -337,7 +361,7 @@ def display_attack_technique_info_callback(t_id):
 '''C008 - Callback to generate trace report'''
 @app.callback(
     Output(component_id = "app-download-sink", component_property = "data", allow_duplicate=True),
-    Input(component_id= "download-trace-report-button", component_property= "n_clicks"),
+    Input(component_id= "download-halberd-report-button", component_property= "n_clicks"),
     prevent_initial_call = True
 )
 def generate_trace_report_callback(n_clicks):
@@ -367,9 +391,9 @@ def download_trace_logs_callback(n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     # Parse log file and create summary
-    events = parse_log_file(APP_LOG_FILE)
-    grouped_events = group_events(events)
-    summary = create_summary(grouped_events)
+    events = parse_app_log_file(APP_LOG_FILE)
+    grouped_events = group_app_log_events(events)
+    summary = create_app_log_event_summary(grouped_events)
 
     # Create DataFrame
     df = pd.DataFrame(summary)
@@ -1027,23 +1051,7 @@ def close_app_t_info_modal_callback(n_clicks, is_open):
         return False
     return is_open
 
-'''C035 - Callback to download report'''
-@app.callback(
-    Output("app-download-sink", "data", allow_duplicate=True),
-    Input("generate-report-button", "n_clicks"),
-    prevent_initial_call=True,
-)
-def download_report_callback(n_clicks):
-    if n_clicks == 0:
-        raise PreventUpdate
-    # Parse log file and create summary
-    events = parse_log_file(APP_LOG_FILE)
-    grouped_events = group_events(events)
-    summary = create_summary(grouped_events)
-
-    # Create DataFrame
-    df = pd.DataFrame(summary)
-    return dcc.send_data_frame(df.to_csv, "attack_trace.csv", index=False)
+'''C035 - Callback to download report (deprecated)'''
 
 '''C036 - Callback to display entity map node information'''
 @app.callback(
@@ -1085,26 +1093,7 @@ def close_pb_info_modal_callback(n_clicks, is_open):
         return False
     return is_open
 
-'''C039 - Callback to download technique response data'''
-@app.callback(
-    Output("app-download-sink", "data", allow_duplicate=True),
-    Input("download-technique-response-button", "n_clicks"),
-    State("technique-output-memory-store", "data"),
-    prevent_initial_call=True
-)
-def download_technique_raw_response_callback(n_clicks, data):
-    if n_clicks is None or data is None:
-        raise PreventUpdate
-    
-    # Create a file in the outputs directory
-    execution_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-
-    output_filepath = f"./output/Response_Export_{execution_time}.txt"
-    with open(output_filepath, "w") as f:
-        f.write(str(data))
-    
-    # Download response file
-    return dcc.send_file(output_filepath)
+'''C039 - Callback to download technique response data (deprecated)'''
 
 '''C040 - Callback to open playbook export modal'''
 @app.callback(
@@ -1321,6 +1310,151 @@ def display_access_info_in_modal_callback(n_clicks, active_tab):
             "azure-access-info-div"
         )
     
+'''C047 - Callback to display technique output in technique output viewer'''
+@app.callback(
+        Output(component_id = "output-viewer-display-div", component_property = "children", allow_duplicate=True),
+        Input(component_id = "trace-table", component_property = "selected_rows"),
+        Input(component_id = "trace-table", component_property = "data"),
+        prevent_initial_call=True
+)
+def display_technique_output_in_output_viewer_callback(selected_rows, data):
+    if not selected_rows:
+        return 'No cell selected'
+    
+    # Get the selected row's data and extract event ID
+    selected_data = (data[selected_rows[0]])
+    event_id = selected_data['Event ID']
+
+    # Initialize output manager
+    output_manager = OutputManager()
+    # Get technique execution output by event id
+    event_output = output_manager.get_output_by_event_id(event_id=event_id)
+
+    # Display output
+    return ParseTechniqueResponse(event_output['data'])
+
+### Attack dashboard callbacks
+'''C048 - Callback to update metrics card in analyse dashboard'''
+@app.callback(
+    Output('metric-cards', 'children'),
+    [Input('date-picker-range', 'start_date'),
+     Input('date-picker-range', 'end_date')]
+)
+def update_metric_cards_callback(start_date, end_date):
+    df = create_df_from_attack_logs()
+    data = process_attack_data(df, pd.to_datetime(start_date), pd.to_datetime(end_date))
+    
+    return [
+        html.Div([
+            create_metric_card("Total Executions", data['total_executions'], "fa-flask", "#3498db"),
+        ], style={'width': '23%', 'marginRight': '2%'}),
+        html.Div([
+            create_metric_card("Unique Techniques", data['unique_techniques'], "fa-code-branch", "#2ecc71"),
+        ], style={'width': '23%', 'marginRight': '2%'}),
+        html.Div([
+            create_metric_card("Success Rate", 
+                             f"{(data['status_counts'].get('success', 0) / data['total_executions'] * 100):.1f}%" if data['total_executions'] > 0 else "N/A", 
+                             "fa-check-circle", "#e74c3c"),
+        ], style={'width': '23%', 'marginRight': '2%'}),
+        html.Div([
+            create_metric_card("Avg Interval", 
+                             f"{data['median_interval'].total_seconds()/60:.1f}min" if 'median_interval' in data else "N/A", 
+                             "fa-clock", "#9b59b6"),
+        ], style={'width': '23%'})
+    ]
+
+'''C049 - Callback to update graphs container in analyse dashboard'''
+@app.callback(
+    Output('graphs-container', 'children'),
+    [Input('date-picker-range', 'start_date'),
+     Input('date-picker-range', 'end_date')]
+)
+def update_graphs_callback(start_date, end_date):
+    df = create_df_from_attack_logs()
+    data = process_attack_data(df, pd.to_datetime(start_date), pd.to_datetime(end_date))
+    
+    return [
+        # Timeline Graph
+        html.Div([
+            dcc.Graph(figure=create_timeline_graph(data)
+            )
+        ], style={'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)', 'marginBottom': '20px'}, className="bg-dark"),
+        
+        # Surface Distribution and Success Rate Row
+        html.Div([
+            html.Div([
+                dcc.Graph(figure=create_pie_chart(
+                    data['surface_counts'].values,
+                    data['surface_counts'].index,
+                    'Attack Surface Distribution'
+                )
+            )
+            ], style={'width': '48%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}),
+            
+            html.Div([
+                dcc.Graph(figure=create_bar_chart(
+                    data['tactic_success'].index,
+                    data['tactic_success']['success_rate'],
+                    'Success Rate by Tactic'
+                )
+                )
+            ], style={'width': '48%', 'marginLeft': '4%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'})
+        ], style={'display': 'flex', 'marginBottom': '20px'}, className="bg-dark"),
+        
+        # MITRE Tactics and Source Distribution Row
+        html.Div([
+            html.Div([
+                dcc.Graph(figure=create_bar_chart(
+                    data['tactic_counts'].index,
+                    data['tactic_counts'].values,
+                    'Attacks Executed by MITRE Tactics'
+                )
+                )
+            ], style={'width': '48%', 'padding': '20px', 'borderRadius': '10px', 
+                      'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}),
+            
+            html.Div([
+                dcc.Graph(figure=create_bar_chart(
+                    data['source_counts'].index,
+                    data['source_counts'].values,
+                    'Attacks Executed by Source Entity'
+                )
+                )
+            ], style={'width': '48%', 'marginLeft': '4%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'})
+        ], style={'display': 'flex', 'marginBottom': '20px'}, className="bg-dark"),
+        
+        # Top Techniques Row
+        html.Div([
+            dcc.Graph(figure=create_bar_chart(
+                data['technique_counts'].values,
+                data['technique_counts'].index,
+                'Most Executed Techniques',
+                orientation='h'
+            )
+            )
+        ], style={'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)', 'marginBottom': '20px'}, className="bg-dark")
+    ]
+
+'''C049 - Callback to update footer stats in analyse dashboard'''
+@app.callback(
+    Output('footer-stats', 'children'),
+    [Input('date-picker-range', 'start_date'),
+     Input('date-picker-range', 'end_date')]
+)
+def update_footer_stats_callback(start_date, end_date):
+    df = create_df_from_attack_logs()
+    data = process_attack_data(df, pd.to_datetime(start_date), pd.to_datetime(end_date))
+    
+    return html.Div([
+        html.H3('Execution Statistics', style={'marginBottom': '15px'}),
+        html.P([
+            f"Test Duration: {str(data['testing_period']['duration']).split('.')[0]} | ",
+            f"Total Attacks: {data['total_executions']} | ",
+            f"Unique Techniques: {data['unique_techniques']} | ",
+            f"Average Success Rate: {(data['status_counts'].get('success', 0) / data['total_executions'] * 100):.1f}%" if data['total_executions'] > 0 else "N/A"
+        ], style={'color': '#7f8c8d'})
+    ], style={'textAlign': 'center', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}, className="bg-dark")
+
 if __name__ == '__main__':
     # Run Initialization check
     run_initialization_check()
