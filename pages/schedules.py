@@ -8,7 +8,7 @@ import dash_bootstrap_components as dbc
 import yaml
 from core.Constants import AUTOMATOR_SCHEDULES_FILE
 
-def GenerateAutomatorSchedulesView():
+def generate_automator_schedules_view():
 
     with open(AUTOMATOR_SCHEDULES_FILE, "r") as schedule_data:
         schedules = yaml.safe_load(schedule_data)
