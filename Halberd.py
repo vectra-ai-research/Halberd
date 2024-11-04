@@ -1349,10 +1349,10 @@ def update_metric_cards_callback(start_date, end_date):
             create_metric_card("Total Executions", data['total_executions'], "fa-flask", "#3498db"),
         ], style={'width': '23%', 'marginRight': '2%'}),
         html.Div([
-            create_metric_card("Unique Techniques", data['unique_techniques'], "fa-code-branch", "#2ecc71"),
+            create_metric_card("Unique Techniques Executed", data['unique_techniques'], "fa-code-branch", "#2ecc71"),
         ], style={'width': '23%', 'marginRight': '2%'}),
         html.Div([
-            create_metric_card("Success Rate", 
+            create_metric_card("Attack Success Rate", 
                              f"{(data['status_counts'].get('success', 0) / data['total_executions'] * 100):.1f}%" if data['total_executions'] > 0 else "N/A", 
                              "fa-check-circle", "#e74c3c"),
         ], style={'width': '23%', 'marginRight': '2%'}),
@@ -1395,7 +1395,7 @@ def update_graphs_callback(start_date, end_date):
                 dcc.Graph(figure=create_bar_chart(
                     data['tactic_success'].index,
                     data['tactic_success']['success_rate'],
-                    'Success Rate by Tactic'
+                    'Attack Success Rate by Tactic'
                 )
                 )
             ], style={'width': '48%', 'marginLeft': '4%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'})
