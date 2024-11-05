@@ -23,7 +23,7 @@ class AzureExecuteScriptOnVM(BaseTechnique):
                 sub_technique_name="Vmss Run Command"
             )
         ]
-        super().__init__("VM - Execute Scripts/Commands", "Run arbitrary scripts or commands on the target VMs by utilizing the 'RunCommand' feature on a Virtual Machine Scale Set (VMSS). This capability allows installation of malicious software, exfiltrate data, or perform other nefarious activities, potentially compromising the VM instances within the scale set.", mitre_techniques)
+        super().__init__("VM - Execute Scripts/Commands", "Run arbitrary scripts or commands on the target VMs by utilizing the 'RunCommand' feature on a Virtual Machine Scale Set (VMSS). This capability allows installation of malicious software, exfiltrate data, or perform other nefarious activities, potentially compromising the VM instances within the scale set.", mitre_techniques, azure_trm_technique)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
@@ -63,13 +63,13 @@ class AzureExecuteScriptOnVM(BaseTechnique):
                 run_command_parameters = {
                     'command_id': 'RunPowerShellScript',
                     'script': [
-                        "Write-Output 'Hello, this is Halberd, I have compromised you! Send me a ton of money'"
+                        "Write-Output 'Hello, this is Halberd!'"
                     ]}
             else:
                 run_command_parameters = {
                     'command_id': 'RunShellScript',
                     'script': [
-                        "echo 'Hello, this is Halberd, I have compromised you! Send me a ton of money'"
+                        "echo 'Hello, this is Halberd!'"
                     ]}
 
             # Create response

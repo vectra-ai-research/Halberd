@@ -158,11 +158,18 @@ page_layout = html.Div([
     # Home footer
     dbc.Row([
         dbc.Col([
-            html.P(f"Halberd : Multi-Cloud Security Testing (v1.1).", className="text-muted")
+            dcc.Link(html.P(f"Halberd : Multi-Cloud Attack Tool (v1.5)", className="text-muted"), href= "https://github.com/vectra-ai-research/Halberd", target="_blank")
         ]),
         dbc.Col([
             dcc.Link("Created by @openrec0n (Arpan Sarkar)", href= "https://github.com/openrec0n", target="_blank", style={'float': 'right'})
         ])
     ],
     className="py-3 mt-5 border-top")
-], className="bg-dark min-vh-100", style={ "height": "100vh", "padding-right": "20px", "padding-left": "20px"})
+], 
+className="bg-dark min-vh-100", 
+style={
+    'minHeight': '100vh',
+    "padding-right": "20px", 
+    "padding-left": "20px"
+    }
+)

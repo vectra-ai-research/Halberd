@@ -32,7 +32,7 @@ class AzureEnumerateVm(BaseTechnique):
             # list vms
             vm_list = compute_client.virtual_machines.list_all()
 
-            vms = [vm.name for vm in vm_list]
+            vms = [{'name':vm.name, 'id': vm.id, 'type':vm.type, 'location': vm.location, 'plan':vm.plan} for vm in vm_list]
 
             if vms:
                 return ExecutionStatus.SUCCESS, {

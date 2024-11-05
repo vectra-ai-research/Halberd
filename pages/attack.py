@@ -122,10 +122,7 @@ page_layout = html.Div([
     dbc.Modal(
         [
             dbc.ModalHeader(dbc.ModalTitle("Access Manager", className="text-success")),
-            dbc.ModalBody(id = "attack-access-info-display-modal-body"),
-            dbc.ModalFooter(
-                dbc.Button("Close", id="close-attack-access-info-display-modal", className="ml-auto")
-            ),
+            dbc.ModalBody(id = "attack-access-info-display-modal-body")
         ],
         id="attack-access-info-display-modal",
         size="xl",
