@@ -15,7 +15,7 @@ class AzureEnumerateRoleAssignment(BaseTechnique):
                 sub_technique_name=None
             )
         ]
-        super().__init__("Enumerate Role Assignment", "Enumerates role assignments in target Azure subscription", mitre_techniques)
+        super().__init__("Enumerate Role Assignment", "Enumerates Azure RBAC role assignments to discover permissions granted to identities (users, groups, service principals) within the target subscription. This technique helps map out the access control landscape by revealing: who has access (users, groups, service principals), what level of access they have (role definitions), where they have access (scope of assignments)", mitre_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
