@@ -246,7 +246,7 @@ def create_playbook_item(playbook_config):
                                     "Execute"
                                 ],
                                 id={"type": "execute-playbook-button", "index": playbook_config.yaml_file},
-                                color="success",
+                                color="danger",
                                 size="sm",
                                 className="w-100 mb-2"
                             ),
@@ -263,7 +263,7 @@ def create_playbook_item(playbook_config):
                                 dbc.Button(
                                     DashIconify(icon="mdi:calendar", width=16),
                                     id={"type": "open-schedule-win-playbook-button", "index": playbook_config.yaml_file},
-                                    color="warning",
+                                    color="light",
                                     size="sm",
                                     title="Schedule",
                                     className="px-2"
@@ -271,7 +271,7 @@ def create_playbook_item(playbook_config):
                                 dbc.Button(
                                     DashIconify(icon="mdi:download", width=16),
                                     id={"type": "open-export-win-playbook-button", "index": playbook_config.yaml_file},
-                                    color="info",
+                                    color="light",
                                     size="sm",
                                     title="Export",
                                     className="px-2"
@@ -279,7 +279,7 @@ def create_playbook_item(playbook_config):
                                 dbc.Button(
                                     DashIconify(icon="mdi:delete", width=16),
                                     id={"type": "delete-playbook-button", "index": playbook_config.yaml_file},
-                                    color="danger",
+                                    color="light",
                                     size="sm",
                                     title="Delete",
                                     className="px-2"
