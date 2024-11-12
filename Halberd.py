@@ -7,14 +7,16 @@ import os
 import boto3
 import uuid
 import dash_bootstrap_components as dbc
-from dash import dcc, html, ALL
+from dash import dcc, html, ALL, callback_context, no_update, MATCH, ctx
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
+import dash_daq as daq
+from dash_iconify import DashIconify
 import pandas as pd
 from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.Functions import generate_technique_info, run_initialization_check, generate_playbook_info, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary
+from core.Functions import generate_technique_info, run_initialization_check, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary, get_playbook_stats
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
 from core.playbook.playbook_error import PlaybookError
@@ -25,6 +27,7 @@ from core.logging.logger import setup_logger,StructuredAppLog
 from core.logging.report import read_log_file, analyze_log, generate_html_report
 from core.output_manager.output_manager import OutputManager
 from pages.attack_analyse import process_attack_data, create_metric_card, create_df_from_attack_logs, create_bar_chart, create_pie_chart, create_timeline_graph
+from pages.automator import create_playbook_item, create_playbook_manager_layout, schedule_pb_div, export_pb_div, generate_playbook_creator_offcanvas, generate_step_form, playbook_editor_create_parameter_inputs
 
 # Create Application
 app = dash.Dash(__name__,  external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP],title='Halberd', update_title='Loading...', suppress_callback_exceptions=True)
@@ -36,7 +39,7 @@ navbar = dbc.NavbarSimple(
         dbc.NavItem(dbc.NavLink("Attack", href="/attack")),
         dbc.NavItem(dbc.NavLink("Recon", href="/recon")),
         dbc.NavItem(dbc.NavLink("Automator", href="/automator")),
-        dbc.NavItem(dbc.NavLink("Analyse", href="/attack-analyse")),
+        dbc.NavItem(dbc.NavLink("Analyse", href="/attack-analyse"))
     ],
     brand= html.Div([
         dbc.Row(
@@ -131,8 +134,7 @@ def display_page_from_url_callback(pathname):
         from pages.recon import page_layout
         return page_layout
     elif pathname == '/automator':
-        from pages.automator import page_layout
-        return page_layout
+        return create_playbook_manager_layout()
     elif pathname == '/schedules':
         from pages.schedules import generate_automator_schedules_view
         return generate_automator_schedules_view()
@@ -571,16 +573,47 @@ def generate_azure_sub_dropdown_callback(title):
 
         return all_subscriptions
 
-'''C019 - Callback to generate automated attack sequence visualization'''
+'''C019 - Callback to generate attack sequence visualization in Automator'''
 @app.callback(
-        Output(component_id = "attack-automator-path-display-div", component_property = "children"), 
-        Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
-        prevent_initial_call=True)
-def generate_attack_seq_viz_callback(selected_pb):
-    if selected_pb:
-        return playbook_viz_generator(selected_pb)
-    else:
+    Output("playbook-visualization-container", "children"),
+    [Input({"type": "playbook-card-click", "index": ALL}, "n_clicks")],
+    prevent_initial_call=True
+)
+def update_visualization(n_clicks):
+    """Update the visualization when a playbook is selected"""
+    if not callback_context.triggered:
         raise PreventUpdate
+    
+    # Get the triggered component's ID
+    triggered = callback_context.triggered[0]
+    prop_id = json.loads(triggered['prop_id'].rsplit('.',1)[0])
+    
+    if triggered['value'] is None:  # No clicks yet
+        raise PreventUpdate
+        
+    playbook_id = prop_id['index']
+    
+    try:
+        pb_config = Playbook(playbook_id)
+        # Return both the visualization and some playbook info
+        return html.Div([
+            html.H4(f"Playbook: {pb_config.name}", className="mb-3 text-light"),
+            html.Div(playbook_viz_generator(pb_config.name), className="mb-3"),
+            dbc.Card([
+                dbc.CardBody([
+                    html.H5("Playbook Details", className="card-title"),
+                    html.P(f"Author: {pb_config.author}", className="mb-2"),
+                    html.P(f"Created: {pb_config.creation_date}", className="mb-2"),
+                    html.P(f"Total Steps: {pb_config.steps}", className="mb-2"),
+                    html.P(f"Description: {pb_config.description}", className="mb-0")
+                ])
+            ], className="bg-dark text-light border-secondary")
+        ])
+    except Exception as e:
+        return html.Div([
+            html.H4("Error Loading Visualization", className="text-danger"),
+            html.P(str(e), className="text-muted")
+        ], className="p-3")
 
 '''C020 - Callback to execute attack sequence in automator view'''
 @app.callback(
@@ -588,20 +621,23 @@ def generate_attack_seq_viz_callback(selected_pb):
         Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
         Output(component_id = "app-error-display-modal", component_property = "is_open", allow_duplicate=True),
         Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True),
-        State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
-        Input(component_id = "execute-sequence-button", component_property = "n_clicks"), prevent_initial_call=True)
-def execute_pb_callback(playbook_name, n_clicks):
-    if n_clicks == 0:
+        Input({'type': 'execute-playbook-button', 'index': ALL}, 'n_clicks'),
+        prevent_initial_call=True
+)
+def execute_pb_callback(n_clicks):
+    if not any(n_clicks):
         raise PreventUpdate
     
-    if playbook_name == None:
-        return False, "", True, "Playbook Execution Aborted - You are missing something : Select a playbook"
+    # Find which button was clicked
+    ctx = callback_context
+    if not ctx.triggered:
+        return no_update
+    
+    # Extract playbook name from context
+    button_id = ctx.triggered[0]['prop_id'].rsplit('.',1)[0]
+    playbook_file = eval(button_id)['index']
     
     # Execute playbook
-    for pb in GetAllPlaybooks():
-        pb_config = Playbook(pb)
-        if pb_config.name == playbook_name:
-            playbook_file = pb_config.yaml_file
     try:
         Playbook(playbook_file).execute()
         return True, "Playbook Execution Completed", False, ""
@@ -613,43 +649,56 @@ def execute_pb_callback(playbook_name, n_clicks):
     except Exception as e:
         return False, "", True, f"Playbook Execution Failed - Unexpected Error : {str(e)}"
 
-'''C021 - Callback to open attack scheduler modal'''
+'''C021 - Callback to open attack scheduler off canvas'''
 @app.callback(
-        Output(component_id = "scheduler-modal", component_property = "is_open"), 
-        [Input("toggle-scheduler-modal-open-button", "n_clicks"), 
-        Input("toggle-scheduler-modal-close-button", "n_clicks")], 
-        [State("scheduler-modal", "is_open")])
-def toggle_scheduler_modal_callback(open_trigger, close_trigger, is_open):
-    if open_trigger or close_trigger:
-        return not is_open
-    return is_open
+        Output(component_id = "automator-offcanvas", component_property = "is_open", allow_duplicate= True), 
+        Output(component_id = "automator-offcanvas", component_property = "title", allow_duplicate= True),
+        Output(component_id = "automator-offcanvas", component_property = "children", allow_duplicate= True),
+        Output(component_id="selected-playbook-data", component_property="data", allow_duplicate= True),
+        Input({'type': 'open-schedule-win-playbook-button', 'index': ALL}, 'n_clicks'),
+        prevent_initial_call=True
+)
+def toggle_pb_schedule_canvas_callback(n_clicks):
+    if not any(n_clicks):
+        raise PreventUpdate
+    
+    # Find which button was clicked
+    ctx = callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+    
+    # Extract playbook name from context
+    button_id = ctx.triggered[0]['prop_id'].rsplit('.',1)[0]
+    selected_pb_name = eval(button_id)['index']
+
+    return True, html.H3(["Schedule Playbook"]), schedule_pb_div, selected_pb_name
 
 '''C022 - Callback to create new automator schedule'''
 @app.callback(
         Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
         Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
-        Output(component_id = "scheduler-modal", component_property = "is_open", allow_duplicate=True), 
-        Input(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
-        Input(component_id = "set-time-input", component_property = "value"), 
-        Input(component_id = "automator-date-range-picker", component_property = "start_date"), 
-        Input(component_id = "automator-date-range-picker", component_property = "end_date"), 
-        Input(component_id = "schedule-repeat-boolean", component_property = "on"), 
-        Input(component_id = "repeat-options-dropdown", component_property = "value"), 
-        Input(component_id = "schedule-name-input", component_property = "value"), 
-        Input(component_id = "schedule-sequence-button", component_property = "n_clicks"), 
+        Output(component_id = "automator-offcanvas", component_property = "is_open", allow_duplicate=True),
+        State(component_id="selected-playbook-data", component_property="data"),
+        State(component_id = "set-time-input", component_property = "value"), 
+        State(component_id = "automator-date-range-picker", component_property = "start_date"), 
+        State(component_id = "automator-date-range-picker", component_property = "end_date"), 
+        State(component_id = "schedule-repeat-boolean", component_property = "on"), 
+        State(component_id = "repeat-options-dropdown", component_property = "value"), 
+        State(component_id = "schedule-name-input", component_property = "value"), 
+        Input(component_id = "schedule-playbook-button", component_property = "n_clicks"), 
         prevent_initial_call=True)
-def create_new_schedule_callback(playbook_id, execution_time, start_date, end_date, repeat_flag, repeat_frequency, schedule_name, n_clicks):
+def create_new_schedule_callback(selected_pb_data, execution_time, start_date, end_date, repeat_flag, repeat_frequency, schedule_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
     
-    # Send notification if no playbook selected from dropdown
-    if playbook_id == None:
-        return True, "No Playbook Selected to Schedule", False
+    if selected_pb_data == None:
+        raise PreventUpdate
     
+    playbook_id = selected_pb_data
     # Create new schedule
     AddNewSchedule(schedule_name, playbook_id, start_date, end_date, execution_time, repeat_flag, repeat_frequency)
 
-    # Send notification after new schedule is created
+    # Send notification after new schedule is created and close scheduler off canvas
     return True, "Playbook Scheduled", False
 
 '''C023 - Callback to export playbook'''
@@ -658,32 +707,25 @@ def create_new_schedule_callback(playbook_id, execution_time, start_date, end_da
         Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
         Output(component_id = "app-notification", component_property = "children", allow_duplicate=True),
         Output(component_id = "app-error-display-modal", component_property = "is_open", allow_duplicate=True),
-        Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True), 
-        State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
+        Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True),  
+        State(component_id="selected-playbook-data", component_property="data"),
         State(component_id = "export-playbook-mask-param-boolean", component_property = "on"),
         State(component_id = "export-playbook-filename-text-input", component_property = "value"),
         Input(component_id = "export-playbook-button", component_property = "n_clicks"), 
         prevent_initial_call=True)
-def export_playbook_callback(playbook_name, mask_param, export_file_name, n_clicks):
+def export_playbook_callback(selected_pb_data, mask_param, export_file_name, n_clicks):
     if n_clicks == 0:
         raise PreventUpdate
-        
-    # If no playbook is selected, show error pop-up
-    if playbook_name == None:
-        return None, False, "", True, "No Playbook Selected to Export"
-    
-    # Get the selected playbook file name
-    for pb in GetAllPlaybooks():
-        pb_config = Playbook(pb)
-        if  pb_config.name == playbook_name:
-            playbook_file = pb_config.yaml_file
-            break
+
+    playbook_file = selected_pb_data
+    playbook = Playbook(playbook_file)
     
     if not export_file_name:
-        export_file_name = "Halberd_Playbook" # Set default file name
+        export_file_base_name = "Halberd_Playbook" # Set default file name
+        export_file_name = export_file_base_name+"-"+(playbook.name).replace(" ", "_")+".yml"
     
     # Export playbook
-    playbook_export_file_path = Playbook(playbook_file).export(export_file = export_file_name, include_params=not(mask_param))
+    playbook_export_file_path = playbook.export(export_file = export_file_name, include_params=not(mask_param))
 
     # Download playbook and send app notification
     return dcc.send_file(playbook_export_file_path), True, "Playbook Exported", False, ""
@@ -694,6 +736,8 @@ def export_playbook_callback(playbook_name, mask_param, export_file_name, n_clic
         Output(component_id = "app-notification", component_property = "children", allow_duplicate=True),
         Output(component_id = "app-error-display-modal", component_property = "is_open", allow_duplicate=True),
         Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True), 
+        Output('playbook-list-container', 'children', allow_duplicate=True),
+        Output("playbook-stats", "children", allow_duplicate=True),
         Input(component_id = 'import-pb-button', component_property = 'n_clicks'), 
         Input(component_id = 'upload-playbook', component_property = 'contents'), 
         prevent_initial_call=True)
@@ -705,10 +749,29 @@ def import_playbook_callback(n_clicks, file_contents):
         try:
             # Import playbook
             Playbook.import_playbook(file_contents)
-            return True, "Playbook Imported", False, ""
+
+            # Refresh the playbook list
+            playbooks = GetAllPlaybooks()
+            playbook_items = []
+            
+            for pb_file in playbooks:
+                try:
+                    pb_config = Playbook(pb_file)
+                    # Apply search filter if query exists
+                    playbook_items.append(create_playbook_item(pb_config))
+                except Exception as e:
+                    print(f"Error loading playbook {pb_file}: {str(e)}")
+            
+            # Generate stats
+            stats = get_playbook_stats()
+            stats_text = (f"{stats['total_playbooks']} playbooks loaded • "
+                        f"Last sync: {stats['last_sync'].strftime('%I:%M %p') if stats['last_sync'] else 'never'}")
+
+            # Import success - display notification and update playbook list    
+            return True, "Playbook Imported", False, "", playbook_items, stats_text
         except Exception as e:
             # Display error in modal pop up
-            return False, "", True, str(e)
+            return False, "", True, str(e), no_update, no_update
     else:
         raise PreventUpdate
 
@@ -795,15 +858,19 @@ def add_technique_to_pb_callback(n_clicks, selected_pb, step_no, wait, t_id, val
         # Display error in error pop-up
         return False, "", True, "Cannot Add Step : No Playbook Selected"
 
-'''C026 - Callback to open playbook creator modal'''
+'''C026 - Callback to open playbook creator off canvas'''
 @app.callback(
-        Output(component_id = "playbook-creator-modal", component_property = "is_open"), 
-        [Input("pb-creator-modal-open-button", "n_clicks"), Input("pb-creator-modal-close-button", "n_clicks")], 
-        [State("playbook-creator-modal", "is_open")])
-def toggle_pb_create_modal_callback(open_trigger, close_trigger, is_open):
-    if open_trigger or close_trigger:
-        return not is_open
-    return is_open
+        Output(component_id = "automator-offcanvas", component_property = "is_open", allow_duplicate= True), 
+        Output(component_id = "automator-offcanvas", component_property = "title", allow_duplicate= True),
+        Output(component_id = "automator-offcanvas", component_property = "children", allow_duplicate= True),
+        Input(component_id = 'open-creator-win-playbook-button', component_property= 'n_clicks'),
+        prevent_initial_call=True
+)
+def toggle_pb_creator_canvas_callback(n_clicks):
+    if n_clicks:
+        return True, [html.H3("Create New Playbook")], generate_playbook_creator_offcanvas()
+
+    raise PreventUpdate
 
 '''C027 - Callback to create new playbook'''
 @app.callback(
@@ -862,95 +929,7 @@ def toggle_t_info_modal_callback(data, is_open):
     else:
         raise PreventUpdate
         
-'''C029 - Callback to display playbook node data on hover'''
-@app.callback(
-        Output(component_id = "playbook-node-data-div", component_property = "children", allow_duplicate= True),
-        Input(component_id = "auto-attack-sequence-cytoscape-nodes", component_property = "mouseoverNodeData"), 
-        State(component_id="automator-pb-selector-dropdown", component_property="value"),
-        prevent_initial_call=True
-    )
-def display_pb_node_data_callback(node_data, value):
-    if node_data:
-        # Extract module_id from node label
-        if node_data['label'] != "None":
-            info = node_data['info']
-        else:
-            raise PreventUpdate
-        
-        if info == "time":
-            wait_time = node_data['label']
-            return dbc.Card(
-                [
-                    dbc.CardHeader(html.H5("Time Gap", className="mb-0")),
-                    dbc.CardBody(
-                        html.P(f"{str(wait_time)} Seconds", className="card-text", style={"white-space": "pre-wrap"})
-                    )
-                ],
-                className="mb-3"
-            )
-        try:
-            # Return module info
-            pb_step_info = node_data['info']
-            pb_step_config = next(iter(pb_step_info.items()))
-            pb_step_no = pb_step_config[0]
-            step_data = next(iter(pb_step_info.items()))[1]
-
-            params = step_data.get('Params', {})
-            param_cards = []
-            if params:
-                for key, value in params.items():
-                    param_cards.append(
-                        dbc.Card([
-                            dbc.CardBody([
-                                html.H6(key, className="card-subtitle mb-2 text-muted"),
-                                html.P(str(value), className="card-text")
-                            ])
-                        ], className="mb-2")
-                    )
-            else:
-                param_cards.append(
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.P("No parameters", className="card-text text-muted")
-                        ])
-                    ], className="mb-2")
-                )
-
-            param_accordion = dbc.Accordion([
-                dbc.AccordionItem(
-                    param_cards,
-                    title="Parameters",
-                )
-            ], start_collapsed=True)
-
-            step_content = [
-                html.H6(f"Step {pb_step_no}", className="mb-2"),
-                html.P(f"Module: {step_data.get('Module', 'N/A')}", className="mb-1"),
-                html.P(f"Wait: {step_data.get('Wait', 'N/A')}", className="mb-2"),
-                param_accordion
-            ]
-
-            step_card = dbc.Card(dbc.CardBody(step_content), className="mb-3")
-            
-            return dbc.Card(
-                [
-                    dbc.CardHeader(html.H5("PB_Sequence", className="mb-0")),
-                    dbc.CardBody(step_card)
-                ],
-                className="mb-3"
-            )
-        except:
-            return dbc.Card(
-                [
-                    dbc.CardHeader(html.H5("Invalid Playbook Node", className="mb-0")),
-                    dbc.CardBody(
-                        html.P("Nothing to display", className="card-text", style={"white-space": "pre-wrap"})
-                    )
-                ],
-                className="mb-3"
-            )
-    else:
-        raise PreventUpdate
+'''C029 - Callback to display playbook node data on hover (deprecated)'''
 
 '''C030 - Callback to open/close add to playbook modal on Attack page'''
 @app.callback(
@@ -968,51 +947,123 @@ def toggle_add_to_pb_modal_callback(n1, n2, n3, is_open):
         return not is_open
     return is_open
 
-'''C031 - Callback to generate playbook options in Automator - Attack Playbook dropdown'''
+'''C031 - [Automator] Callback to generate/update playbook list in automator'''
 @app.callback(
-        Output(component_id = "automator-pb-selector-dropdown", component_property = "options"), 
-        Input(component_id = "automator-pb-selector-dropdown", component_property = "title"))
-def generate_pb_dropdown_options_callback(title):
-    if title == None:
-        playbook_dropdown_option = []    
-        for pb in GetAllPlaybooks():
-            
-            playbook_dropdown_option.append(
-                {
-                    "label": html.Div([Playbook(pb).name], style={'font-size': 20}, className="text-dark"),
-                    "value": Playbook(pb).name,
-                }
-            )
-        return playbook_dropdown_option
+    Output("playbook-list-container", "children"),
+    Output("playbook-stats", "children"),
+    Input("playbook-search", "value"),
+)
+def update_playbook_list_callback(search_query):
+    """Update the playbook list and stats based on search query"""
+    # Get all available playbooks on system
+    playbooks = GetAllPlaybooks()
     
-'''C032 - Callback to delete playbook'''
+    # Generate stats
+    stats = get_playbook_stats()
+    stats_text = (f"{stats['total_playbooks']} playbooks loaded • "f"Last sync: {stats['last_sync'].strftime('%I:%M %p') if stats['last_sync'] else 'never'}")
+    
+    # If no playbooks found on system
+    if not playbooks:
+        empty_playbook_list_div = html.Div(
+            children=[
+                html.Div([
+                    DashIconify(
+                        icon="mdi:information-outline", #Information icon
+                        width=48,
+                        height=48,
+                        className="text-muted mb-3"
+                    ),
+                    html.P("Create or Import a playbook", # Default message when no playbook is selected
+                            className="text-muted")
+                ], className="text-center")
+            ],
+            className="d-flex justify-content-center align-items-center",
+            style={'padding':'20px'}
+        )
+        return empty_playbook_list_div, stats_text
+    
+    # Initialize list to store playbook items
+    playbook_items = []
+    
+    for pb_file in playbooks:
+        try:
+            pb_config = Playbook(pb_file)
+            # Apply search filter if query exists
+            if search_query and search_query.lower() not in pb_config.name.lower():
+                continue
+            playbook_items.append(create_playbook_item(pb_config))
+        except Exception as e:
+            print(f"Error loading playbook {pb_file}: {str(e)}")
+
+    return playbook_items, stats_text
+    
+'''C032 - Callback to delete playbook from automator'''
 @app.callback(
-        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
-        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
-        Output(component_id = "app-error-display-modal", component_property = "is_open", allow_duplicate=True),
-        Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True),
-        Input(component_id = "delete-pb-button", component_property = "n_clicks"), 
-        State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
-        prevent_initial_call=True)
-def delete_pb_callback(n_clicks, playbook_name):
-    if n_clicks == 0:
-        raise PreventUpdate
-        
-    # If no playbook is selected, send notification
-    if playbook_name == None:
-        return False, "", True, "Delete Error : No Playbook Selected to Delete"
+    Output('playbook-list-container', 'children', allow_duplicate=True),
+    Output("playbook-stats", "children", allow_duplicate=True),
+    Input({'type': 'delete-playbook-button', 'index': ALL}, 'n_clicks'),
+    prevent_initial_call=True
+)
+def delete_playbook(n_clicks):
+    """Handles playbook deletion"""
+    if not any(n_clicks):
+        return no_update
     
-    # Get the selected playbook file location
-    for pb in GetAllPlaybooks():
-        pb_config = Playbook(pb)
-        if  pb_config.name == playbook_name:
-            playbook_file = pb_config.yaml_file_path
+    # Find which button was clicked
+    ctx = callback_context
+    if not ctx.triggered:
+        return no_update
+    
+    button_id = ctx.triggered[0]['prop_id'].rsplit('.',1)[0]
+    playbook_file = eval(button_id)['index']
 
     try:
-        os.remove(playbook_file)
-        return True, "Playbook Deleted", False, ""
+        # Delete the playbook file
+        os.remove(os.path.join(AUTOMATOR_PLAYBOOKS_DIR, playbook_file))
+        
+        # Refresh the playbook list
+        playbooks = GetAllPlaybooks()
+
+        # Generate stats
+        stats = get_playbook_stats()
+        stats_text = (f"{stats['total_playbooks']} playbooks loaded • "f"Last sync: {stats['last_sync'].strftime('%I:%M %p') if stats['last_sync'] else 'never'}")
+
+        if not playbooks:
+            empty_playbook_list_div = html.Div(
+                children=[
+                    html.Div([
+                        DashIconify(
+                            icon="mdi:information-outline", #Information icon
+                            width=48,
+                            height=48,
+                            className="text-muted mb-3"
+                        ),
+                        html.P("Create or Import a playbook", # Default message when no playbook is selected
+                                className="text-muted")
+                    ], className="text-center")
+                ],
+                className="d-flex justify-content-center align-items-center",
+                style={'padding':'20px'}
+            )
+            return empty_playbook_list_div, stats_text
+
+        # Initialize list to store playbook items
+        playbook_items = []
+        
+        for pb_file in playbooks:
+            try:
+                pb_config = Playbook(pb_file)
+                # Apply search filter if query exists
+                playbook_items.append(create_playbook_item(pb_config))
+            except Exception as e:
+                print(f"Error loading playbook {pb_file}: {str(e)}")
+        
+        
+        
+        return playbook_items, stats_text
     except Exception as e:
-        return False, "", True, str(e)
+        print(f"Error deleting playbook {playbook_file}: {str(e)}")
+        return no_update
 
 '''C033 - Callback to open modal and display technique information from home techniques matrix'''
 @app.callback(
@@ -1062,24 +1113,8 @@ def display_entity_map_node_info_callback(data):
     if not data:
         return "Click on a node to see more information."
     return f"Selected Node: {data['label']}"
-    
-'''C037 - Callback to display playbook information in playook information modal'''
-@app.callback(
-        Output(component_id = "automator-playbook-info-display-modal", component_property = "is_open", allow_duplicate=True),
-        Output("automator-playbook-info-display-modal-body", "children", allow_duplicate = True), 
-        Input(component_id= "pb-view-details-button", component_property= "n_clicks"),
-        State(component_id = "automator-pb-selector-dropdown", component_property = "value"), 
-        prevent_initial_call=True
-)
-def display_pb_info_in_modal_callback(n_clicks, selected_pb):
-    if n_clicks == 0:
-        raise PreventUpdate
-    
-    # If no playbook is selected
-    if selected_pb == None:
-        raise PreventUpdate
-    
-    return True, generate_playbook_info(selected_pb)
+
+'''C037 - Callback to view playbook details in automator off canvas (deprecated)'''
 
 '''C038 - Callback to close the playbook information modal'''
 @app.callback(
@@ -1097,16 +1132,27 @@ def close_pb_info_modal_callback(n_clicks, is_open):
 
 '''C040 - Callback to open playbook export modal'''
 @app.callback(
-        Output(component_id = "export-playbook-modal", component_property = "is_open"), 
-        [
-            Input("toggle-export-playbook-modal-open-button", "n_clicks"), 
-            Input("toggle-export-playbook-modal-close-button", "n_clicks")
-        ], 
-        [State("export-playbook-modal", "is_open")])
-def toggle_pb_export_modal_callback(open_trigger, close_trigger, is_open):
-    if open_trigger or close_trigger:
-        return not is_open
-    return is_open
+        Output(component_id = "automator-offcanvas", component_property = "is_open", allow_duplicate= True), 
+        Output(component_id = "automator-offcanvas", component_property = "title", allow_duplicate= True),
+        Output(component_id = "automator-offcanvas", component_property = "children", allow_duplicate= True),
+        Output(component_id="selected-playbook-data", component_property="data", allow_duplicate= True),
+        Input({'type': 'open-export-win-playbook-button', 'index': ALL}, 'n_clicks'),
+        prevent_initial_call=True
+)
+def toggle_pb_export_canvas_callback(n_clicks):
+    if not any(n_clicks):
+        raise PreventUpdate
+    
+    # Find which button was clicked
+    ctx = callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+    
+    # Extract playbook name from context
+    button_id = ctx.triggered[0]['prop_id'].rsplit('.',1)[0]
+    selected_pb_name = eval(button_id)['index']
+    
+    return True, [html.H3("Export Playbook")], export_pb_div, selected_pb_name
 
 '''C041 - Callback to close the app error modal'''
 @app.callback(
@@ -1121,7 +1167,10 @@ def close_app_error_modal_callback(n_clicks, is_open):
     return is_open
 
 '''C042 - Callback to generate AWS session options in AWS sessions dropdown'''
-@app.callback(Output(component_id = "aws-session-selector-dropdown", component_property = "options"), Input(component_id = "aws-session-selector-dropdown", component_property = "title"))
+@app.callback(
+    Output(component_id = "aws-session-selector-dropdown", component_property = "options"), 
+    Input(component_id = "aws-session-selector-dropdown", component_property = "title")
+)
 def generate_aws_session_options_dropdown_callback(session_name):
     manager = SessionManager()
     if session_name == None:
@@ -1333,7 +1382,7 @@ def display_technique_output_in_output_viewer_callback(selected_rows, data):
     # Display output
     return ParseTechniqueResponse(event_output['data'])
 
-### Attack dashboard callbacks
+'''Attack dashboard callbacks'''
 '''C048 - Callback to update metrics card in analyse dashboard'''
 @app.callback(
     Output('metric-cards', 'children'),
@@ -1435,7 +1484,7 @@ def update_graphs_callback(start_date, end_date):
         ], style={'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)', 'marginBottom': '20px'}, className="bg-dark")
     ]
 
-'''C049 - Callback to update footer stats in analyse dashboard'''
+'''C050 - Callback to update footer stats in analyse dashboard'''
 @app.callback(
     Output('footer-stats', 'children'),
     [Input('date-picker-range', 'start_date'),
@@ -1455,10 +1504,551 @@ def update_footer_stats_callback(start_date, end_date):
         ], style={'color': '#7f8c8d'})
     ], style={'textAlign': 'center', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}, className="bg-dark")
 
+'''Create new playbook functionality callbacks'''
+'''C051 - [Playbook Creator] Callback to generate/update parameter fields from selected technique'''
+@app.callback(
+    Output({"type": "step-params-container", "index": MATCH}, "children"),
+    Input({"type": "step-module-dropdown", "index": MATCH}, "value"),
+    prevent_initial_call=True
+)
+def update_step_parameters(module_id):
+    """Update parameter fields based on selected module"""
+    if not module_id:
+        return []
+    
+    technique = TechniqueRegistry.get_technique(module_id)()
+    params = technique.get_parameters()
+    
+    if not params:
+        return html.P("No parameters required", className="text-muted")
+    
+    param_inputs = []
+    for param_name, param_config in params.items():
+        required = param_config.get("required", False)
+        label_text = f"{param_config['name']} {'*' if required else ''}"
+        
+        input_type = param_config.get("input_field_type", "text")
+        
+        # Create the appropriate input element
+        if input_type == "bool":
+            input_elem = daq.BooleanSwitch(
+                id={"type": "param-input", "param": param_name},
+                on=param_config.get("default", False)
+            )
+        else:
+            # Add any input validation based on technique requirements
+            input_props = {
+                "type": input_type,
+                "id": {"type": "param-input", "param": param_name},
+                "placeholder": param_config.get("default", ""),
+                "className": "bg-dark text-light",
+                "required": required
+            }
+            
+            # Add any additional validation attributes
+            if input_type == "number":
+                input_props.update({
+                    "min": param_config.get("min", None),
+                    "max": param_config.get("max", None),
+                    "step": param_config.get("step", None)
+                })
+            
+            input_elem = dbc.Input(**input_props)
+        
+        # Add description or help text if available
+        help_text = None
+        if param_config.get("description"):
+            help_text = html.Small(
+                param_config["description"],
+                className="text-muted d-block mt-1"
+            )
+        
+        param_inputs.append(
+            dbc.Row([
+                dbc.Col([
+                    dbc.Label(label_text),
+                    input_elem,
+                    help_text
+                ])
+            ], className="mb-3")
+        )
+    
+    return param_inputs
+
+'''C052 - [Playbook Creator] Callback to add a new step in playbook'''
+@app.callback(
+    Output("playbook-steps-container", "children"),
+    Input("add-playbook-step-button", "n_clicks"),
+    State("playbook-steps-container", "children"),
+    prevent_initial_call=True
+)
+def add_playbook_step(n_clicks, current_steps):
+    """Add a new step form to the playbook creator"""
+    if n_clicks:
+        new_step_number = len(current_steps) + 1
+        return current_steps + [generate_step_form(new_step_number)]
+    return current_steps
+
+'''C053 - [Playbook Creator] Callback to remove a step from playbook'''
+@app.callback(
+    Output("playbook-steps-container", "children", allow_duplicate=True),
+    Input({"type": "remove-step-button", "index": ALL}, "n_clicks"),
+    State("playbook-steps-container", "children"),
+    prevent_initial_call=True
+)
+def remove_playbook_step(n_clicks, current_steps):
+    """Remove a step from the playbook creator"""
+    if not any(n_clicks):
+        raise PreventUpdate
+    
+    # Find which button was clicked
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+    
+    button_id = json.loads(ctx.triggered[0]["prop_id"].rsplit(".")[0])
+    step_to_remove = button_id["index"]
+
+    # Remove the step and renumber remaining steps
+    remaining_steps = [step for step in current_steps if int(step["props"]["children"][0]["props"]["children"][0]["props"]["children"][0]["props"]["children"][0]["props"]["children"].split()[-1]) != step_to_remove]
+    renumbered_steps = [generate_step_form(i+1) for i in range(len(remaining_steps))]
+    
+    return renumbered_steps
+
+'''C054 - [Playbook Creator] Callback to create a new playbook from offcanvas configuration'''
+@app.callback(
+    Output("app-notification", "is_open", allow_duplicate=True),
+    Output("app-notification", "children", allow_duplicate=True),
+    Output("app-error-display-modal", "is_open", allow_duplicate=True),
+    Output("app-error-display-modal-body", "children", allow_duplicate=True),
+    Output("automator-offcanvas", "is_open", allow_duplicate=True),
+    Output('playbook-list-container', 'children', allow_duplicate=True),
+    Output("playbook-stats", "children", allow_duplicate=True),
+    Input("create-playbook-offcanvas-button", "n_clicks"),
+    [
+         State("pb-name-input-offcanvas", "value"),
+        State("pb-desc-input-offcanvas", "value"),
+        State("pb-author-input-offcanvas", "value"),
+        State("pb-refs-input-offcanvas", "value"),
+        State({"type": "step-module-dropdown", "index": ALL}, "value"),
+        State({"type": "step-wait-input", "index": ALL}, "value"),
+        State({"type": "param-input", "param": ALL}, "value"),
+        State({"type": "param-input", "param": ALL}, "id")
+    ],
+    prevent_initial_call=True
+)
+def create_playbook_from_offcanvas(n_clicks, name, desc, author, refs, modules, waits, param_values, param_ids):
+    """Create a new playbook from the off-canvas form data"""
+    if not n_clicks:
+        raise PreventUpdate
+    
+    try:
+        # Validate required fields
+        if not all([name, desc, author]):
+            raise ValueError("Please fill in all required fields")
+        
+        if not any(modules):
+            raise ValueError("At least one step is required")
+        
+        # Create new playbook
+        new_playbook = Playbook.create_new(
+            name=name,
+            author=author,
+            description=desc,
+            references=[refs] if refs else None
+        )
+        
+        # Group parameters by step
+        step_params = {}
+        for i, module in enumerate(modules):
+            if module:  # If module is selected
+                # Get technique parameters configuration
+                technique = TechniqueRegistry.get_technique(module)()
+                technique_params = technique.get_parameters()
+                
+                # Initialize params dict for this step
+                step_params[i] = {}
+                
+                # Match parameters with their values for this step's technique
+                for param_id, param_value in zip(param_ids, param_values):
+                    param_name = param_id['param']
+                    if param_name in technique_params:
+                        # Convert empty strings to None for optional parameters
+                        if param_value == "" and not technique_params[param_name].get('required', False):
+                            param_value = None
+                        step_params[i][param_name] = param_value
+        
+        # Add steps with their parameters
+        for i, (module, wait) in enumerate(zip(modules, waits)):
+            if module:  # Only add steps with selected modules
+                new_step = PlaybookStep(
+                    module=module,
+                    params=step_params.get(i, {}),  # Get parameters for this step
+                    wait=int(wait) if wait else 0
+                )
+                new_playbook.add_step(new_step, i + 1)
+        
+        # get updated list of available playbooks
+        playbooks = GetAllPlaybooks()
+        playbook_items = []
+        
+        for pb_file in playbooks:
+            try:
+                pb_config = Playbook(pb_file)
+                # Apply search filter if query exists
+                playbook_items.append(create_playbook_item(pb_config))
+            except Exception as e:
+                print(f"Error loading playbook {pb_file}: {str(e)}")
+        
+        stats = get_playbook_stats()
+        stats_text = (f"{stats['total_playbooks']} playbooks loaded • "f"Last sync: {stats['last_sync'].strftime('%I:%M %p') if stats['last_sync'] else 'never'}")
+
+        return True, f"New Playbook Created: {name}", False, "", False, playbook_items, stats_text
+    
+    except Exception as e:
+        return False, "", True, str(e), False, no_update, no_update
+    
+'''Playbook editor callbacks'''
+'''C055 - [Playbook Editor] Callback to open playbook editor off canvas'''
+@app.callback(
+    Output("playbook-editor-offcanvas", "is_open", allow_duplicate = True),
+    Output(component_id="selected-playbook-data-editor-memory-store", component_property="data", allow_duplicate= True),
+    Input({'type': 'edit-playbook-button', 'index': ALL}, 'n_clicks'),
+    prevent_initial_call=True
+)
+def update_editable_playbook_view(n_clicks):
+    if not any(n_clicks):
+        raise PreventUpdate
+    
+    # Find which button was clicked
+    ctx = callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+    
+    # Extract playbook file name from context
+    button_id = ctx.triggered[0]['prop_id'].rsplit('.',1)[0]
+    selected_pb = eval(button_id)['index']
+
+    return True, selected_pb
+
+'''C056 - [Playbook Editor] Callback to load & display existing playbook information'''
+@app.callback(
+    [
+        Output("pb-name-input-editor", "value"),
+        Output("pb-desc-input-editor", "value"),
+        Output("pb-author-input-editor", "value"),
+        Output("pb-refs-input-editor", "value"),
+        Output("playbook-steps-editor-container", "children")
+    ],
+    Input({'type': 'edit-playbook-button', 'index': ALL}, 'n_clicks'),
+    prevent_initial_call=True
+)
+def load_playbook_data(n_clicks):
+    """Load existing playbook data into editor when opened"""
+    if not n_clicks:
+        raise PreventUpdate
+    
+    # Find which button was clicked
+    ctx = callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+    
+    # Extract playbook file name from context
+    button_id = ctx.triggered[0]['prop_id'].rsplit('.',1)[0]
+    selected_pb = eval(button_id)['index']
+    
+    # Find the selected playbook
+    try:
+        playbook = Playbook(selected_pb)
+
+        # Generate step forms with existing data
+        steps = []
+        for step_no, step_data in playbook.data['PB_Sequence'].items():
+            step_form = dbc.Card([
+                dbc.CardBody([
+                    # Step header
+                    dbc.Row([
+                        dbc.Col([
+                            html.H5(f"Step {step_no}", className="mb-3")
+                        ], width=10),
+                        dbc.Col([
+                            html.Button(
+                                html.I(className="bi bi-trash"),
+                                id={"type": "remove-step-editor-button", "index": step_no},
+                                className="btn btn-link text-danger",
+                                style={"float": "right"}
+                            ) if int(step_no) > 1 else None
+                        ], width=2)
+                    ]),
+                    
+                    # Module selector
+                    dbc.Row([
+                        dbc.Col([
+                            dbc.Label("Module *"),
+                            dcc.Dropdown(
+                                id={"type": "step-module-dropdown-editor", "index": step_no},
+                                options=[
+                                    {"label": technique().name, "value": tid}
+                                    for tid, technique in TechniqueRegistry.list_techniques().items()
+                                ],
+                                value=step_data.get('Module'),
+                                placeholder="Select module",
+                                className="bg-dark text-dark"
+                            )
+                        ])
+                    ], className="mb-3"),
+                    
+                    # Parameters container
+                    html.Div(
+                        # Create parameter inputs if module data available
+                        playbook_editor_create_parameter_inputs(
+                            step_data.get('Module'),
+                            step_data.get('Params', {})
+                        ) if step_data.get('Module') else [],
+                        id={"type": "step-params-container-editor", "index": step_no}
+                    ),
+
+                    # Wait time input
+                    dbc.Row([
+                        dbc.Col([
+                            dbc.Label("Wait (seconds)"),
+                            dbc.Input(
+                                type="number",
+                                id={"type": "step-wait-input-editor", "index": step_no},
+                                value=step_data.get('Wait', 0),
+                                placeholder="0",
+                                min=0,
+                                className="bg-dark text-light"
+                            )
+                        ])
+                    ], className="mb-3"),
+                ])
+            ], className="mb-3")
+            steps.append(step_form)
+                
+        return (
+            playbook.name,
+            playbook.description,
+            playbook.author,
+            ', '.join(playbook.references) if playbook.references else '',
+            steps
+        )
+    except:
+        raise PreventUpdate
+
+'''C057 - [Playbook Editor] Callback to add a new step in existing playbook'''
+@app.callback(
+    Output("playbook-steps-editor-container", "children", allow_duplicate=True),
+    Input("add-playbook-step-editor-button", "n_clicks"),
+    State("playbook-steps-editor-container", "children"),
+    prevent_initial_call=True
+)
+def add_playbook_step_editor(n_clicks, current_steps):
+    """Add a new step form to the playbook editor"""
+    if n_clicks:
+        new_step_number = len(current_steps) + 1
+        new_step = dbc.Card([
+            dbc.CardBody([
+                # Step header
+                dbc.Row([
+                    dbc.Col([
+                        html.H5(f"Step {new_step_number}", className="mb-3")
+                    ], width=10),
+                    dbc.Col([
+                        html.Button(
+                            html.I(className="bi bi-trash"),
+                            id={"type": "remove-step-editor-button", "index": new_step_number},
+                            className="btn btn-link text-danger",
+                            style={"float": "right"}
+                        )
+                    ], width=2)
+                ]),
+                
+                # Module selector
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Label("Module *"),
+                        dcc.Dropdown(
+                            id={"type": "step-module-dropdown-editor", "index": new_step_number},
+                            options=[
+                                {"label": technique().name, "value": tid}
+                                for tid, technique in TechniqueRegistry.list_techniques().items()
+                            ],
+                            placeholder="Select module",
+                            className="bg-dark"
+                        )
+                    ])
+                ], className="mb-3"),
+                
+                # Wait time input
+                dbc.Row([
+                    dbc.Col([
+                        dbc.Label("Wait (seconds)"),
+                        dbc.Input(
+                            type="number",
+                            id={"type": "step-wait-input-editor", "index": new_step_number},
+                            placeholder="0",
+                            min=0,
+                            value=0,
+                            className="bg-dark text-light"
+                        )
+                    ])
+                ], className="mb-3"),
+                
+                # Parameters container (initially empty)
+                html.Div(
+                    id={"type": "step-params-container-editor", "index": new_step_number}
+                )
+            ])
+        ], className="mb-3")
+        
+        return current_steps + [new_step]
+    return current_steps
+
+'''C058 - [Playbook Editor] Callback to update parameters on technique change from dropdown'''
+@app.callback(
+    Output({"type": "step-params-container-editor", "index": MATCH}, "children"),
+    Input({"type": "step-module-dropdown-editor", "index": MATCH}, "value"),
+    prevent_initial_call=True
+)
+def update_step_parameters_editor(module_id):
+    """Update parameter fields when module selection changes"""
+    if not module_id:
+        return []
+    
+    return playbook_editor_create_parameter_inputs(module_id)
+
+@app.callback(
+    Output("app-notification", "is_open", allow_duplicate=True),
+    Output("app-notification", "children", allow_duplicate=True),
+    Output("app-error-display-modal", "is_open", allow_duplicate=True),
+    Output("app-error-display-modal-body", "children", allow_duplicate=True),
+    Output("playbook-editor-offcanvas", "is_open", allow_duplicate = True),
+    Input("update-playbook-editor-button", "n_clicks"),
+    [
+        State("pb-name-input-editor", "value"),
+        State("pb-desc-input-editor", "value"),
+        State("pb-author-input-editor", "value"),
+        State("pb-refs-input-editor", "value"),
+        State({"type": "step-module-dropdown-editor", "index": ALL}, "value"),
+        State({"type": "step-wait-input-editor", "index": ALL}, "value"),
+        State({"type": "param-input-editor", "param": ALL}, "value"),
+        State({"type": "param-input-editor", "param": ALL}, "id"),
+        State("selected-playbook-data-editor-memory-store", "data"),
+    ],
+    prevent_initial_call=True
+)
+def update_playbook_from_editor(n_clicks, name, desc, author, refs, modules, waits, param_values, param_ids, selected_playbook):
+    """Update existing playbook from editor data"""
+    if not n_clicks:
+        raise PreventUpdate
+
+    try:
+        # Find the selected playbook
+        playbook = Playbook(selected_playbook)
+        # Update playbook metadata
+        playbook.data['PB_Name'] = name
+        playbook.data['PB_Description'] = desc
+        playbook.data['PB_Author'] = author
+        playbook.data['PB_References'] = [ref.strip() for ref in refs.split(',')] if refs else []
+        
+        # Clear existing sequence
+        playbook.data['PB_Sequence'] = {}
+        
+        # Group parameters by step
+        step_params = {}
+        for i, module in enumerate(modules):
+            if module:
+                technique = TechniqueRegistry.get_technique(module)()
+                technique_params = technique.get_parameters()
+                step_params[i] = {}
+                
+                for param_id, param_value in zip(param_ids, param_values):
+                    param_name = param_id['param']
+                    if param_name in technique_params:
+                        if param_value == "" and not technique_params[param_name].get('required', False):
+                            param_value = None
+                        step_params[i][param_name] = param_value
+        
+        # Add updated steps
+        for i, (module, wait) in enumerate(zip(modules, waits)):
+            if module:
+                playbook.data['PB_Sequence'][i + 1] = {
+                    'Module': module,
+                    'Params': step_params.get(i, {}),
+                    'Wait': int(wait) if wait else 0
+                }
+        
+        # Save updated playbook
+        playbook.save()
+        return True, f"Playbook Updated: {name}", False, "", False
+        
+    except Exception as e:
+        return False, "", True, str(e), False
+
+'''C059 - [Playbook Editor] Callback to remove step from playbook and update the playbook steps'''
+@app.callback(
+    Output("playbook-steps-editor-container", "children", allow_duplicate=True),
+    Input({"type": "remove-step-editor-button", "index": ALL}, "n_clicks"),
+    State("playbook-steps-editor-container", "children"),
+    prevent_initial_call=True
+)
+def remove_playbook_step_editor(n_clicks, current_steps):
+    """Remove a step from the playbook editor and renumber remaining steps"""
+    if not any(n_clicks) or not current_steps:
+        raise PreventUpdate
+    
+    # Find which button was clicked
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+    
+    try:
+        button_id = json.loads(ctx.triggered[0]["prop_id"].split(".")[0])
+        step_to_remove = button_id["index"]
+        
+        # Create new list without the removed step
+        remaining_steps = []
+        new_step_number = 1
+        
+        for step in current_steps:
+            # Extract current step number from the card
+            current_step_header = step["props"]["children"]["props"]["children"][0]["props"]["children"][0]["props"]["children"]["children"]
+            current_step_num = int(current_step_header.split()[1])
+            
+            if current_step_num != step_to_remove:
+                # Update step number in header
+                step["props"]["children"]["props"]["children"][0]["props"]["children"][0]["props"]["children"]["children"] = f"Step {new_step_number}"
+                
+                # Update all component IDs that contain step number
+                for component in [
+                    {"type": "remove-step-editor-button", "location": [0, "props", "children", 1, "props", "children", "props", "id"]},
+                    {"type": "step-module-dropdown-editor", "location": [1, "props", "children", 0, "props", "children", 1, "props", "id"]},
+                    {"type": "step-wait-input-editor", "location": [2, "props", "children", 0, "props", "children", 1, "props", "id"]},
+                    {"type": "step-params-container-editor", "location": [3, "props", "id"]}
+                ]:
+                    try:
+                        # Navigate to the component's location
+                        current = step["props"]["children"]["props"]["children"]
+                        for loc in component["location"][:-1]:
+                            current = current[loc]
+                        # Update the ID
+                        current[component["location"][-1]]["index"] = new_step_number
+                    except (KeyError, IndexError, TypeError):
+                        continue
+                
+                remaining_steps.append(step)
+                new_step_number += 1
+        
+        return remaining_steps
+    except Exception as e:
+        print(f"Error in remove_playbook_step_editor: {str(e)}")
+        raise PreventUpdate
+
 if __name__ == '__main__':
     # Run Initialization check
     run_initialization_check()
-    #Initialize logger
+    # Initialize logger
     logger = setup_logger() 
     # Start application
     app.run_server(debug = True)
