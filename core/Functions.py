@@ -311,128 +311,6 @@ def GetAllPlaybooks():
     except:
         return "Error"
 
-def generate_playbook_info(selected_pb):
-    """
-    Generates a display element with dbc.Cards containing playbook details that can be displayed in HTML elements like div, modal, etc. 
-
-    :param selected_pb: Name of a playbook (from playbook config)
-    """
-    for pb in GetAllPlaybooks():
-        playbook = Playbook(pb)
-        if  playbook.name == selected_pb:
-            break
-    display_elements = []
-
-    def create_sequence_card(sequence):
-        if not sequence:
-            return dbc.Card(
-                [
-                    dbc.CardHeader(html.H5("PB_Sequence", className="mb-0")),
-                    dbc.CardBody(html.P("No steps defined", className="card-text"))
-                ],
-                className="mb-3"
-            )
-        
-        steps = []
-        for step_num, step_data in sequence.items():
-            params = step_data.get('Params', {})
-            param_cards = []
-            if params:
-                for key, value in params.items():
-                    param_cards.append(
-                        dbc.Card([
-                            dbc.CardBody([
-                                html.H6(key, className="card-subtitle mb-2 text-muted"),
-                                html.P(str(value), className="card-text")
-                            ])
-                        ], className="mb-2")
-                    )
-            else:
-                param_cards.append(
-                    dbc.Card([
-                        dbc.CardBody([
-                            html.P("No parameters", className="card-text text-muted")
-                        ])
-                    ], className="mb-2")
-                )
-
-            param_accordion = dbc.Accordion([
-                dbc.AccordionItem(
-                    param_cards,
-                    title="Parameters",
-                )
-            ], start_collapsed=True)
-
-            step_content = [
-                html.H6(f"Step {step_num}", className="mb-2"),
-                html.P(f"Module: {step_data.get('Module', 'N/A')}", className="mb-1"),
-                html.P(f"Wait: {step_data.get('Wait', 'N/A')}", className="mb-2"),
-                param_accordion
-            ]
-            steps.append(dbc.Card(dbc.CardBody(step_content), className="mb-3"))
-        
-        return dbc.Card(
-            [
-                dbc.CardHeader(html.H5("PB_Sequence", className="mb-0")),
-                dbc.CardBody(steps)
-            ],
-            className="mb-3"
-        )
-    
-    def create_references_card(references):
-        """
-        Creates dbc.card element with information in PB_References
-        """
-        if not references:
-            return dbc.Card(
-                [
-                    dbc.CardHeader(html.H5("PB_References", className="mb-0")),
-                    dbc.CardBody(html.P("No references available", className="card-text"))
-                ],
-                className="mb-3"
-            )
-        
-        reference_links = [
-            html.Li(
-                html.A(ref, href=ref, target="_blank", rel="noopener noreferrer"),
-                className="mb-2"
-            ) for ref in references
-        ]
-        
-        return dbc.Card(
-            [
-                dbc.CardHeader(html.H5("PB_References", className="mb-0")),
-                dbc.CardBody([
-                    html.P("Click on the links below to open in a new tab:", className="mb-2"),
-                    html.Ul(reference_links, className="pl-3")
-                ])
-            ],
-            className="mb-3"
-        )
-    
-    def create_field_card(key, value):
-        """
-        Creates dbc.card with all information in Playbook configuration
-        """
-        if key == 'PB_Sequence':
-            return create_sequence_card(value)
-        elif key == 'PB_References':
-            return create_references_card(value)
-        return dbc.Card(
-            [
-                dbc.CardHeader(html.H5(key, className="mb-0")),
-                dbc.CardBody(
-                    html.P(json.dumps(value, indent=2) if isinstance(value, (dict, list)) else str(value), 
-                        className="card-text", style={"white-space": "pre-wrap"})
-                )
-            ],
-            className="mb-3"
-        )
-
-    display_elements = [create_field_card(key, value) for key, value in playbook.data.items()]
-
-    return display_elements
-
 def ParseTechniqueResponse(technique_response):
     """
     Function to parse the technique execution response and display it structured
@@ -580,26 +458,16 @@ def ParseTechniqueResponse(technique_response):
     parsed_response = parse_data(response)
     return create_cards(parsed_response)
 
-def playbook_viz_generator(playbook_name: Optional[str]) -> cyto.Cytoscape:
+def playbook_viz_generator(playbook_name: Optional[str]) -> html.Div:
     """
-    Generate a visualization of a playbook's attack sequence.
-
-    This function creates a Cytoscape graph representation of a playbook's
-    attack sequence. If no playbook is selected, it returns a div with a
-    "No Selection" message.
-
+    Generate a vertical visualization of a playbook's attack sequence.
+    
     Args:
         playbook_name (Optional[str]): The name of the playbook to visualize.
             If None, a "No Selection" message is displayed.
 
     Returns:
-        cyto.Cytoscape: A cytoscope component containing graph of the playbook's attack sequence or a html.Div with "No Selection" message.
-
-    Notes:
-        - The function assumes the existence of several global objects and
-          functions: get_all_playbooks(), Playbook, and TechniqueRegistry.
-        - Each step in the playbook sequence is represented by two nodes:
-          one for the technique and one for the wait time.
+        html.Div: A container with both the graph and its legend
     """
     if playbook_name is None:
         return html.Div([
@@ -611,77 +479,175 @@ def playbook_viz_generator(playbook_name: Optional[str]) -> cyto.Cytoscape:
             pb_config = Playbook(pb)
             if pb_config.name == playbook_name:
                 break
+
+        # Attack surface configuration
+        surface_colors = {
+            'entra_id': '#4B77BE',
+            'm365': '#45B39D',
+            'azure': '#5D6D7E',
+            'aws': '#D4AC0D'
+        }
         
-        # Initialize array for cytoscope
+        # Initialize arrays
         attack_sequence_viz_elements = []
         n = 0
-        position_x = 50
+        position_y = 100
 
-        for step_no,step in pb_config.data['PB_Sequence'].items():
+        # Base spacing
+        step_spacing = 150
+        base_x = 300
+        total_steps = len(pb_config.data['PB_Sequence'])
+
+        # Create nodes
+        for step_no, step in pb_config.data['PB_Sequence'].items():
+            step_no = int(step_no)
             step_module_id = step['Module']
             step_wait = step['Wait']
-            attack_sequence_viz_elements.append({'data': {'id': str(n), 'label': f"{TechniqueRegistry.get_technique(step_module_id)().name}", 'info':{step_no: step}}, 'position': {'x': position_x, 'y': 50}})
-            position_x += 70
+            category = TechniqueRegistry.get_technique_category(step_module_id)
+            
+            # Add technique node
+            attack_sequence_viz_elements.append({
+                'data': {
+                    'id': str(n),
+                    'label': f"Step {step_no}\n{TechniqueRegistry.get_technique(step_module_id)().name}",
+                    'category': category,
+                    'info':{step_no: step}
+                },
+                'position': {'x': base_x, 'y': position_y}
+            })
             n += 1
 
-            attack_sequence_viz_elements.append({'data': {'id': str(n), 'label': str(step_wait), 'info':"time"}, 'position': {'x': position_x, 'y': 50}, 'classes': 'timenode'})
-            position_x += 70
-            n += 1
-        
-        while n>1:
-            n = n-1
-            attack_sequence_viz_elements.append({'data': {'source': str(n-1), 'target': str(n)}})
-        
-        return cyto.Cytoscape(
-                id='auto-attack-sequence-cytoscape-nodes',
-                layout={'name': 'preset'},
-                style={'height': '20vh'},
-                elements= attack_sequence_viz_elements,
-                stylesheet=[
-                    # Add styles for the graph here
-                    {
-                        'selector': 'node',
-                        'style': {
-                            'label': 'data(label)',
-                            'background-color': '#FFFFFF',
-                            'color': '#000000',
-                            'width': '40px',
-                            'height': '40px',
-                            'text-halign': 'center',
-                            'text-valign': 'center',
-                            'text-wrap': 'wrap',
-                            'text-max-width': '50',
-                            'font-size': '5px',
-                            'shape': 'square'
-                        }
+            # Add time node if not last step
+            if step_no < total_steps:
+                attack_sequence_viz_elements.append({
+                    'data': {
+                        'id': str(n),
+                        'label': f"{step_wait}s",
+                        'time': True,
+                        'info':"time"
                     },
-                    {
-                        'selector': 'edge',
-                        'style': {
-                            'curve-style': 'bezier',
-                            'target-arrow-shape': 'triangle',
-                            'line-color': '#000000',
-                            'target-arrow-color': '#000000',
-                        }
-                    },
-                    {
-                        'selector': '.timenode',
-                        'style': {
-                            'label': 'data(label)',
-                            'background-color': '#000000',
-                            'color': '#fff',
-                            'text-halign': 'center',
-                            'text-valign': 'center',
-                            'text-wrap': 'wrap',
-                            'text-max-width': '20px',
-                            'shape': 'ellipse',
-                            'opacity': 0.7,
+                    'position': {'x': base_x, 'y': position_y + step_spacing/2},
+                    'classes': 'timenode'
+                })
+                n += 1
+            
+            position_y += step_spacing
+
+        # Create edges
+        for i in range(len(attack_sequence_viz_elements) - 1):
+            attack_sequence_viz_elements.append({
+                'data': {
+                    'source': str(i),
+                    'target': str(i + 1)
+                }
+            })
+
+        # Stylesheet
+        stylesheet = [
+            {
+                'selector': 'node',
+                'style': {
+                    'label': 'data(label)',
+                    'width': '300px',
+                    'height': '80px',
+                    'text-halign': 'center',
+                    'text-valign': 'center',
+                    'shape': 'rectangle',
+                    'background-color': '#FFFFFF',
+                    'color': '#000000',
+                    'font-size': '16px',
+                    'text-wrap': 'wrap',
+                    'font-weight': 'bold'
+                }
+            }
+        ]
+        
+        # Add surface colors
+        for surface, color in surface_colors.items():
+            stylesheet.append({
+                'selector': f'node[category = "{surface}"]',
+                'style': {
+                    'background-color': color,
+                    'color': '#ffffff'
+                }
+            })
+        
+        # Additional styles
+        stylesheet.extend([
+            {
+                'selector': '.timenode',
+                'style': {
+                    'label': 'data(label)',
+                    'background-color': '#2b2b2b',
+                    'color': '#ffffff',
+                    'width': '40px',
+                    'height': '40px',
+                    'shape': 'diamond'
+                }
+            },
+            {
+                'selector': 'edge',
+                'style': {
+                    'curve-style': 'straight',
+                    'target-arrow-shape': 'triangle',
+                    'line-color': '#525252',
+                    'target-arrow-color': '#525252',
+                    'width': 2
+                }
+            }
+        ])
+
+        # Attack surface legend
+        legend_items = []
+        used_surfaces = {node['data']['category'] for node in attack_sequence_viz_elements 
+                        if 'data' in node and 'category' in node['data']}
+        
+        for surface in used_surfaces:
+            if surface in surface_colors:
+                legend_items.append(
+                    html.Div([
+                        html.Div(style={
+                            'backgroundColor': surface_colors[surface],
                             'width': '20px',
                             'height': '20px',
-                        }
-                    }
-                ]
+                            'marginRight': '8px',
+                            'display': 'inline-block'
+                        }),
+                        html.Span(surface.replace('_', ' ').upper(), 
+                                style={'color': 'white'})
+                    ], style={'marginRight': '20px', 'display': 'inline-block'})
                 )
+
+        # Return layout
+        return html.Div([
+            # Legend
+            html.Div(
+                legend_items,
+                style={
+                    'backgroundColor': '#2b2b2b',
+                    'padding': '10px',
+                    'marginBottom': '15px',
+                    'display': 'flex',
+                    'alignItems': 'center',
+                    'justifyContent': 'center',
+                }
+            ),
+            # Graph
+            cyto.Cytoscape(
+                id='auto-attack-sequence-cytoscape-nodes',
+                layout={'name': 'preset'},
+                style={
+                    'width': '100%',
+                    'height': '65vh'
+                },
+                elements=attack_sequence_viz_elements,
+                stylesheet=stylesheet,
+                userZoomingEnabled=True,
+                userPanningEnabled=True,
+                minZoom=0.5,
+                maxZoom=2
+            )
+        ])
 
 def generate_attack_tactics_options(tab):
     """
@@ -1256,3 +1222,42 @@ def generate_attack_trace_table():
         ),
     ], 
     className="bg-dark")
+
+def get_playbook_stats():
+    """
+    Get statistics about playbooks in the system.
+    
+    Returns:
+        dict: Dictionary containing:
+            - total_playbooks: Total number of playbooks
+            - last_sync: Timestamp of most recently modified playbook
+    """
+    try:
+        playbooks = GetAllPlaybooks()
+        total_playbooks = len(playbooks)
+        last_modified = None
+        
+        for pb in playbooks:
+            try:
+                config = Playbook(pb)
+                
+                # Check last modified time
+                pb_modified = os.path.getmtime(config.yaml_file_path)
+                if last_modified is None or pb_modified > last_modified:
+                    last_modified = pb_modified
+                    
+            except Exception as e:
+                print(f"Error processing playbook {pb}: {str(e)}")
+                continue
+        
+        return {
+            "total_playbooks": total_playbooks,
+            "last_sync": datetime.datetime.fromtimestamp(last_modified) if last_modified else None
+        }
+        
+    except Exception as e:
+        print(f"Error getting playbook stats: {str(e)}")
+        return {
+            "total_playbooks": 0,
+            "last_sync": None
+        }
