@@ -9,33 +9,58 @@ from dash_iconify import DashIconify
                    
 page_layout = html.Div([
     html.H2(["Attack ",html.A(DashIconify(icon="mdi:help-circle-outline", width=18, height=18), href="https://github.com/vectra-ai-research/Halberd/wiki/UI-&-Navigation#attack-attack", target="_blank")], className="text-success mb-3"),
-    
-    dbc.Row([
-        # Column 1 : Display cloud tabs
-        dbc.Col([
-            dbc.Tabs(
-                [
-                    dbc.Tab(label="EntraID", tab_id="tab-attack-EntraID", labelClassName="text-success"),
-                    dbc.Tab(label="M365", tab_id="tab-attack-M365", labelClassName="text-success"),
-                    dbc.Tab(label="AWS", tab_id="tab-attack-AWS", labelClassName="text-success"),
-                    dbc.Tab(label="Azure", tab_id="tab-attack-Azure", labelClassName="text-success"),
-                ],
-                id="attack-surface-tabs",
-                active_tab="tab-attack-EntraID",
-                class_name="bg-dark"
-            ),
-        ], md=3),
-    ], className="mt-3"),
-
-    html.Br(),
 
     html.Div([
         dbc.Row([
             # Column 1: Display technique options radio buttons
             dbc.Col([
+                html.H5("Technique Options"),
+                html.Br(),
                 html.Div([
-                    html.H5("Access"),
+                    dbc.Label("Attack Surface"),
+                    dbc.Tabs(
+                        [
+                            dbc.Tab(label="EntraID", tab_id="tab-attack-EntraID", labelClassName="text-success",
+                                tab_style={
+                                    'borderRadius': '0px',
+                                    'margin': '0px',
+                                    'marginLeft': '0px',
+                                    'marginRight': '0px'
+                                }
+                            ),
+                            dbc.Tab(
+                                label="M365", tab_id="tab-attack-M365", labelClassName="text-success",
+                                tab_style={
+                                    'borderRadius': '0px',
+                                    'margin': '0px',
+                                    'marginLeft': '0px',
+                                    'marginRight': '0px'
+                                }
+                            ),
+                            dbc.Tab(
+                                label="AWS", tab_id="tab-attack-AWS", labelClassName="text-success",
+                                tab_style={
+                                    'borderRadius': '0px',
+                                    'margin': '0px',
+                                    'marginLeft': '0px',
+                                    'marginRight': '0px'
+                                }
+                            ),
+                                dbc.Tab(label="Azure", tab_id="tab-attack-Azure", labelClassName="text-success",
+                                tab_style={
+                                    'borderRadius': '0px',
+                                    'margin': '0px',
+                                    'marginLeft': '0px',
+                                    'marginRight': '0px'
+                                }
+                            ),
+                        ],
+                        id="attack-surface-tabs",
+                        active_tab="tab-attack-EntraID",
+                        # class_name="bg-dark"
+                    ),
                     html.Br(),
+                    dbc.Label("Access"),
                     dbc.Button(
                         "Establish Access", 
                         id="attack-access-info-dynamic-btn", 
@@ -49,7 +74,7 @@ page_layout = html.Div([
                             'align-items': 'center'
                         }
                     ),
-                    html.P("Tactics", style={"font-size": 20}),
+                    dbc.Label("Tactics"),
                     dcc.Dropdown(id = "tactic-dropdown", className= "bg-dark"),
                     html.Br(),
                     html.P("Techniques", style={"font-size": 20}),
