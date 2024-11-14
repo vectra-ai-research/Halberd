@@ -111,6 +111,6 @@ class M365DeployEmailFrwdRule(BaseTechnique):
                 "required": True, 
                 "default":None, 
                 "name": "New Rule Name", 
-                "input_field_type" : "email"
+                "input_field_type" : "text"
             }
         }
