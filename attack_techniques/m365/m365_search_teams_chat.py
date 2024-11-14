@@ -100,7 +100,7 @@ class M365SearchTeamsChat(BaseTechnique):
         return {
             "user_id": {
                 "type": "str", 
-                "required": False, 
+                "required": True, 
                 "default":None, 
                 "name": "User UPN", 
                 "input_field_type" : "text"

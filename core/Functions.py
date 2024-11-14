@@ -1261,3 +1261,27 @@ def get_playbook_stats():
             "total_playbooks": 0,
             "last_sync": None
         }
+    
+def parse_execution_report(execution_folder):
+    """Parse the execution report CSV file"""
+    report_file = os.path.join(execution_folder, "Report.csv")
+    
+    if not os.path.exists(report_file):
+        return []
+        
+    results = []
+    try:
+        with open(report_file, 'r') as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                if row.get('Time_Stamp') != 'Time_Stamp':
+                    results.append({
+                        'module': row.get('Module'),
+                        'status': row.get('Result'),
+                        'timestamp': row.get('Time_Stamp')
+                    })
+    except Exception as e:
+        print(f"Error parsing report: {str(e)}")
+        return []
+        
+    return results

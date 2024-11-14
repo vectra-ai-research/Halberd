@@ -16,11 +16,18 @@ def create_playbook_manager_layout():
         # Header Section with title and buttons
         html.Div([
             # Left side - Title
-            html.H2(["Playbook Manager ",html.A(DashIconify(icon="mdi:help-circle-outline", width=18, height=18), href="https://github.com/vectra-ai-research/Halberd/wiki/UI-&-Navigation#automator", target="_blank")], className="text-success mb-3"),
+            html.H2([
+                "Playbook Manager ",
+                html.A(
+                    DashIconify(icon="mdi:help-circle-outline", width=18, height=18), 
+                    href="https://github.com/vectra-ai-research/Halberd/wiki/UI-&-Navigation#automator", 
+                    target="_blank"
+                )
+            ], className="text-success mb-3"),
             
             # Right side - Action Buttons
             html.Div([
-                # Create new playbook button
+                # New playbook button
                 dbc.Button([
                     DashIconify(
                         icon="mdi:plus",
@@ -53,6 +60,21 @@ def create_playbook_manager_layout():
                         className="me-2"
                     ),
                 ),
+                html.Div(
+                    dbc.Button([
+                        DashIconify(
+                            icon="mdi:progress-clock",
+                            width=20,
+                            className="me-2"
+                        ),
+                        "View Progress"
+                    ],
+                    id="view-progress-button",
+                    color="primary",
+                    n_clicks=0
+                    ),
+                    id="view-progress-button-container"
+                )
             ], className="d-flex")
         ], className="d-flex justify-content-between align-items-center p-3"),
 
@@ -120,6 +142,13 @@ def create_playbook_manager_layout():
                 className="text-muted"
             )
         ], className="d-flex justify-content-between p-2 border-top border-secondary"),
+
+        # Add stores and intervals for progress tracking
+        dcc.Interval(
+            id="execution-interval",
+            interval=1000,  # 1 second refresh
+            disabled=True
+        ),
         
         # Element to trigger download/export of playbooks
         dcc.Download(id="download-pb-config-file"),
@@ -139,7 +168,9 @@ def create_playbook_manager_layout():
             className="bg-dark"
         ),
         # Off canvas for playbook editing workflow
-        generate_playbook_editor_offcanvas()
+        generate_playbook_editor_offcanvas(),
+        # Add progress off-canvas
+        create_execution_progress_offcanvas(),
     ], 
     className="bg-dark d-flex flex-column",
     style={
@@ -744,3 +775,102 @@ def playbook_editor_create_parameter_inputs(module_id, existing_params=None):
         )
     
     return param_inputs
+
+def create_execution_progress_offcanvas():
+    """Creates the execution progress off-canvas"""
+    return dbc.Offcanvas([
+        # Info message
+        dbc.Alert([
+            DashIconify(icon="mdi:information", className="me-2"),
+            "You can close this window and return anytime to check progress. ",
+            "Click the 'View Progress' button to reopen.",
+        ], 
+        color="primary", 
+        className="mb-4"
+        ),
+        
+        # Progress content
+        html.Div(
+            id="playbook-execution-progress",
+            className="mb-4"
+        ),
+        
+        # Interval for updates
+        dcc.Interval(
+            id="execution-interval",
+            interval=1000,
+            disabled=True
+        ),
+    ],
+    id="execution-progress-offcanvas",
+    title=html.H4("Execution Progress", className="text-light"),
+    placement="end",
+    is_open=False,
+    style={"width": "50%"},
+    className="bg-dark text-light",
+    backdrop=False,
+    scrollable=True
+    )
+
+def create_step_progress_card(step_number, module_name, status=None, is_active=False, message=None):
+    """Creates a card showing execution status for a single playbook step"""
+    # Define status icon and color
+    if is_active:
+        icon = DashIconify(
+            icon="mdi:progress-clock",
+            width=24,
+            className="text-primary animate-spin"
+        )
+        status_color = "text-primary"
+    elif status == "success":
+        icon = DashIconify(
+            icon="mdi:check-circle",
+            width=24,
+            className="text-success"
+        )
+        status_color = "text-success"
+    elif status == "failed":
+        icon = DashIconify(
+            icon="mdi:alert-circle",
+            width=24,
+            className="text-danger"
+        )
+        status_color = "text-danger"
+    else:
+        icon = DashIconify(
+            icon="mdi:circle-outline",
+            width=24,
+            className="text-gray-400"
+        )
+        status_color = "text-muted"
+
+    return dbc.Card([
+        dbc.CardBody([
+            dbc.Row([
+                dbc.Col(icon, width=1),
+                dbc.Col([
+                    dbc.Row([
+                        dbc.Col(
+                            html.H6(
+                                f"Step {step_number}: {module_name}",
+                                className="mb-0"
+                            ),
+                            width=9
+                        ),
+                        dbc.Col(
+                            html.Span(
+                                status.title() if status else "Pending",
+                                className=status_color
+                            ),
+                            width=3,
+                            className="text-end"
+                        )
+                    ]),
+                    html.Small(
+                        message,
+                        className="text-danger"
+                    ) if message else None,
+                ], width=11)
+            ], className="align-items-center")
+        ])
+    ], className=f"mb-2 {'border-primary' if is_active else ''} bg-dark")
