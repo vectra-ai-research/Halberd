@@ -43,14 +43,14 @@ azure-mgmt-iothub==0.5.0
 azure-mgmt-iothubprovisioningservices==0.2.0
 azure-mgmt-keyvault==10.3.0
 azure-mgmt-loganalytics==0.2.0
-azure-mgmt-logic==3.0.0
+azure-mgmt-logic==10.0.0
 azure-mgmt-machinelearningcompute==0.4.1
 azure-mgmt-managementgroups==0.1.0
 azure-mgmt-managementpartner==0.1.1
 azure-mgmt-maps==0.1.0
 azure-mgmt-marketplaceordering==0.1.0
 azure-mgmt-media==1.0.1
-azure-mgmt-monitor==0.5.2
+azure-mgmt-monitor==6.0.2
 azure-mgmt-msi==0.2.0
 azure-mgmt-network==2.7.0
 azure-mgmt-notificationhubs==2.1.0
@@ -161,3 +161,4 @@ Werkzeug==3.0.1
 wrapt==1.16.0
 yarl==1.9.4
 zipp==3.17.0
+pyarrow==18.0.0

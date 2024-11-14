@@ -26,7 +26,7 @@ class AzureAbuseAzurePolicyToDisableLogging(BaseTechnique):
                 sub_technique_name=None
             )
         ]
-        super().__init__("Abuse Azure Policy - Disable Logging", "This technique uses a malicious DeployIfNotExists policy primarily focused on Defense Evasion by impairing logging and monitoring capabilities in Azure through manipulation of the Azure Policy service.", mitre_techniques)
+        super().__init__("Abuse Azure Policy - Disable Logging", "This technique uses a malicious DeployIfNotExists policy primarily focused on Defense Evasion by impairing logging and monitoring capabilities in Azure through manipulation of the Azure Policy service.", mitre_techniques, azure_trm_technique)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)

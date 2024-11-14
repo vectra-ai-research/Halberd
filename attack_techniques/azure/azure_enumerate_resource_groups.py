@@ -51,6 +51,4 @@ class AzureEnumerateResourceGroups(BaseTechnique):
             }
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
-        return {
-            "subscription_id": {"type": "str", "required": False, "default": None, "name": "Subscription ID", "input_field_type" : "text"}
-        }
+        return {}

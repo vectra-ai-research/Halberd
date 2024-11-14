@@ -1,4 +1,4 @@
-from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique
+from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, AzureTRMTechnique
 from ..technique_registry import TechniqueRegistry
 from typing import Dict, Any, Tuple
 from core.azure.azure_access import AzureAccess
@@ -18,8 +18,16 @@ class AzurePasswordSpray(BaseTechnique):
                 sub_technique_name="Password Spraying"
             )
         ]
-        super().__init__("Password Spray", "Executes password spray attack using a list of usernames", mitre_techniques)
-
+        azure_trm_technique = [
+            AzureTRMTechnique(
+                technique_id="AZT202",
+                technique_name="Password Spraying",
+                tactics=["Initial Access"],
+                sub_technique_name=None
+            )
+        ]
+        super().__init__("Password Spray", "Performs a password spray attack against Azure ID using the Azure CLI to authenticate with a specified password against a list of usernames. The technique includes configurable wait times between attempts to avoid triggering account lockouts. It detects successful authentications as well as cases where correct credentials trigger MFA prompts. The technique can be configured to stop at first successful match or continue through the entire username list.", mitre_techniques, azure_trm_technique)
+        
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
         try:

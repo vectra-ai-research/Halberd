@@ -6,7 +6,7 @@ from azure.mgmt.storage.models import StorageAccountUpdateParameters, NetworkRul
 from core.azure.azure_access import AzureAccess
 
 @TechniqueRegistry.register
-class AzureExposeStorageAccountPublic(BaseTechnique):
+class AzureDisableStorageAccountFirewall(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
@@ -16,7 +16,7 @@ class AzureExposeStorageAccountPublic(BaseTechnique):
                 sub_technique_name="Disable or Modify Cloud Firewall"
             )
         ]
-        super().__init__("Expose Storage Account Public", "Modify the network rule set of an Azure Storage Account to change its default action to 'Allow', effectively making the storage account publicly accessible", mitre_techniques)
+        super().__init__("Disable Storage Account Firewall", "Compromises Azure Storage Account network security by disabling network firewall rules and modifying network access controls to allow connections from any source. This technique changes the default network rule action to 'Allow' and enables public network access, effectively removing IP, virtual network, and private endpoint restrictions. The technique is particularly dangerous as it can circumvent planned network security architectures and allow direct internet access to storage resources that were intended to be private or accessed only through specific networks. Use this technique to establish broad access for data exfiltration or to remove security boundaries that would prevent other attack techniques from succeeding.", mitre_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
@@ -52,7 +52,7 @@ class AzureExposeStorageAccountPublic(BaseTechnique):
             )
 
             return ExecutionStatus.SUCCESS, {
-                "message": f"Storage account {account_name} made public. Betwork rule set updated to allow default action.",
+                "message": f"Storage account {account_name} made public. Network rule set updated to allow default action.",
                 "value": {
                     "account_name" : account_name,
                     "rg_name" : rg_name,

@@ -28,7 +28,7 @@ class AzureDumpAutomationAccounts(BaseTechnique):
                 sub_technique_name="Automation Account Credential Secret Dump"
             )
         ]
-        super().__init__("Dump Automation Accounts", "Creates multiple runbooks within Azure Automation Accounts to execute scripts that extract credentials and tokens", mitre_techniques)
+        super().__init__("Dump Automation Accounts", "Compromises Azure Automation Accounts by extracting stored credentials, managed identities access tokens, and other sensitive authentication materials. This technique creates temporary runbooks that execute scripts designed to dump both user-assigned and system-assigned managed identity tokens, as well as plaintext credentials stored in the Automation Account. The extracted access tokens and credentials can be used to escalate privileges and move laterally within the Azure environment. The technique cleans up after execution by removing the created runbooks to minimize detection. Automation Accounts are high-value targets since they often contain privileged credentials and managed identities used for automated tasks across the Azure environment, making this technique particularly effective for privilege escalation and persistence.", mitre_techniques, azure_trm_technique)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)

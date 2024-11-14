@@ -9,34 +9,58 @@ from dash_iconify import DashIconify
                    
 page_layout = html.Div([
     html.H2(["Attack ",html.A(DashIconify(icon="mdi:help-circle-outline", width=18, height=18), href="https://github.com/vectra-ai-research/Halberd/wiki/UI-&-Navigation#attack-attack", target="_blank")], className="text-success mb-3"),
-    
-    dbc.Row([
-        # Column 1 : Display cloud tabs
-        dbc.Col([
-            dbc.Tabs(
-                [
-                    dbc.Tab(label="EntraID", tab_id="tab-attack-EntraID", labelClassName="text-success"),
-                    dbc.Tab(label="M365", tab_id="tab-attack-M365", labelClassName="text-success"),
-                    dbc.Tab(label="AWS", tab_id="tab-attack-AWS", labelClassName="text-success"),
-                    dbc.Tab(label="Azure", tab_id="tab-attack-Azure", labelClassName="text-success"),
-                    dbc.Tab(label="GCP", tab_id="tab-attack-GCP", labelClassName="text-success"),
-                ],
-                id="attack-surface-tabs",
-                active_tab="tab-attack-EntraID",
-                class_name="bg-dark"
-            ),
-        ], md=3),
-    ], className="mt-3"),
-
-    html.Br(),
 
     html.Div([
         dbc.Row([
             # Column 1: Display technique options radio buttons
             dbc.Col([
+                html.H5("Technique Options"),
+                html.Br(),
                 html.Div([
-                    html.H5("Access"),
+                    dbc.Label("Attack Surface"),
+                    dbc.Tabs(
+                        [
+                            dbc.Tab(label="EntraID", tab_id="tab-attack-EntraID", labelClassName="text-success",
+                                tab_style={
+                                    'borderRadius': '0px',
+                                    'margin': '0px',
+                                    'marginLeft': '0px',
+                                    'marginRight': '0px'
+                                }
+                            ),
+                            dbc.Tab(
+                                label="M365", tab_id="tab-attack-M365", labelClassName="text-success",
+                                tab_style={
+                                    'borderRadius': '0px',
+                                    'margin': '0px',
+                                    'marginLeft': '0px',
+                                    'marginRight': '0px'
+                                }
+                            ),
+                            dbc.Tab(
+                                label="AWS", tab_id="tab-attack-AWS", labelClassName="text-success",
+                                tab_style={
+                                    'borderRadius': '0px',
+                                    'margin': '0px',
+                                    'marginLeft': '0px',
+                                    'marginRight': '0px'
+                                }
+                            ),
+                                dbc.Tab(label="Azure", tab_id="tab-attack-Azure", labelClassName="text-success",
+                                tab_style={
+                                    'borderRadius': '0px',
+                                    'margin': '0px',
+                                    'marginLeft': '0px',
+                                    'marginRight': '0px'
+                                }
+                            ),
+                        ],
+                        id="attack-surface-tabs",
+                        active_tab="tab-attack-EntraID",
+                        # class_name="bg-dark"
+                    ),
                     html.Br(),
+                    dbc.Label("Access"),
                     dbc.Button(
                         "Establish Access", 
                         id="attack-access-info-dynamic-btn", 
@@ -50,7 +74,7 @@ page_layout = html.Div([
                             'align-items': 'center'
                         }
                     ),
-                    html.P("Tactics", style={"font-size": 20}),
+                    dbc.Label("Tactics"),
                     dcc.Dropdown(id = "tactic-dropdown", className= "bg-dark"),
                     html.Br(),
                     html.P("Techniques", style={"font-size": 20}),
@@ -84,18 +108,38 @@ page_layout = html.Div([
                     html.H4("Response")
                 ),
                 dbc.Col(
-                    dbc.Button([
-                        DashIconify(icon="mdi:download"),
-                    ], id="download-technique-response-button", color="primary", style={'float': 'right', 'margin-left': '10px'}),
+                    html.A(
+                        dbc.Button(
+                            [
+                                DashIconify(
+                                    icon="mdi:history",
+                                    width=20,
+                                    className="me-1"
+                                ),
+                                "View Attack History"
+                            ],
+                            n_clicks=0,
+                            color="primary",
+                            className="ms-2",
+                            id="history-button",
+                        ),
+                        href="/attack-history", 
+                        target="_blank", 
+                        style={'float': 'right', 'margin-left': '10px'}
+                    )
                 )
             ]
         ),
         dbc.Row(
-            dcc.Loading(
-                id="attack-output-loading",
-                type="default",
-                children=html.Div(id= "execution-output-div", style={"height":"40vh", "overflowY": "auto", "border":"1px solid #ccc", "padding-right": "10px", "padding-left": "10px", "padding-top": "10px", "padding-bottom": "10px"})
-            )
+            [
+                dbc.Col(
+                    dcc.Loading(
+                        id="attack-output-loading",
+                        type="default",
+                        children=html.Div(id= "execution-output-div", style={"height":"40vh", "overflowY": "auto", "border":"1px solid #ccc", "padding-right": "10px", "padding-left": "10px", "padding-top": "10px", "padding-bottom": "10px"})
+                    )
+                )
+            ]
         )
     ]),
     
@@ -103,14 +147,18 @@ page_layout = html.Div([
     dbc.Modal(
         [
             dbc.ModalHeader(dbc.ModalTitle("Access Manager", className="text-success")),
-            dbc.ModalBody(id = "attack-access-info-display-modal-body"),
-            dbc.ModalFooter(
-                dbc.Button("Close", id="close-attack-access-info-display-modal", className="ml-auto")
-            ),
+            dbc.ModalBody(id = "attack-access-info-display-modal-body")
         ],
         id="attack-access-info-display-modal",
         size="xl",
         scrollable=True,
         backdrop="static"
     ),
-], className="bg-dark", style={"height": "100vh", 'overflow': 'auto', "padding-right": "20px", "padding-left": "20px"})
+],
+className="bg-dark",
+style={
+    'minHeight': '100vh',
+    "padding-right": "20px", 
+    "padding-left": "20px"
+    }
+)
