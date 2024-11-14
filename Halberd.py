@@ -17,7 +17,7 @@ import pandas as pd
 from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.Functions import generate_technique_info, run_initialization_check, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary, get_playbook_stats, parse_execution_report, create_step_progress_card
+from core.Functions import generate_technique_info, run_initialization_check, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary, get_playbook_stats, parse_execution_report
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
 from core.playbook.playbook_error import PlaybookError
@@ -28,7 +28,7 @@ from core.logging.logger import setup_logger,StructuredAppLog
 from core.logging.report import read_log_file, analyze_log, generate_html_report
 from core.output_manager.output_manager import OutputManager
 from pages.attack_analyse import process_attack_data, create_metric_card, create_df_from_attack_logs, create_bar_chart, create_pie_chart, create_timeline_graph
-from pages.automator import create_playbook_item, create_playbook_manager_layout, schedule_pb_div, export_pb_div, generate_playbook_creator_offcanvas, generate_step_form, playbook_editor_create_parameter_inputs
+from pages.automator import create_playbook_item, create_playbook_manager_layout, schedule_pb_div, export_pb_div, generate_playbook_creator_offcanvas, generate_step_form, playbook_editor_create_parameter_inputs, create_step_progress_card
 
 # Create Application
 app = dash.Dash(__name__,  external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP],title='Halberd', update_title='Loading...', suppress_callback_exceptions=True)
