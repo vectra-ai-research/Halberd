@@ -1269,6 +1269,8 @@ def update_access_button_callback(active_tab, is_open):
                 return "No Access", "danger"
         except:
             return "No Azure Access", "danger"
+    elif active_tab == "tab-attack-GCP":
+        return "No Access", "danger"
 
 '''C046 - Callback to display access info in modal'''
 @app.callback(

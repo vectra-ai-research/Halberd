@@ -19,6 +19,7 @@ page_layout = html.Div([
                     dbc.Tab(label="M365", tab_id="tab-attack-M365", labelClassName="text-success"),
                     dbc.Tab(label="AWS", tab_id="tab-attack-AWS", labelClassName="text-success"),
                     dbc.Tab(label="Azure", tab_id="tab-attack-Azure", labelClassName="text-success"),
+                    dbc.Tab(label="GCP", tab_id="tab-attack-GCP", labelClassName="text-success"),
                 ],
                 id="attack-surface-tabs",
                 active_tab="tab-attack-EntraID",

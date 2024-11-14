@@ -700,6 +700,8 @@ def generate_attack_tactics_options(tab):
         tactics_options = technique_registry.list_tactics("azure")
     if tab == "tab-attack-AWS":
         tactics_options = technique_registry.list_tactics("aws")
+    if tab == "tab-attack-GCP":
+        tactics_options = technique_registry.list_tactics("gcp")
     
     # Create the dropdown element
     tactic_dropdown_option = []    
@@ -733,6 +735,8 @@ def generate_attack_technique_options(tab, tactic):
         attack_surface_techniques = technique_registry.list_techniques("m365")
     elif tab == "tab-attack-EntraID":
         attack_surface_techniques = technique_registry.list_techniques("entra_id")
+    elif tab == "tab-attack-GCP":
+        attack_surface_techniques = technique_registry.list_techniques("gcp")
         
     technique_options_list = []
     # tracker list to avoid duplicate entry
@@ -748,6 +752,7 @@ def generate_attack_technique_options(tab, tactic):
                             "value": technique_module,
                         }
                     )
+    
 
     technique_options_element = [
         dcc.RadioItems(id = "attack-options-radio", options = technique_options_list, value = technique_options_list[0]["value"], labelStyle={"display": "flex", "align-items": "center"})
