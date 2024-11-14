@@ -93,3 +93,6 @@ from .m365.m365_search_teams_chat import M365SearchTeamsChat
 from .m365.m365_search_teams_messages import M365SearchTeamsMessages
 from .m365.m365_search_user_one_drive import M365SearchUserOneDrive
 from .m365.m365_send_outlook_email import M365SendOutlookEmail
+
+# GCP Techniques
+from .gcp.gcp_establish_access_as_sa import GCPEstablishAccessAsServiceAccount

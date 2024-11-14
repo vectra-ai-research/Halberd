@@ -681,3 +681,4 @@ automator/Outputs/
 automator/Playbooks/
 automator/Exports/
 automator/Schedules.yml
+.vscode/*
