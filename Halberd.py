@@ -6,6 +6,7 @@ import time
 import os
 import boto3
 import uuid
+import threading
 import dash_bootstrap_components as dbc
 from dash import dcc, html, ALL, callback_context, no_update, MATCH, ctx
 from dash.dependencies import Input, Output, State
@@ -16,7 +17,7 @@ import pandas as pd
 from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.Functions import generate_technique_info, run_initialization_check, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary, get_playbook_stats
+from core.Functions import generate_technique_info, run_initialization_check, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary, get_playbook_stats, parse_execution_report, create_step_progress_card
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
 from core.playbook.playbook_error import PlaybookError
@@ -617,37 +618,47 @@ def update_visualization(n_clicks):
 
 '''C020 - Callback to execute attack sequence in automator view'''
 @app.callback(
-        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
-        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
-        Output(component_id = "app-error-display-modal", component_property = "is_open", allow_duplicate=True),
-        Output(component_id = "app-error-display-modal-body", component_property = "children", allow_duplicate=True),
-        Input({'type': 'execute-playbook-button', 'index': ALL}, 'n_clicks'),
-        prevent_initial_call=True
+    Output("execution-progress-offcanvas", "is_open", allow_duplicate=True),
+    Output("app-notification", "is_open", allow_duplicate=True),
+    Output("app-notification", "children", allow_duplicate=True),
+    Output("app-error-display-modal", "is_open", allow_duplicate=True),
+    Output("app-error-display-modal-body", "children", allow_duplicate=True),
+    Output("selected-playbook-data", "data", allow_duplicate=True),
+    Output("execution-interval", "disabled", allow_duplicate=True),
+    Input({'type': 'execute-playbook-button', 'index': ALL}, 'n_clicks'),
+    prevent_initial_call=True
 )
-def execute_pb_callback(n_clicks):
+def execute_playbook_callback(n_clicks):
+    """Execute playbook and initialize progress tracking"""
     if not any(n_clicks):
         raise PreventUpdate
-    
-    # Find which button was clicked
+        
     ctx = callback_context
     if not ctx.triggered:
-        return no_update
-    
-    # Extract playbook name from context
+        raise PreventUpdate
+        
+    # Get clicked playbook
     button_id = ctx.triggered[0]['prop_id'].rsplit('.',1)[0]
     playbook_file = eval(button_id)['index']
     
-    # Execute playbook
     try:
-        Playbook(playbook_file).execute()
-        return True, "Playbook Execution Completed", False, ""
+        # Execute playbook in background thread
+        def execute_playbook():
+            playbook = Playbook(playbook_file)
+            playbook.execute()
+            
+        execution_thread = threading.Thread(target=execute_playbook)
+        execution_thread.daemon = True
+        execution_thread.start()
+        
+        return True, True, "Playbook Execution Started", False, "", playbook_file, False
+        
     except PlaybookError as e:
-        if e.error_type == "data_error":
-            return False, "", True, f"Playbook Execution Aborted - Invalid Playbook : {str(e.message)}"
-        else:
-            return False, "", True, f"Playbook Execution Failed - Invalid Playbook : {str(e.message)}"
+        error_msg = f"Playbook Execution Failed: {str(e.message)}"
+        return False, False, "", True, error_msg, None, True
     except Exception as e:
-        return False, "", True, f"Playbook Execution Failed - Unexpected Error : {str(e)}"
+        error_msg = f"Unexpected Error: {str(e)}"
+        return False, False, "", True, error_msg, None, True
 
 '''C021 - Callback to open attack scheduler off canvas'''
 @app.callback(
@@ -2044,6 +2055,129 @@ def remove_playbook_step_editor(n_clicks, current_steps):
     except Exception as e:
         print(f"Error in remove_playbook_step_editor: {str(e)}")
         raise PreventUpdate
+
+'''C060 - [Playbook Progress Tracker] Callback to update the execution progress display'''
+@app.callback(
+    Output("playbook-execution-progress", "children"),
+    Output("execution-interval", "disabled"),
+    Input("execution-interval", "n_intervals"),
+    State("selected-playbook-data", "data"),
+    prevent_initial_call=True
+)
+def update_execution_progress(n_intervals, playbook_data):
+    """Update the execution progress display"""
+    if not playbook_data:
+        raise PreventUpdate
+        
+    try:
+        # Get playbook config
+        playbook = Playbook(playbook_data)
+        total_steps = len(playbook.data['PB_Sequence'])
+        
+        # Get latest execution folder
+        execution_folders = [
+            d for d in os.listdir(AUTOMATOR_OUTPUT_DIR)
+            if d.startswith(f"{playbook.name}_")
+        ]
+        
+        if not execution_folders:
+            raise PreventUpdate
+            
+        latest_folder = max(execution_folders)
+        execution_folder = os.path.join(AUTOMATOR_OUTPUT_DIR, latest_folder)
+        
+        # Get execution results
+        results = parse_execution_report(execution_folder)
+        active_step = len(results)
+        
+        # Create status cards for each step
+        step_cards = []
+        for step_no, step_data in playbook.data['PB_Sequence'].items():
+            step_index = int(step_no) - 1
+            
+            # Determine step status
+            status = None
+            message = None
+            is_active = False
+            
+            if step_index < len(results):
+                status = results[step_index].get('status')
+            elif step_index == len(results):
+                is_active = True
+                
+            step_cards.append(
+                create_step_progress_card(
+                    step_number=step_no,
+                    module_name=step_data['Module'],
+                    status=status,
+                    is_active=is_active,
+                    message=message
+                )
+            )
+        
+        # Create progress tracker component
+        progress_tracker = dbc.Card([
+            dbc.CardHeader([
+                dbc.Row([
+                    dbc.Col(
+                        html.H5("Execution Progress", className="mb-0"),
+                        width=8
+                    ),
+                    dbc.Col(
+                        html.Small(
+                            f"Step {active_step} of {total_steps}",
+                            className="text-muted"
+                        ),
+                        width=4,
+                        className="text-end"
+                    )
+                ])
+            ]),
+            dbc.CardBody(step_cards)
+        ], className="bg-dark text-light mb-4")
+        
+        # Check if execution is complete
+        is_complete = active_step == total_steps
+        
+        return progress_tracker, is_complete
+        
+    except Exception as e:
+        print(f"Error updating progress: {str(e)}")
+        raise PreventUpdate
+
+'''C061 - [Playbook Progress Tracker] Callback to handle the off-canvas visibility and button display'''
+@app.callback(
+    Output("execution-progress-offcanvas", "is_open", allow_duplicate=True),
+    Output("view-progress-button-container", "style", allow_duplicate=True),
+    Output("execution-interval", "disabled", allow_duplicate=True),
+    [
+        Input({'type': 'execute-playbook-button', 'index': ALL}, 'n_clicks'),
+        Input("view-progress-button", "n_clicks")
+    ],
+    [
+        State("execution-progress-offcanvas", "is_open")
+    ],
+    prevent_initial_call=True
+)
+def manage_progress_display(execute_clicks, view_clicks, is_open):
+    """Manage progress display visibility"""
+    ctx = dash.callback_context
+    if not ctx.triggered:
+        raise PreventUpdate
+        
+    trigger_id = ctx.triggered[0]['prop_id'].split('.')[0]
+    
+    # Handle execute button clicks
+    if "execute-playbook-button" in trigger_id:
+        if any(click for click in execute_clicks if click):
+            # Show button and open offcanvas
+            return True, {"display": "block"}, False
+            
+    # Handle view progress button clicks
+    elif trigger_id == "view-progress-button" and view_clicks:
+        return not is_open, {"display": "block"}, False
+        
+    raise PreventUpdate
 
 if __name__ == '__main__':
     # Run Initialization check
