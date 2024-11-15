@@ -16,6 +16,7 @@ from dash_iconify import DashIconify
 import pandas as pd
 from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
+from core.gcp.gcp_access import GCPAccess
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
 from core.Functions import generate_technique_info, run_initialization_check, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary, get_playbook_stats, parse_execution_report
 from core.playbook.playbook import Playbook
@@ -234,6 +235,16 @@ def execute_technique_callback(n_clicks, tactic, t_id, values, bool_on, file_con
             active_entity = current_access['user']['name']
         except:
             active_entity = "Unknown"
+
+    if attack_surface == "gcp":
+        try:
+            current_access = GCPAccess().current_credentials()
+            active_entity = current_access.service_account_email
+
+
+        except:
+            active_entity = "Unknown"
+        
 
     # Create technique input
     technique_input = {}

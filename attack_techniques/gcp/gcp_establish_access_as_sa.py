@@ -3,11 +3,10 @@ from ..technique_registry import TechniqueRegistry
 from typing import Dict, Any, Tuple
 import json
 import base64
-
-
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 from google.auth.exceptions import RefreshError
+from core.gcp.gcp_access import GCPAccess
 
 @TechniqueRegistry.register
 class GCPEstablishAccessAsServiceAccount(BaseTechnique):
@@ -27,6 +26,7 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
         try:
             # input validation
             credential_raw: str = kwargs['credential']
+            # name: str = kwargs['name']
             
             # Input validationc
             if credential_raw in [None, ""]:
@@ -35,16 +35,8 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
                     "message": {"Error" : "Invalid Technique Input"}
                 }
             
-            credential_json = json.loads(base64.b64decode(credential_raw[29:]))
-
-            default_scopes = ["https://www.googleapis.com/auth/cloud-platform"]
-
+            credential = GCPAccess(credential_raw)
             
-            credential = service_account.Credentials.from_service_account_info(credential_json, scopes=default_scopes)
-
-            
-            credential.refresh(Request())
-
             caller_info_output = {
                 'email' : credential.service_account_email,
                 'project' : credential.project_id,
@@ -52,20 +44,29 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
                 'expired' : credential.expired
             }
 
-            if credential.valid == False:
+            if credential.get_validation() == False:
+                caller_info_output["validity"] = False
                 return ExecutionStatus.FAILURE, {
                     "error" : str(caller_info_output),
                     "message": "Failed to establish access to GCP. The credential is not valid"
                 }
-            if credential.expired == True:
+            else :
+                caller_info_output["validity"] = True
+            
+            if credential.get_expired_info() == False:
+                caller_info_output["expired"] == True
                 return ExecutionStatus.FAILURE, {
                     "error" : str(caller_info_output),
                     "message": "Failed to establish access to GCP. The credential is expired"
                 }
+            else :
+                caller_info_output["expired"] = False
+
+            
             
             return ExecutionStatus.SUCCESS, {
-                "value": str(caller_info_output),
-                "message": "Successfully established access to target Azure tenant"
+                "value": caller_info_output,
+                "message": f"Successfully established access to target Azure tenant"
             }
         
         except ValueError as e:
@@ -95,5 +96,6 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            "credential": {"type": "str", "required": True, "default": None, "name": "JSON Credential", "input_field_type" : "upload"}
+            "credential": {"type": "str", "required": True, "default": None, "name": "JSON Credential", "input_field_type" : "upload"},
+            "name": {"type": "str", "required": True, "default": None, "name": "Name", "input_field_type" : "text"}
         }
