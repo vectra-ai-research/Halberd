@@ -21,8 +21,6 @@ class GCPAccess(service_account.Credentials):
     def __init__(self, raw_credential, scopes=None):
         """Initialize GCPAccess directly with raw credential string and optional scopes"""
         # Only initialize if it's not already initialized
-        if not hasattr(self, '_initialized'):
-            self._initialized = True  # Prevent re-initialization
 
         # Default scope if none provided
         if scopes is None:
@@ -38,37 +36,50 @@ class GCPAccess(service_account.Credentials):
                 scopes=scopes
             )
 
-            credentials.refresh(Request())
             
             # Initialize the parent class (service_account.Credentials) with extracted values
             super().__init__(credentials.signer, credentials.service_account_email, credentials._token_uri, scopes=scopes)
-            
-        except RefreshError as e:
-            # Directly raise the exception from __init__ to be caught by the caller
-            raise e
         except Exception as e:
             # Raise any other exception that occurs during initialization
             raise e
         
+
+    @classmethod
+    def refresh_token(self):
+        """Refresh the token associated with the credentials."""
+        try:
+            request = Request()
+            self.refresh(request)
+        except RefreshError as e:
+            raise e
+        except Exception as e:
+            raise e
+
     @classmethod
     def get_validation(self):
         """Validates GCP access"""
         try:
+            self.refresh_token
             if self.valid == False:
                 return False
             return True
-        except:
-            return False
+        except RefreshError as e:
+            raise e
+        except Exception as e:
+            raise e
         
     @classmethod
     def get_expired_info(self):
         """Gets GCP access expired info"""
         try:
+            self.refresh_token
             if self.expired == True:
                 return False
             return True
-        except:
-            return False
+        except RefreshError as e:
+            raise e
+        except Exception as e:
+            raise e
         
     @classmethod
     def current_credentials(cls):

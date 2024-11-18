@@ -19,7 +19,7 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
                 sub_technique_name="Cloud Accounts"
             )
         ]
-        super().__init__("Establish Access As App", "Establishes access to Azure tenant as application", mitre_techniques)
+        super().__init__("Establish Access As Service Account", "Establishes access to Google Cloud Platform as service account", mitre_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)

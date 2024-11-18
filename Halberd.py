@@ -238,7 +238,7 @@ def execute_technique_callback(n_clicks, tactic, t_id, values, bool_on, file_con
 
     if attack_surface == "gcp":
         try:
-            current_access = GCPAccess().current_credentials()
+            current_access = GCPAccess(file_content[0]).current_credentials()
             active_entity = current_access.service_account_email
 
 
