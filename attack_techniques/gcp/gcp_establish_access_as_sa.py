@@ -25,26 +25,29 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
         self.validate_parameters(kwargs)
         try:
             # input validation
-            credential_raw: str = kwargs['credential']
-            # name: str = kwargs['name']
+            raw_credential: str = kwargs['credential']
+            name: str = kwargs['name']
+            save_and_activate: bool = kwargs['save_and_activate']
+            set
             
             # Input validationc
-            if credential_raw in [None, ""]:
+            if raw_credential in [None, ""]:
                 return ExecutionStatus.FAILURE, {
                     "error": {"Error" : "Invalid Technique Input"},
                     "message": {"Error" : "Invalid Technique Input"}
                 }
             
-            credential = GCPAccess(credential_raw)
+            access_manager = GCPAccess(raw_credentials=raw_credential, name=name )
+            current_access = access_manager.credential
             
             caller_info_output = {
-                'email' : credential.service_account_email,
-                'project' : credential.project_id,
-                'validity': credential.valid,
-                'expired' : credential.expired
+                'email/client_id' : current_access.service_account_email,
+                'project' : current_access.project_id,
+                'validity': current_access.valid,
+                'expired' : current_access.expired
             }
 
-            if credential.get_validation() == False:
+            if access_manager.get_validation() == False:
                 caller_info_output["validity"] = False
                 return ExecutionStatus.FAILURE, {
                     "error" : str(caller_info_output),
@@ -53,8 +56,8 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
             else :
                 caller_info_output["validity"] = True
             
-            if credential.get_expired_info() == False:
-                caller_info_output["expired"] == True
+            if access_manager.get_expired_info() == True:
+                caller_info_output["expired"] = True
                 return ExecutionStatus.FAILURE, {
                     "error" : str(caller_info_output),
                     "message": "Failed to establish access to GCP. The credential is expired"
@@ -62,8 +65,9 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
             else :
                 caller_info_output["expired"] = False
 
-            
-            
+            if save_and_activate :
+                access_manager.save_credential()
+
             return ExecutionStatus.SUCCESS, {
                 "value": caller_info_output,
                 "message": f"Successfully established access to target Azure tenant"
@@ -97,5 +101,6 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
             "credential": {"type": "str", "required": True, "default": None, "name": "JSON Credential", "input_field_type" : "upload"},
-            "name": {"type": "str", "required": True, "default": None, "name": "Name", "input_field_type" : "text"}
+            "name": {"type": "str", "required": True, "default": None, "name": "Name", "input_field_type" : "text"},
+            "save_and_activate": {"type": "bool", "required": False, "default": False, "name": "Save and Activate?", "input_field_type" : "bool"}
         }

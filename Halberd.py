@@ -17,6 +17,8 @@ import pandas as pd
 from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
 from core.gcp.gcp_access import GCPAccess
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+from google.oauth2.credentials import Credentials as UserAccountCredentials
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
 from core.Functions import generate_technique_info, run_initialization_check, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary, get_playbook_stats, parse_execution_report
 from core.playbook.playbook import Playbook
@@ -238,9 +240,17 @@ def execute_technique_callback(n_clicks, tactic, t_id, values, bool_on, file_con
 
     if attack_surface == "gcp":
         try:
-            current_access = GCPAccess(file_content[0]).current_credentials()
-            active_entity = current_access.service_account_email
-
+            current_access = None
+            if t_id == "GCPEstablishAccessAsServiceAccount":
+                manager = GCPAccess(raw_credentials=file_content[0],name=values[0])
+                current_access = manager.credential
+            else:
+                manager = GCPAccess()
+                current_access = manager.current_saved_credential()
+            if isinstance(current_access, ServiceAccountCredentials):
+                active_entity = current_access.service_account_email
+            if isinstance(current_access, UserAccountCredentials):
+                active_entity = current_access.client_id
 
         except:
             active_entity = "Unknown"
