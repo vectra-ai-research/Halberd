@@ -18,7 +18,10 @@ from core.playbook.playbook import Playbook
 from core.entra.entra_token_manager import EntraTokenManager
 from core.aws.aws_session_manager import SessionManager
 from core.azure.azure_access import AzureAccess
+from core.gcp.gcp_access import GCPAccess
 from attack_techniques.technique_registry import TechniqueRegistry
+from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+from google.oauth2.credentials import Credentials as UserAccountCredentials
 
 def generate_technique_info(technique_id)-> list:
     """
@@ -1031,6 +1034,98 @@ def generate_aws_access_info(session_name):
         )
 
     return info_output_div
+
+def generate_gcp_access_info(credential_name):
+    info_output_div = []
+
+    if credential_name:
+        info_output_div.append(html.Br())
+        info_output_div.append(html.H5("Access : "))
+        
+        manager = GCPAccess()
+        manager.set_activate_credentials(credential_name)
+        current_access = manager.get_current_access()
+        b64str_credential = current_access["credential"]
+        raw_credential = manager.get_detailed_credential(data=b64str_credential).get("credential")
+        try :
+            manager = GCPAccess(raw_credential,name=credential_name)
+            
+            if manager.get_expired_info() == False and manager.get_validation() == True:
+                credential = manager.credential
+                if isinstance(manager.credential, ServiceAccountCredentials):
+                    user = credential.service_account_email
+                if isinstance(manager.credential, UserAccountCredentials):
+                    user = credential.client_id
+                card_content = [
+                    dbc.Row([
+                        dbc.Col([
+                            html.Div([
+                                DashIconify(icon="mdi:account-key", className="me-2"),
+                                html.Strong("Name"),
+                                html.Span(credential_name, className="ms-2 text-info")
+                            ], className="mb-3"),
+                            html.Div([
+                                DashIconify(icon="mdi:account-cash", className="me-2"),
+                                html.Strong("Email or Client-ID:"),
+                                html.Span(user, className="ms-2")
+                            ], className="mb-3"),
+                            html.Div([
+                                DashIconify(icon="mdi:identifier", className="me-2"),
+                                html.Strong("Project:"),
+                                html.Span(credential.project_id, className="ms-2")
+                            ], className="mb-3"),
+                            html.Div([
+                                DashIconify(icon="mdi:shield-check", className="me-2"),
+                                html.Strong("Scopes:"),
+                                html.Span(credential.scopes, className="ms-2")
+                            ], className="mb-3")
+                        ], width=12)
+                    ])
+                ]
+            
+                info_output_div.append(
+                    dbc.Card(
+                        dbc.CardBody([
+                            html.H4([
+                                DashIconify(icon="mdi:aws", className="me-2"),
+                                "Access: ",
+                                html.Span("VALID SESSION", className="text-success")
+                            ], className="card-title mb-3"),
+                            *card_content
+                        ]),
+                        className="mb-3 text-white"
+                    )
+                )
+
+        except: 
+            info_output_div.append(
+                dbc.Card(
+                    dbc.CardBody([
+                        html.H4([
+                            DashIconify(icon="mdi:aws", className="me-2"),
+                            "Access: ",
+                            html.Span("CREDENTIAL ARE NOT SET", className="text-danger")
+                        ], className="card-title")
+                    ]),
+                    className="mb-3 text-white"
+                )
+            )
+    else:
+        info_output_div.append(
+                dbc.Card(
+                    dbc.CardBody([
+                        html.H4([
+                            DashIconify(icon="mdi:aws", className="me-2"),
+                            "Access: ",
+                            html.Span("CREDENTIAL ARE NOT SET", className="text-danger")
+                        ], className="card-title")
+                    ]),
+                    className="mb-3 text-white"
+                )
+            )
+    return info_output_div
+
+
 
 def generate_azure_access_info(subscription):
     info_output_div = []

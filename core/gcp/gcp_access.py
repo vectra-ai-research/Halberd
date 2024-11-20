@@ -15,64 +15,94 @@ class GCPAccess():
 
 
 
-    def __init__(self, raw_credentials, scopes=None, name=None):
+    def __init__(self, raw_credentials=None, scopes=None, name=None):
         """Initialize GCPAccess directly with raw credential string and optional scopes"""
         # Only initialize if it's not already initialized
-
-        # Default scope if none provided
-        if scopes is None:
-            scopes = ["https://www.googleapis.com/auth/cloud-platform"]
-        
-        try:
-            # Check if raw_credentials is Base64-encoded, decode if true
-            if self._is_base64(raw_credentials):
-                raw_credentials = base64.b64decode(raw_credentials[29:]).decode("utf-8")
-
-            self.encoded_credential=base64.b64encode(raw_credentials.encode())
-            # # Load the credentials using the parsed JSON and provided scopes
-            # credentials = service_account.Credentials.from_service_account_info(
-            #     raw_credentials,
-            #     scopes=scopes
-            # )
+        if raw_credentials != None :
+            # Default scope if none provided
+            if scopes is None:
+                scopes = ["https://www.googleapis.com/auth/cloud-platform"]
             
-            # # Initialize the parent class (service_account.Credentials) with extracted values
-            # super().__init__(credentials.signer, credentials.service_account_email, credentials._token_uri, scopes=scopes)
+            try:
+                # Check if raw_credentials is Base64-encoded, decode if true
+                if self._is_base64(raw_credentials):
+                    raw_credentials = base64.b64decode(raw_credentials[29:]).decode("utf-8")
+                
+                if isinstance(raw_credentials, dict):
+                    raw_credentials = json.dumps(raw_credentials)
+
+                self.encoded_credential=base64.b64encode(raw_credentials.encode())
+                # # Load the credentials using the   parsed JSON and provided scopes
+                # credentials = service_account.Credentials.from_service_account_info(
+                #     raw_credentials,
+                #     scopes=scopes
+                # )
+                
+                # # Initialize the parent class (service_account.Credentials) with extracted values
+                # super().__init__(credentials.signer, credentials.service_account_email, credentials._token_uri, scopes=scopes)
 
 
-            # Deserialized credential
-            loaded_credentials = json.loads(raw_credentials)
+                # Deserialized credential
+                loaded_credentials = json.loads(raw_credentials)
 
-            # Credential name
-            if name is None:
-                raise ValueError("Credential name is required.")
+                # Credential name
+                if name is None:
+                    raise ValueError("Credential name is required.")
 
 
-            # Detect credential type and initialize
-            if self._is_service_account(loaded_credentials):
-                self.credential = ServiceAccountCredentials.from_service_account_info(
-                    loaded_credentials,
-                    scopes=scopes
-                )
-                self.credential.current = True
-                self.credential.name = name
-            elif self._is_user_account(loaded_credentials):
-                self.credential = UserAccountCredentials.from_authorized_user_info(
-                    loaded_credentials,
-                    scopes=scopes
-                )
-                self.credential.current = True
-                self.credential.name = name
-            else:
-                raise ValueError("Invalid credential type. Must be Service Account or User Account.")
+                # Detect credential type and initialize
+                if self._is_service_account(loaded_credentials):
+                    self.credential = ServiceAccountCredentials.from_service_account_info(
+                        loaded_credentials,
+                        scopes=scopes
+                    )
+                    self.credential.current = True
+                    self.credential.name = name
+                elif self._is_user_account(loaded_credentials):
+                    self.credential = UserAccountCredentials.from_authorized_user_info(
+                        loaded_credentials,
+                        scopes=scopes
+                    )
+                    self.credential.current = True
+                    self.credential.name = name
+                else:
+                    raise ValueError("Invalid credential type. Must be Service Account or User Account.")
+                
+            except ValueError as e:
+                raise e
             
-        except ValueError as e:
-            raise e
-        
-        except Exception as e:
-            raise e
+            except Exception as e:
+                raise e
+        else :
+            pass
     
     
-    
+    def get_detailed_credential(self, name = None, data = None):
+        """Get detailed credential"""
+        if name != None :
+            credentials = self.list_credentials()
+            detailed_credential = None
+            for credential in credentials:
+                if credential["name"] == name:
+                    decoded_credential = base64.b64decode(credential["credential"]).decode("utf-8")
+                    detailed_credential = {
+                        "name": credential["name"],
+                        "current": credential["current"],
+                        "credential": json.loads(decoded_credential)
+                    }
+                    return detailed_credential
+
+            raise ValueError("Credential not found")
+        if data != None :
+            decoded_credential = base64.b64decode(data).decode("utf-8")
+            detailed_credential = {
+                "name": name,
+                "current": False,
+                "credential": json.loads(decoded_credential)
+            }
+            return detailed_credential
+        raise ValueError("No credential data provided")
+
     def refresh_token(self):
         """Refresh the token associated with the credentials."""
         try:
@@ -144,7 +174,7 @@ class GCPAccess():
         except ValueError as e:
             raise e
     
-    def list_credentials(self) -> Union[ServiceAccountCredentials,UserAccountCredentials]:
+    def list_credentials(self):
         """List all credentials"""
         try :
             if os.path.exists(GCP_CREDS_FILE):
@@ -172,14 +202,13 @@ class GCPAccess():
                 return False
             
     
-    def current_saved_credential(self):
+    def get_current_access(self):
         """Returns the current saved credentials"""
         credentials = self.list_credentials()
         for credential in credentials:
             if credential["current"] == True:
                 return credential
-            else :
-                raise ValueError("No current saved credential")
+        raise ValueError("No current saved credential")
         
     
     def set_deactivate_current_credentials(self):
@@ -194,12 +223,16 @@ class GCPAccess():
           
     def set_activate_credentials(self, name):
         """Set the credential to activate"""
+        self.set_deactivate_current_credentials()
         credentials = self.list_credentials()
         for credential in credentials:
             if credential["name"] == name:
                 credential["current"] = True
-            else :
-                raise ValueError("Credential not found")
+                with open(GCP_CREDS_FILE, 'w') as file:
+                    json.dump(credentials, file)
+                break
+        else:
+            raise ValueError("Credential not found")
         
     
 
