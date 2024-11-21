@@ -5,14 +5,20 @@ from azure.mgmt.compute import ComputeManagementClient
 from core.azure.azure_access import AzureAccess
 
 @TechniqueRegistry.register
-class AzureShareVmDisk(BaseTechnique):
+class AzureGenerateVMDiskSASUrl(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
-                technique_id="T1212",
-                technique_name="Exploitation for Credential Access",
-                tactics=["Credential Access"],
+                technique_id="T1530",
+                technique_name="Data from Cloud Storage",
+                tactics=["Collection"],
                 sub_technique_name=None
+            ),
+            MitreTechnique(
+                technique_id="T1552.005", 
+                technique_name="Unsecured Credentials",
+                tactics=["Credential Access"],
+                sub_technique_name="Cloud Instance Metadata API"
             )
         ]
         azure_trm_techniques = [
@@ -23,7 +29,7 @@ class AzureShareVmDisk(BaseTechnique):
                 sub_technique_name="VM Disk SAS URI"
             )
         ]
-        super().__init__("Share VM Disk", "Generate Shared Access Signatures (SAS) URIs specifically for disks of virtual machines in Azure", mitre_techniques)
+        super().__init__("Generate VM Disk SAS URL", "Generates SAS tokens to gain unauthorized access to Azure VM disk contents. This technique allows an attacker to create time-limited access tokens for both OS and data disks attached to virtual machines, enabling potential data exfiltration. The technique first deallocates the target VM if running, then generates SAS URIs with read permissions valid for 24 hours.", mitre_techniques, azure_trm_techniques)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)

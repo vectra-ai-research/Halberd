@@ -11,10 +11,16 @@ class AzureGenerateStorageContainerSAS(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
-                technique_id="T1567",
-                technique_name="Exfiltration Over Web Service",
-                tactics=["Exfiltration"],
+                technique_id="T1530",
+                technique_name="Data from Cloud Storage",
+                tactics=["Collection"],
                 sub_technique_name=None
+            ),
+            MitreTechnique(
+                technique_id="T1552.005", 
+                technique_name="Unsecured Credentials",
+                tactics=["Credential Access"],
+                sub_technique_name="Cloud Instance Metadata API"
             )
         ]
         azure_trm_technique = [
@@ -25,7 +31,7 @@ class AzureGenerateStorageContainerSAS(BaseTechnique):
                 sub_technique_name="Storage Account File Share SAS"
             )
         ]
-        super().__init__("Generate Storage Container SAS", "Generates container-level Shared Access Signature (SAS) tokens that provide authenticated access to Azure Storage containers without requiring storage account keys or Azure AD credentials. This technique creates SAS URIs with full read, write, delete, and list permissions, valid for 4 hours, which can be used to access container data from anywhere without leaving typical authentication logs. SAS tokens are particularly dangerous as they can't be easily revoked before expiration, persist even if other credentials are rotated, and their usage is harder to track compared to standard authentication methods. Generate SAS tokens as a persistence mechanism to maintain access for data exfiltration, even if the original compromise is detected and account credentials or storage keys are rotated. The technique can be used to create portable access tokens that can be utilized outside the Azure environment with standard storage tools and SDKs, making data exfiltration harder to detect through normal Azure monitoring.", mitre_techniques, azure_trm_technique)
+        super().__init__("Generate Storage Container SAS URL", "Generates container-level Shared Access Signature (SAS) tokens that provide authenticated access to Azure Storage containers without requiring storage account keys or Azure AD credentials. This technique creates SAS URIs with full read, write, delete, and list permissions, valid for 4 hours, which can be used to access container data from anywhere without leaving typical authentication logs. SAS tokens are particularly dangerous as they can't be easily revoked before expiration, persist even if other credentials are rotated, and their usage is harder to track compared to standard authentication methods. Generate SAS tokens as a persistence mechanism to maintain access for data exfiltration, even if the original compromise is detected and account credentials or storage keys are rotated. The technique can be used to create portable access tokens that can be utilized outside the Azure environment with standard storage tools and SDKs, making data exfiltration harder to detect through normal Azure monitoring.", mitre_techniques, azure_trm_technique)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
@@ -77,7 +83,7 @@ class AzureGenerateStorageContainerSAS(BaseTechnique):
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            "vm_name": {"type": "str", "required": True, "default": None, "name": "VM Name", "input_field_type" : "text"},
+            "account_name": {"type": "str", "required": True, "default": None, "name": "Account Name", "input_field_type" : "text"},
             "rg_name": {"type": "str", "required": True, "default": None, "name": "Resource Group Name", "input_field_type" : "text"},
             "container_name": {"type": "str", "required": True, "default": None, "name": "Container Name", "input_field_type" : "text"}
         }

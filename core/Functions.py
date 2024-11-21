@@ -57,7 +57,7 @@ def generate_technique_info(technique_id)-> list:
     # Get technique information from technique registry
     technique = TechniqueRegistry.get_technique(technique_id)()
     technique_category = TechniqueRegistry.get_technique_category(technique_id)
-    
+
     # Main technique information card
     main_info_card = dbc.Card([
         dbc.CardHeader(html.H4(f"Technique: {technique.name}", className="mb-0")),
@@ -65,13 +65,17 @@ def generate_technique_info(technique_id)-> list:
         dbc.CardBody([
             html.H5(f"Attack Surface: {technique_category}", className="mb-3"),
             html.H5("Technique Description:", className="mb-2"),
-            html.P(technique.description, className="mb-3"),
-            html.H5("MITRE ATT&CK Reference:", className="mb-2"),
-            create_mitre_info_cards(technique.mitre_techniques)
+            html.P(technique.description, className="mb-3")
         ])
     ], className="mb-3")
 
     modal_content = [main_info_card]
+    
+    modal_content.append(
+        dbc.Accordion([
+            dbc.AccordionItem(create_mitre_info_cards(technique.mitre_techniques), title="MITRE ATT&CK Reference")
+        ], start_collapsed=False, className="mb-3")
+    )
     
     # Display Azure threat research matrix info - only for Azure techniques
     if technique_category == "azure":
@@ -81,24 +85,28 @@ def generate_technique_info(technique_id)-> list:
                     dbc.AccordionItem(create_azure_trm_info_cards(technique.azure_trm_techniques), title="Azure Threat Research Matrix Reference")
                 ], start_collapsed=True, className="mb-3")
             )
-    # Technique references
-    if technique.references:
-        modal_content.append(
-            dbc.Accordion([
-                dbc.AccordionItem(
-                    [dcc.Link("Visit Ref", href=ref if ref not in [None, "#"] else "#", target="_blank", className="card-link") for ref in technique.references],
-                    title="Technique References"
-                )
-            ], start_collapsed=True, className="mb-3")
-        )  
     
     # Technique notes
     if technique.notes:
         modal_content.append(
             dbc.Accordion([
-                dbc.AccordionItem(technique.notes, title="Technique Notes")
+                dbc.AccordionItem(
+                    [html.Li(note.note) for note in technique.notes],
+                    title="Technique Notes"
+                )
             ], start_collapsed=True, className="mb-3")
         )
+
+    # Technique references
+    if technique.references:
+        modal_content.append(
+            dbc.Accordion([
+                dbc.AccordionItem(
+                    [html.Li(dcc.Link(ref.title, href=ref.link if ref.link not in [None, "#"] else "#", target="_blank", className="card-link")) for ref in technique.references],
+                    title="Technique References"
+                )
+            ], start_collapsed=True, className="mb-3")
+        )  
 
     # Return final modal body content
     return modal_content

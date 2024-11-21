@@ -31,22 +31,23 @@ class AzureTRMTechnique:
         else:
             self.azure_trm_url = f"https://microsoft.github.io/Azure-Threat-Research-Matrix/{tactics[0].replace(' ', '')}/{technique_id.split('.')[0]}/{technique_id.split('.')[0]}/"
 
-class TechniqueReferences:
+class TechniqueReference:
     """
-    List of reference links related to the technique
+    Class for defining a single reference for the technique
     """
-    def __init__(self, references: List[str]):
-        self.references = references
+    def __init__(self, ref_title: str, ref_link: str):
+        self.title = ref_title
+        self.link = ref_link
 
-class TechniqueNotes:
+class TechniqueNote:
     """
     List of notes and any additional information related to the technique
     """
-    def __init__(self, notes: List[str]):
-        self.notes = notes
+    def __init__(self, note: str):
+        self.note = note
 
 class BaseTechnique(ABC):
-    def __init__(self, name: str, description: str, mitre_techniques: List[MitreTechnique], azure_trm_techniques: List[AzureTRMTechnique] = None, references: List[TechniqueReferences] = None, notes: List[TechniqueNotes] = None):
+    def __init__(self, name: str, description: str, mitre_techniques: List[MitreTechnique], azure_trm_techniques: List[AzureTRMTechnique] = None, references: List[TechniqueReference] = None, notes: List[TechniqueNote] = None):
         self.name = name
         self.description = description
         self.mitre_techniques = mitre_techniques
@@ -113,6 +114,6 @@ class BaseTechnique(ABC):
                 "technique_name": tech.technique_name,
                 "tactics": tech.tactics,
                 "sub_technique_name": tech.sub_technique_name,
-                "mitre_url": tech.azure_trm_url
+                "azure_trm_url": tech.azure_trm_url
             } for tech in self.azure_trm_techniques
         ]
