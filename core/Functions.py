@@ -1070,12 +1070,12 @@ def generate_gcp_access_info(credential_name):
                                 html.Span(user, className="ms-2")
                             ], className="mb-3"),
                             html.Div([
-                                DashIconify(icon="mdi:identifier", className="me-2"),
+                                DashIconify(icon="ant-design:project-twotone", className="me-2"),
                                 html.Strong("Project:"),
                                 html.Span(credential.project_id, className="ms-2")
                             ], className="mb-3"),
                             html.Div([
-                                DashIconify(icon="mdi:shield-check", className="me-2"),
+                                DashIconify(icon="mdi:telescope", className="me-2"),
                                 html.Strong("Scopes:"),
                                 html.Span(credential.scopes, className="ms-2")
                             ], className="mb-3")
@@ -1087,7 +1087,7 @@ def generate_gcp_access_info(credential_name):
                     dbc.Card(
                         dbc.CardBody([
                             html.H4([
-                                DashIconify(icon="mdi:aws", className="me-2"),
+                                DashIconify(icon="mdi:google-cloud", className="me-2"),
                                 "Access: ",
                                 html.Span("VALID SESSION", className="text-success")
                             ], className="card-title mb-3"),
@@ -1102,9 +1102,9 @@ def generate_gcp_access_info(credential_name):
                 dbc.Card(
                     dbc.CardBody([
                         html.H4([
-                            DashIconify(icon="mdi:aws", className="me-2"),
+                            DashIconify(icon="mdi:google-cloud", className="me-2"),
                             "Access: ",
-                            html.Span("CREDENTIAL ARE NOT SET", className="text-danger")
+                            html.Span("CREDENTIAL ARE INVALID", className="text-danger")
                         ], className="card-title")
                     ]),
                     className="mb-3 text-white"
@@ -1115,7 +1115,7 @@ def generate_gcp_access_info(credential_name):
                 dbc.Card(
                     dbc.CardBody([
                         html.H4([
-                            DashIconify(icon="mdi:aws", className="me-2"),
+                            DashIconify(icon="mdi:google-cloud", className="me-2"),
                             "Access: ",
                             html.Span("CREDENTIAL ARE NOT SET", className="text-danger")
                         ], className="card-title")

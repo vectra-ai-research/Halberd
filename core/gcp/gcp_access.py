@@ -194,12 +194,13 @@ class GCPAccess():
     def delete_current_credentials(self):
         """Delete current credential"""
         credentials = self.list_credentials()
-        filtered_credentials = None
+        filtered_credentials = []
         for credential in credentials:
             if credential["current"] == False:
                 filtered_credentials.append(credential)
-            else :
-                return False
+        with open(GCP_CREDS_FILE, 'w') as file:
+            json.dump(filtered_credentials, file)
+          
             
     
     def get_current_access(self):

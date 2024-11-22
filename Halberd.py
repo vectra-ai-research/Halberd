@@ -2236,13 +2236,42 @@ def generate_gcp_credential_options_dropdown_callback(credential_name):
         return all_sessions
     
 
-'''C063 - Callback to set GCP active/default session and populate GCP access info dynamically based on selected session'''
+'''C063 - Callback to set GCP active credential and populate GCP access info dynamically based on selected credential'''
 @app.callback(
         Output(component_id = "gcp-access-info-div", component_property = "children"), 
         Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"), 
         Input(component_id = "gcp-credential-selector-dropdown", component_property = "value"))
 def generate_gcp_access_info_callback(n_interval, value):
+    if value == None :
+        try : 
+            value = GCPAccess().get_current_access().get("name")
+        except:
+            pass
     return generate_gcp_access_info(value)
+
+'''C064 - Callback to delete GCP credential'''
+@app.callback(
+        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True),
+        State(component_id = "gcp-credential-selector-dropdown", component_property = "value"),
+        Input(component_id = "del-gcp-credential-button", component_property = "n_clicks"),
+        prevent_initial_call=True
+    )
+def delete_gcp_credential_callback(credential_name, n_clicks):
+    if n_clicks is None:
+        raise PreventUpdate
+    
+    # GCP session manager
+    manager = GCPAccess()
+    
+    if credential_name is None:
+        credential_name = manager.get_current_access().get("name") 
+    
+    # Delete selected session
+    manager.delete_current_credentials()
+    
+
+    return True, "GCP Credential Deleted"
 
 if __name__ == '__main__':
     # Run Initialization check
