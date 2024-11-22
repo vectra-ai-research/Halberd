@@ -4,7 +4,7 @@ import os
 
 class TechniqueRegistry:
     _techniques: Dict[str, Type[BaseTechnique]] = {}
-    _categories = ['azure', 'entra_id', 'aws', 'm365']
+    _categories = ['azure', 'entra_id', 'aws', 'm365', 'gcp']
     _base_path = os.path.dirname(__file__)
 
     @classmethod
