@@ -33,7 +33,7 @@ def generate_technique_info(technique_id)-> list:
                     html.P(f"Technique: {mitre_info.technique_name}", className="card-text"),
                     html.P(f"Sub-technique: {mitre_info.sub_technique_name}", className="card-text"),
                     html.P(f"Tactic: {', '.join(mitre_info.tactics)}", className="card-text"),
-                    dcc.Link("Visit MITRE", href=mitre_info.mitre_url if mitre_info.mitre_url not in [None, "#"] else "#", target="_blank", className="card-link")
+                    dcc.Link("Visit MITRE", href=mitre_info.mitre_url if mitre_info.mitre_url not in [None, "#"] else "#", target="_blank", className="halberd-link")
                 ])
             ], className="mb-2")
             mitre_cards.append(mitre_card)
@@ -48,7 +48,7 @@ def generate_technique_info(technique_id)-> list:
                     html.P(f"Technique: {azure_trm_info.technique_name}", className="card-text"),
                     html.P(f"Sub-technique: {azure_trm_info.sub_technique_name}", className="card-text"),
                     html.P(f"Tactic: {', '.join(azure_trm_info.tactics)}", className="card-text"),
-                    dcc.Link("Visit Azure Threat Research Matrix", href=azure_trm_info.azure_trm_url if azure_trm_info.azure_trm_url not in [None, "#"] else "#", target="_blank", className="card-link")
+                    dcc.Link("Visit Azure Threat Research Matrix", href=azure_trm_info.azure_trm_url if azure_trm_info.azure_trm_url not in [None, "#"] else "#", target="_blank", className="halberd-link")
                 ])
             ], className="mb-2")
             mitre_cards.append(mitre_card)
@@ -102,7 +102,7 @@ def generate_technique_info(technique_id)-> list:
         modal_content.append(
             dbc.Accordion([
                 dbc.AccordionItem(
-                    [html.Li(dcc.Link(ref.title, href=ref.link if ref.link not in [None, "#"] else "#", target="_blank", className="card-link")) for ref in technique.references],
+                    [html.Li(dcc.Link(ref.title, href=ref.link if ref.link not in [None, "#"] else "#", target="_blank", className="halberd-link")) for ref in technique.references],
                     title="Technique References"
                 )
             ], start_collapsed=True, className="mb-3")
@@ -721,7 +721,7 @@ def generate_attack_technique_options(tab, tactic):
                     technique_tracker.append(technique_module)
                     technique_options_list.append(
                         {
-                            "label": html.Div([technique().name], style={"padding-left": "10px","padding-top": "5px", "padding-bottom": "5px", "font-size": 20}, className="bg-dark text-body"),
+                            "label": html.Div([technique().name], style={"padding-left": "10px","padding-top": "5px", "padding-bottom": "5px", "font-size": 20}, className="bg-halberd-dark text-body"),
                             "value": technique_module,
                         }
                     )
@@ -762,7 +762,7 @@ def generate_attack_technique_config(technique):
                     placeholder = input_config['default'] if input_config['default'] else "",
                     debounce = True,
                     id = {"type": "technique-config-display", "index": input_field},
-                    className="bg-dark border text-light",
+                    className="bg-halberd-dark border text-light",
                 ))
             elif input_config['input_field_type'] == "bool":
                 config_div_elements.append(daq.BooleanSwitch(
@@ -773,7 +773,7 @@ def generate_attack_technique_config(technique):
                 config_div_elements.append(dcc.Upload(
                     id = {"type": "technique-config-display-file-upload", "index": input_field}, 
                     children=html.Div([html.A('Select a file or Drag one here')]), 
-                    className="bg-dark",
+                    className="bg-halberd-dark",
                     style={'width': '50%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px'})
                 )
                 
@@ -828,10 +828,10 @@ def generate_attack_technique_config(technique):
                         ),
                     html.Br(),
                     dbc.Label("Add to Step # (Optional)", className="text-light"),
-                    dbc.Input(id='pb-add-step-number-input', placeholder="3", type= "number", className="bg-dark text-light"),
+                    dbc.Input(id='pb-add-step-number-input', placeholder="3", type= "number", className="bg-halberd-dark text-light"),
                     html.Br(),
                     dbc.Label("Wait in Seconds After Step Execution (Optional)", className="text-light"),
-                    dbc.Input(id='pb-add-step-wait-input', placeholder="120", type= "number", className="bg-dark text-light")
+                    dbc.Input(id='pb-add-step-wait-input', placeholder="120", type= "number", className="bg-halberd-dark text-light")
                 ]),
                 dbc.ModalFooter([
                     dbc.Button("Cancel", id="close-add-to-playbook-modal-button", className="ml-auto", color="danger", n_clicks=0),
@@ -1229,7 +1229,7 @@ def generate_attack_trace_table():
             markdown_options={"html": True}  # Allow HTML in markdown
         ),
     ], 
-    className="bg-dark")
+    className="bg-halberd-dark")
 
 def get_playbook_stats():
     """
