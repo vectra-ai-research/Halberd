@@ -54,6 +54,14 @@ page_layout = html.Div([
                                     'marginRight': '0px'
                                 }
                             ),
+                                dbc.Tab(label="GCP", tab_id="tab-attack-GCP", labelClassName="text-success",
+                                tab_style={
+                                    'borderRadius': '0px',
+                                    'margin': '0px',
+                                    'marginLeft': '0px',
+                                    'marginRight': '0px'
+                                }
+                            ),
                         ],
                         id="attack-surface-tabs",
                         active_tab="tab-attack-EntraID",

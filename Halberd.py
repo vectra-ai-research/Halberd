@@ -16,8 +16,10 @@ from dash_iconify import DashIconify
 import pandas as pd
 from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
+from core.gcp.gcp_access import GCPAccess
+
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.Functions import generate_technique_info, run_initialization_check, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary, get_playbook_stats, parse_execution_report
+from core.Functions import generate_technique_info, run_initialization_check, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary, get_playbook_stats, parse_execution_report, generate_gcp_access_info
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
 from core.playbook.playbook_error import PlaybookError
@@ -234,6 +236,25 @@ def execute_technique_callback(n_clicks, tactic, t_id, values, bool_on, file_con
             active_entity = current_access['user']['name']
         except:
             active_entity = "Unknown"
+
+    if attack_surface == "gcp":
+        try:
+            current_access = None
+            if t_id == "GCPEstablishAccessAsServiceAccount":
+                manager = GCPAccess(raw_credentials=file_content[0],name=values[0])
+                current_access = manager.get_current_access().get("name")
+                current_access = manager.get_detailed_credential(name=current_access)
+            else:
+                manager = GCPAccess()
+                current_access = manager.get_current_access()
+            if current_access["credential"]["type"] == "service_account":
+                active_entity = current_access["credential"]["client_email"]
+            if current_access["credential"]["type"] == "user_authorized":
+                active_entity = current_access["credential"]["client_id"]
+
+        except:
+            active_entity = "Unknown"
+        
 
     # Create technique input
     technique_input = {}
@@ -1318,6 +1339,16 @@ def update_access_button_callback(active_tab, is_open):
                 return "No Access", "danger"
         except:
             return "No Azure Access", "danger"
+    elif active_tab == "tab-attack-GCP":
+        gcp_manager = GCPAccess()
+        try :
+            user = gcp_manager.get_current_access().get("name")
+            if user != None:
+                return user, "success"
+            else:
+                return "No Access", "danger"
+        except :
+            return "No Access", "danger"
 
 '''C046 - Callback to display access info in modal'''
 @app.callback(
@@ -1368,6 +1399,12 @@ def display_access_info_in_modal_callback(n_clicks, active_tab):
             "azure-subscription-selector-dropdown",
             "del-az-session-button",
             "azure-access-info-div"
+        )
+    elif active_tab == "tab-attack-GCP":    
+        return True, create_access_section(
+            "gcp-credential-selector-dropdown",
+            "del-gcp-credential-button",
+            "gcp-access-info-div"
         )
     
 '''C047 - Callback to display technique output in technique output viewer'''
@@ -2159,6 +2196,7 @@ def update_execution_progress(n_intervals, playbook_data):
     ],
     prevent_initial_call=True
 )
+
 def manage_progress_display(execute_clicks, view_clicks, is_open):
     """Manage progress display visibility"""
     ctx = dash.callback_context
@@ -2178,6 +2216,62 @@ def manage_progress_display(execute_clicks, view_clicks, is_open):
         return not is_open, {"display": "block"}, False
         
     raise PreventUpdate
+
+'''C062 - Callback to generate GCP session options in GCP sessions dropdown'''
+@app.callback(
+    Output(component_id = "gcp-credential-selector-dropdown", component_property = "options"), 
+    Input(component_id = "gcp-credential-selector-dropdown", component_property = "title")
+)
+def generate_gcp_credential_options_dropdown_callback(credential_name):
+    manager = GCPAccess()
+    if credential_name == None:
+        all_sessions = []
+        for credential in manager.list_credentials():
+            all_sessions.append(
+                {
+                    'label': html.Div(credential['name'], className="text-dark"), 
+                    'value': credential['name']
+                }
+            )
+        return all_sessions
+    
+
+'''C063 - Callback to set GCP active credential and populate GCP access info dynamically based on selected credential'''
+@app.callback(
+        Output(component_id = "gcp-access-info-div", component_property = "children"), 
+        Input(component_id = "interval-to-trigger-initialization-check", component_property = "n_intervals"), 
+        Input(component_id = "gcp-credential-selector-dropdown", component_property = "value"))
+def generate_gcp_access_info_callback(n_interval, value):
+    if value == None :
+        try : 
+            value = GCPAccess().get_current_access().get("name")
+        except:
+            pass
+    return generate_gcp_access_info(value)
+
+'''C064 - Callback to delete GCP credential'''
+@app.callback(
+        Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
+        Output(component_id = "app-notification", component_property = "children", allow_duplicate=True),
+        State(component_id = "gcp-credential-selector-dropdown", component_property = "value"),
+        Input(component_id = "del-gcp-credential-button", component_property = "n_clicks"),
+        prevent_initial_call=True
+    )
+def delete_gcp_credential_callback(credential_name, n_clicks):
+    if n_clicks is None:
+        raise PreventUpdate
+    
+    # GCP session manager
+    manager = GCPAccess()
+    
+    if credential_name is None:
+        credential_name = manager.get_current_access().get("name") 
+    
+    # Delete selected session
+    manager.delete_current_credentials()
+    
+
+    return True, "GCP Credential Deleted"
 
 if __name__ == '__main__':
     # Run Initialization check
