@@ -28,9 +28,8 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
             raw_credential: str = kwargs['credential']
             name: str = kwargs['name']
             save_and_activate: bool = kwargs['save_and_activate']
-            set
             
-            # Input validationc
+            # Input validation
             if raw_credential in [None, ""]:
                 return ExecutionStatus.FAILURE, {
                     "error": {"Error" : "Invalid Technique Input"},
@@ -69,8 +68,16 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
                 access_manager.save_credential()
 
             return ExecutionStatus.SUCCESS, {
-                "value": caller_info_output,
-                "message": f"Successfully established access to target Azure tenant"
+                "value": {
+                    "credential_info": caller_info_output,
+                    "access_status": {
+                        "saved": save_and_activate,
+                        "activated": save_and_activate,
+                        "scopes": current_access.scopes,
+                        "token_expiry": str(current_access.expiry) if current_access.expiry else None
+                    }
+                },
+                "message": f"Successfully established access to target GCP tenant"
             }
         
         except ValueError as e:

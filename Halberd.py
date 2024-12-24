@@ -2217,7 +2217,7 @@ def manage_progress_display(execute_clicks, view_clicks, is_open):
         
     raise PreventUpdate
 
-'''C062 - Callback to generate GCP session options in AWS sessions dropdown'''
+'''C062 - Callback to generate GCP session options in GCP sessions dropdown'''
 @app.callback(
     Output(component_id = "gcp-credential-selector-dropdown", component_property = "options"), 
     Input(component_id = "gcp-credential-selector-dropdown", component_property = "title")

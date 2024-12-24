@@ -1,6 +1,5 @@
 import base64
 import os
-from typing import Union
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from google.oauth2.credentials import Credentials as UserAccountCredentials
 from google.auth.transport.requests import Request
@@ -12,9 +11,6 @@ class GCPAccess():
     """GCP access manager"""
     credential = None
     
-
-
-
     def __init__(self, raw_credentials=None, scopes=None, name=None):
         """Initialize GCPAccess directly with raw credential string and optional scopes"""
         # Only initialize if it's not already initialized
@@ -32,14 +28,6 @@ class GCPAccess():
                     raw_credentials = json.dumps(raw_credentials)
 
                 self.encoded_credential=base64.b64encode(raw_credentials.encode())
-                # # Load the credentials using the   parsed JSON and provided scopes
-                # credentials = service_account.Credentials.from_service_account_info(
-                #     raw_credentials,
-                #     scopes=scopes
-                # )
-                
-                # # Initialize the parent class (service_account.Credentials) with extracted values
-                # super().__init__(credentials.signer, credentials.service_account_email, credentials._token_uri, scopes=scopes)
 
 
                 # Deserialized credential
