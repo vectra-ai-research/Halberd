@@ -78,7 +78,7 @@ navbar = dbc.NavbarSimple(
         dbc.Row(
                 [
                     dbc.Col(html.Img(src="/assets/favicon.ico", height="30px")),
-                    dbc.Col(html.Div("Halberd", className="text-danger", style={'font-family':'horizon'})),
+                    dbc.Col(html.Div("Halberd", className="halberd-brand")),
                 ],
             ),
         ]),
@@ -86,7 +86,8 @@ navbar = dbc.NavbarSimple(
     color="dark",
     dark=True,
     sticky= "top",
-    className="bg-halberd-dark"
+    className="bg-halberd-navbar mb-5",
+    style={'min-height': '48px', 'padding': '4px 16px'}
 )
 
 # App layout
@@ -662,14 +663,14 @@ def update_visualization(n_clicks):
             html.H4(f"Playbook: {pb_config.name}", className="mb-3 text-light"),
             html.Div(playbook_viz_generator(pb_config.name), className="mb-3"),
             dbc.Card([
+                dbc.CardHeader(html.Div("Playbook Details", className="mb-0 halberd-brand")),
                 dbc.CardBody([
-                    html.H5("Playbook Details", className="card-title"),
                     html.P(f"Author: {pb_config.author}", className="mb-2"),
                     html.P(f"Created: {pb_config.creation_date}", className="mb-2"),
                     html.P(f"Total Steps: {pb_config.steps}", className="mb-2"),
                     html.P(f"Description: {pb_config.description}", className="mb-0")
                 ])
-            ], className="bg-halberd-dark text-light border-secondary")
+            ], className="bg-halberd-dark border-secondary halberd-text halberd-depth-card")
         ])
     except Exception as e:
         return html.Div([
@@ -1045,8 +1046,9 @@ def update_playbook_list_callback(search_query):
                         height=48,
                         className="text-muted mb-3"
                     ),
-                    html.P("Create or Import a playbook", # Default message when no playbook is selected
-                            className="text-muted")
+                    html.P(
+                        "Create or Import a playbook", # Default message when no playbook is selected
+                        className="halberd-text text-muted")
                 ], className="text-center")
             ],
             className="d-flex justify-content-center align-items-center",
@@ -1497,27 +1499,42 @@ def update_graphs_callback(start_date, end_date):
     return [
         # Timeline Graph
         html.Div([
-            dcc.Graph(figure=create_timeline_graph(data)
+            dcc.Graph(
+                figure=create_timeline_graph(data),
+                className="halberd-depth-card"
             )
-        ], style={'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)', 'marginBottom': '20px'}, className="bg-halberd-dark"),
+        ], 
+        style={
+            'padding': '20px', 
+            'borderRadius': '10px', 
+            'boxShadow': '0 2px 4px rgba(0,0,0,0.1)', 
+            'marginBottom': '20px'
+        }, 
+        className="bg-halberd-dark"),
         
         # Surface Distribution and Success Rate Row
         html.Div([
             html.Div([
-                dcc.Graph(figure=create_pie_chart(
-                    data['surface_counts'].values,
-                    data['surface_counts'].index,
-                    'Attack Surface Distribution'
+                dcc.Graph(
+                    figure=create_pie_chart(
+                        data['surface_counts'].values,
+                        data['surface_counts'].index,
+                        'Attack Surface Distribution',
+                    ),
+                    className="halberd-depth-card"
                 )
-            )
-            ], style={'width': '48%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}),
+            ], 
+            style={'width': '48%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'},
+            ),
             
             html.Div([
-                dcc.Graph(figure=create_bar_chart(
-                    data['tactic_success'].index,
-                    data['tactic_success']['success_rate'],
-                    'Attack Success Rate by Tactic'
-                )
+                dcc.Graph(
+                    figure=create_bar_chart(
+                        data['tactic_success'].index,
+                        data['tactic_success']['success_rate'],
+                        'Attack Success Rate by Tactic'
+                    ),
+                    className="halberd-depth-card"
                 )
             ], style={'width': '48%', 'marginLeft': '4%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'})
         ], style={'display': 'flex', 'marginBottom': '20px'}, className="bg-halberd-dark"),
@@ -1525,21 +1542,25 @@ def update_graphs_callback(start_date, end_date):
         # MITRE Tactics and Source Distribution Row
         html.Div([
             html.Div([
-                dcc.Graph(figure=create_bar_chart(
-                    data['tactic_counts'].index,
-                    data['tactic_counts'].values,
-                    'Attacks Executed by MITRE Tactics'
-                )
+                dcc.Graph(
+                    figure=create_bar_chart(
+                        data['tactic_counts'].index,
+                        data['tactic_counts'].values,
+                        'Attacks Executed by MITRE Tactics'
+                    ),
+                    className="halberd-depth-card"
                 )
             ], style={'width': '48%', 'padding': '20px', 'borderRadius': '10px', 
                       'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}),
             
             html.Div([
-                dcc.Graph(figure=create_bar_chart(
-                    data['source_counts'].index,
-                    data['source_counts'].values,
-                    'Attacks Executed by Source Entity'
-                )
+                dcc.Graph(
+                    figure=create_bar_chart(
+                        data['source_counts'].index,
+                        data['source_counts'].values,
+                        'Attacks Executed by Source Entity'
+                    ),
+                    className="halberd-depth-card"
                 )
             ], style={'width': '48%', 'marginLeft': '4%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'})
         ], style={'display': 'flex', 'marginBottom': '20px'}, className="bg-halberd-dark"),
