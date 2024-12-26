@@ -106,28 +106,23 @@ def ReconUserAssignedApps(user_id):
 
 # define dashboard layout
 page_layout = html.Div([
-    html.H4("Enter User Info"),
+    html.H4("Enter User UPN"),
     dbc.Row([
         dbc.Col(
             dbc.Input(
-                type = "text",
-                placeholder = "John Doe",
+                type = "email",
+                placeholder = "john_doe@corp.com",
                 debounce = True,
                 id = "user-recon-input",
-                class_name="text-dark mb-3",
+                className="bg-halberd-dark border halberd-text halberd-input mb-3",
             ),
-            width=6
+            width=6,
         ),
-        dbc.Col(
-            dbc.Button("Recon", id="user-recon-start-button", n_clicks=0, color="danger", className="mb-3"),
-            width=3
-        ),
-        dbc.Col(
-            dbc.Button("Export Results", color="primary", className="mb-3", id="export-button"),
-            width=3
-        )
-    ]),
-    html.Br(),
+        dbc.Col([
+            dbc.Button("Recon", id="user-recon-start-button", n_clicks=0, className="me-3 halberd-button"),
+            dbc.Button("Export Results", className="me-3 halberd-button-secondary", id="export-button")
+        ], width=3)
+    ], className="mb-3"),
     html.H2("Name"),
     dcc.Loading(
         id="user-displayname-recon-loading",
@@ -233,5 +228,6 @@ page_layout = html.Div([
     ),
     html.Br(),
 ],
-style={ "height": "100vh", "padding-top": "20px", "padding-bottom": "20px", "padding-right": "20px", "padding-left": "20px"}
+style={ "height": "100vh", "padding-top": "20px", "padding-bottom": "20px", "padding-right": "20px", "padding-left": "20px"},
+className="halberd-text"
 )
