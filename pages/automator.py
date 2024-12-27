@@ -1,6 +1,6 @@
 '''
 Page Navigation URL : app/automator
-Page Description : Allows management / execution of playbooks and scheduling.
+Page Description : Manage (add/edit/schedule/import/export) and execute playbooks.
 '''
 
 from dash import html, dcc
@@ -11,117 +11,117 @@ from datetime import date
 from attack_techniques.technique_registry import TechniqueRegistry
 
 def create_playbook_manager_layout():
-    """Creates the enhanced playbook management interface layout"""
+    """Creates the playbook management interface layout"""
     return html.Div([
-        # Header Section with title and buttons
-        html.Div([
-            # Left side - Title
-            html.H2([
-                "Playbook Manager ",
-                html.A(
-                    DashIconify(icon="mdi:help-circle-outline", width=18, height=18), 
-                    href="https://github.com/vectra-ai-research/Halberd/wiki/UI-&-Navigation#automator", 
-                    target="_blank"
-                )
-            ], className="text-success mb-3"),
-            
-            # Right side - Action Buttons
-            html.Div([
-                # New playbook button
-                dbc.Button([
-                    DashIconify(
-                        icon="mdi:plus",
-                        width=24,
-                        height=24,
-                        className="me-2"
-                    ),
-                    "New Playbook"
-                ], 
-                id="open-creator-win-playbook-button", 
-                n_clicks=0,
-                color="success",
-                className="me-2"),
-                # Import playbook button
-                dcc.Upload(
-                    id="upload-playbook",
-                    children=dbc.Button(
+        dbc.Row([
+            # Left Panel - Playbook List
+            dbc.Col([
+                # Primary management buttons       
+                html.Div([
+                    # New playbook button
+                    dbc.Button(
                         [
                             DashIconify(
-                                icon="material-symbols:upload-file",  # Upload file icon for import
+                                icon="mdi:plus",
                                 width=24,
                                 height=24,
                                 className="me-2"
                             ),
-                            "Import"
-                        ],
-                        id="import-pb-button", 
-                        n_clicks=0,  
-                        color="primary",
-                        className="me-2"
+                            "New Playbook"
+                        ], 
+                        id="open-creator-win-playbook-button", 
+                        n_clicks=0,
+                        color="success",
+                        className="me-2 halberd-button-secondary"
                     ),
-                ),
-                html.Div(
-                    dbc.Button([
-                        DashIconify(
-                            icon="mdi:progress-clock",
-                            width=20,
-                            className="me-2"
+                    # Import playbook button
+                    dcc.Upload(
+                        id="upload-playbook",
+                        children=dbc.Button(
+                            [
+                                DashIconify(
+                                    icon="material-symbols:upload-file",  # Upload file icon for import
+                                    width=24,
+                                    height=24,
+                                    className="me-2"
+                                ),
+                                "Import"
+                            ],
+                            id="import-pb-button", 
+                            n_clicks=0,  
+                            className="me-2 halberd-button-secondary"
                         ),
-                        "View Progress"
-                    ],
-                    id="view-progress-button",
-                    color="primary",
-                    n_clicks=0
                     ),
-                    id="view-progress-button-container"
-                )
-            ], className="d-flex")
-        ], className="d-flex justify-content-between align-items-center p-3"),
-
-        # Main content area with playbook list and visualization
-        dbc.Row([
-            # Left Panel - Playbook List
-            dbc.Col([
+                    html.Div(
+                        # View progress button
+                        dbc.Button([
+                            DashIconify(
+                                icon="mdi:progress-clock",
+                                width=20,
+                                className="me-2"
+                            ),
+                            "View Progress"
+                        ],
+                        id="view-progress-button",
+                        n_clicks=0,
+                        className="me-2 halberd-button-secondary"
+                        ),
+                        id="view-progress-button-container"
+                    )
+                ], className="d-flex justify-content-between align-items-center mb-3"),
                 # Search bar
                 html.Div([
                     dbc.InputGroup([
                         dbc.InputGroupText(
                             DashIconify(icon="mdi:magnify", className="text-muted"),
-                            className="bg-dark border-secondary"
+                            className="bg-halberd-dark border-secondary"
                         ),
                         dbc.Input(
                             id="playbook-search",
                             placeholder="Search playbooks...",
                             type="text",
-                            className="bg-dark text-light border-secondary",
+                            className="bg-halberd-dark text-light border-secondary",
                         ),
                     ], className="w-100")
                 ], className="pb-3"),
                 # Playbook list
                 html.Div(
                     id="playbook-list-container",
-                    className="vh-65 overflow-auto",
+                    style={
+                        'overflowY': 'auto',
+                        'height':'76vh'
+                    }
                 )
-            ], width=4, className="p-0"),
+            ], width=4, className="bg-halberd-dark"),
 
             # Right Panel - Playbook Visualization
             dbc.Col([
                 html.Div(
-                    children=[
-                        html.Div([
-                            DashIconify(
-                                icon="mdi:information-outline", #Information icon
-                                width=48,
-                                height=48,
-                                className="text-muted mb-3"
+                    [
+                        dbc.Col([
+                            dbc.Row(
+                                DashIconify(
+                                    icon="mdi:information-outline", #Information icon
+                                    width=48,
+                                    height=48,
+                                    className="text-muted mb-3 me-3"
+                                ),
                             ),
-                            html.P("Select a playbook to view details", # Default message when no playbook is selected
-                                  className="text-muted")
-                        ], className="text-center")
+                            dbc.Row(
+                                html.P("Select a playbook to view details") # Default message when no playbook is selected
+                            )
+                        ], 
+                        className="halberd-text text-muted",
+                        style={
+                            'textAlign': 'center',
+                            'height': '50vh',
+                            'display': 'flex',
+                            'alignItems': 'center',
+                            'justifyContent': 'center',
+                        })
                     ],
                     id="playbook-visualization-container",
-                    className="d-flex justify-content-center align-items-center",
-                    style={'padding':'20px'}
+                    className="d-flex justify-content-center align-items-center ms-4 p-1",
                 )
             ], width=8, className="p-0")
         ], className="g-0 flex-fill"),
@@ -165,16 +165,16 @@ def create_playbook_manager_layout():
                 "width": "50%",  # Set width to 50% of screen
                 "max-width": "none"  # Override default max-width
             },
-            className="bg-dark"
+            className="bg-halberd-dark halberd-offcanvas halberd-text"
         ),
         # Off canvas for playbook editing workflow
         generate_playbook_editor_offcanvas(),
         # Add progress off-canvas
         create_execution_progress_offcanvas(),
     ], 
-    className="bg-dark d-flex flex-column",
+    className="bg-halberd-dark d-flex flex-column",
     style={
-        'minHeight': '100vh',
+        'minHeight': '91vh',
         "padding-right": "20px", 
         "padding-left": "20px"
         }
@@ -196,51 +196,43 @@ def create_playbook_item(playbook_config):
             dbc.CardBody([
                 # Content section
                 dbc.Row([
-                    # Icon column
-                    dbc.Col(
-                        html.Div(
-                            DashIconify(
-                                icon="mdi:file-document-outline",
-                                width=32,
-                                height=32,
-                                className="text-primary"
-                            ),
-                        ),
-                        width=1,
-                        className="d-flex align-items-start justify-content-center"
-                    ),
-                    
                     # Main content column
                     dbc.Col([
                         # Title and metadata section
                         html.Div([
                             # Title
-                            html.H5(
+                            DashIconify(
+                                icon="mdi:file-document-outline",
+                                width=22,
+                                height=22,
+                                className="text-muted me-1 mb-2"
+                            ),
+                            html.Span(
                                 playbook_config.name,
-                                className="mb-2 text-white fw-bold"
+                                className="mb-2 halberd-brand text-xl"
                             ),
                             # Metadata row
                             html.Div([
                                 html.Span([
                                     DashIconify(
                                         icon="mdi:account",
-                                        width=14,
-                                        className="me-1 text-muted"
+                                        width=18,
+                                        className="me-1 mb-2 text-muted"
                                     ),
                                     html.Span(
                                         playbook_config.author,
-                                        className="text-muted me-3"
+                                        className="text-muted halberd-text me-3"
                                     ),
                                 ]),
                                 html.Span([
                                     DashIconify(
                                         icon="mdi:calendar",
-                                        width=14,
-                                        className="me-1 text-muted"
+                                        width=18,
+                                        className="me-1 mb-2 text-muted"
                                     ),
                                     html.Span(
                                         playbook_config.creation_date,
-                                        className="text-muted"
+                                        className="text-muted halberd-text"
                                     ),
                                 ]),
                             ], className="mb-2"),
@@ -249,19 +241,19 @@ def create_playbook_item(playbook_config):
                         # Description div with fixed height
                         html.Div(
                             html.P(
-                                playbook_config.description[:150] + "..." 
-                                if len(playbook_config.description) > 150 
+                                playbook_config.description[:100] + "..." 
+                                if len(playbook_config.description) > 100 
                                 else playbook_config.description,
-                                className="mb-0 text-muted small lh-base"
+                                className="mb-0 text-muted lh-base halberd-typography"
                             ),
                             style={
-                                "minHeight": "40px",
-                                "maxHeight": "40px",
+                                "minHeight": "45px",
+                                "maxHeight": "45px",
                                 "overflow": "hidden",
                                 "textOverflow": "ellipsis"
                             }
                         )
-                    ], width=8),
+                    ], width=9),
 
                     # Actions column with fixed width
                     dbc.Col([
@@ -277,9 +269,8 @@ def create_playbook_item(playbook_config):
                                     "Execute"
                                 ],
                                 id={"type": "execute-playbook-button", "index": playbook_config.yaml_file},
-                                color="danger",
                                 size="sm",
-                                className="w-100 mb-2"
+                                className="w-100 mb-2 halberd-button"
                             ),
                             # Secondary Actions
                             dbc.ButtonGroup([
@@ -317,7 +308,7 @@ def create_playbook_item(playbook_config):
                                 ),
                             ], size="sm", className="w-100")
                         ], 
-                        className="d-flex flex-column",
+                        className="mx-3 d-flex flex-column halberd-text",
                         # Add zindex to prevent click propagation on buttons
                         style={"zIndex": "1"}),
                     ], 
@@ -327,13 +318,11 @@ def create_playbook_item(playbook_config):
                 ], className="g-0"),
             ], className="p-3"),
         ],
-        className="mb-3 border-0",
+        className="mb-3 halberd-depth-card",
         style={
-            "borderLeft": "4px solid",
             "backgroundColor": "#2d2d2d",
-            "boxShadow": "0 2px 4px rgba(0,0,0,.075)",
-            'borderRadius': '10px'
-        }),
+        }
+        ),
     ],
     # Click handler div
     id={"type": "playbook-card-click", "index": playbook_config.yaml_file},
@@ -354,18 +343,18 @@ export_pb_div = html.Div([
                 dbc.Col([
                     dbc.Label(
                         "Mask Playbook Config Values", 
-                        className="text-light fw-bold mb-2"
+                        className="mb-2"
                     ),
                     html.Div([
                         daq.BooleanSwitch(
                             id="export-playbook-mask-param-boolean",
                             on=True,
-                            color="#198754",  # Bootstrap success color
+                            color="var(--brand-red)",  # Halberd red color
                             className="me-2"
                         ),
                         html.Span(
                             "Hide sensitive configuration values", 
-                            className="text-light ms-2 align-middle"
+                            className="ms-2 align-middle"
                         )
                     ], className="d-flex align-items-center")
                 ], width=12, className="mb-3"),
@@ -376,16 +365,16 @@ export_pb_div = html.Div([
                 dbc.Col([
                     dbc.Label(
                         "Export File Name (Optional)", 
-                        className="text-light fw-bold mb-2"
+                        className="mb-2"
                     ),
                     dbc.Input(
                         id="export-playbook-filename-text-input",
-                        placeholder="my_playbook_007",
-                        className="bg-dark text-light border-secondary"
+                        placeholder="my_playbook_007.yaml",
+                        className="bg-halberd-dark halberd-input halberd-text"
                     ),
                     html.Small(
                         "File will be exported as YAML", 
-                        className="text-muted mt-1 d-block"
+                        className="text-muted mt-2 d-block"
                     )
                 ], width=12, className="mb-4"),
             ]),
@@ -404,14 +393,13 @@ export_pb_div = html.Div([
                             "Export Playbook"
                         ],
                         id="export-playbook-button",
-                        color="info",
-                        className="float-end",
+                        className="float-end halberd-button",
                         n_clicks=0
                     ),
                 ], width=12),
             ]),
         ])
-    ], className="bg-dark border-secondary"),
+    ], className="bg-halberd-dark border-secondary"),
 ], className="p-3")
 
 # Static div for playbook schedule workflow
@@ -422,51 +410,53 @@ schedule_pb_div = html.Div([
             # Execution Time Row
             dbc.Row([
                 dbc.Col([
-                    dbc.Label("Execution Time *", className="text-light fw-bold mb-2"),
+                    dbc.Label("Execution Time *", html_for="set-time-input", className="mb-2"),
                     dbc.Input(
                         id='set-time-input', 
                         type="time", 
                         required=True, 
-                        className="bg-dark text-light border-secondary"
+                        className="bg-halberd-dark halberd-input halberd-text"
                     )
-                ], width=12, className="mb-3"),
+                ], width=12, className="mb-4"),
             ]),
             
             # Date Range Row
             dbc.Row([
                 dbc.Col([
-                    dbc.Label("Date Range *", className="text-light fw-bold mb-2"),
+                    dbc.Label("Date Range *", html_for="automator-date-range-picker", className="me-2 mb-2"),
                     dcc.DatePickerRange(
                         id='automator-date-range-picker',
                         min_date_allowed=date.today(),
                         max_date_allowed=date(9999, 12, 31),
                         initial_visible_month=date.today(),
-                        className="bg-dark"
+                        className="bg-halberd-dark halberd-text"
                     )
-                ], width=12, className="mb-3"),
+                ], width=12, className="mb-4"),
             ]),
             
             # Repeat Switch Row
             dbc.Row([
                 dbc.Col([
-                    dbc.Label("Repeat Execution", className="text-light fw-bold mb-2"),
+                    dbc.Label("Repeat Execution", className="mb-2"),
                     html.Div([
                         daq.BooleanSwitch(
                             id='schedule-repeat-boolean',
                             on=False,
-                            color="#198754",  # Bootstrap success color
+                            color="var(--brand-red)",
                             className="me-2"
                         ),
-                        html.Span("Enable repeat execution", 
-                                className="text-light ms-2 align-middle")
+                        html.Span(
+                            "Enable repeat execution", 
+                            className="ms-2 align-middle"
+                        )
                     ], className="d-flex align-items-center")
-                ], width=12, className="mb-3"),
+                ], width=12, className="mb-4"),
             ]),
             
             # Repeat Frequency Row
             dbc.Row([
                 dbc.Col([
-                    dbc.Label("Repeat Frequency", className="text-light fw-bold mb-2"),
+                    dbc.Label("Repeat Frequency", html_for= "repeat-options-dropdown", className="mb-2"),
                     dcc.Dropdown(
                         id='repeat-options-dropdown',
                         options=[
@@ -474,19 +464,19 @@ schedule_pb_div = html.Div([
                             {'label': 'Weekly', 'value': 'Weekly'},
                             {'label': 'Monthly', 'value': 'Monthly'}
                         ],
-                        className="bg-dark border-0",
+                        className="bg-halberd-dark halberd-dropdown halberd-text",
                     )
-                ], width=12, className="mb-3 text-dark"),
+                ], width=12, className="mb-4"),
             ]),
             
             # Schedule Name Row
             dbc.Row([
                 dbc.Col([
-                    dbc.Label("Schedule Name (Optional)", className="text-light fw-bold mb-2"),
+                    dbc.Label("Schedule Name (Optional)", html_for="schedule-name-input", className="mb-2"),
                     dbc.Input(
                         id='schedule-name-input',
                         placeholder="my_schedule",
-                        className="bg-dark text-light border-secondary"
+                        className="bg-halberd-dark halberd-input halberd-text"
                     )
                 ], width=12, className="mb-4"),
             ]),
@@ -505,14 +495,13 @@ schedule_pb_div = html.Div([
                             "Schedule Playbook"
                         ],
                         id="schedule-playbook-button",
-                        color="success",
                         n_clicks=0,
-                        className="float-end"
+                        className="float-end halberd-button"
                     ),
                 ], width=12),
             ]),
         ])
-    ], className="bg-dark border-secondary"),
+    ], className="bg-halberd-dark halberd-depth-card halberd-text"),
 ], className="p-3")
 
 def generate_playbook_creator_offcanvas():
@@ -527,7 +516,7 @@ def generate_playbook_creator_offcanvas():
                                 type="text",
                                 id="pb-name-input-offcanvas",
                                 placeholder="Enter playbook name",
-                                className="bg-dark text-light"
+                                className="bg-halberd-dark halberd-input halberd-text"
                             )
                         ])
                     ], className="mb-3"),
@@ -538,7 +527,7 @@ def generate_playbook_creator_offcanvas():
                             dbc.Textarea(
                                 id="pb-desc-input-offcanvas",
                                 placeholder="Enter playbook description",
-                                className="bg-dark text-light"
+                                className="bg-halberd-dark halberd-input halberd-text"
                             )
                         ])
                     ], className="mb-3"),
@@ -550,7 +539,7 @@ def generate_playbook_creator_offcanvas():
                                 type="text",
                                 id="pb-author-input-offcanvas",
                                 placeholder="Enter author name",
-                                className="bg-dark text-light"
+                                className="bg-halberd-dark halberd-input halberd-text"
                             )
                         ])
                     ], className="mb-3"),
@@ -562,13 +551,13 @@ def generate_playbook_creator_offcanvas():
                                 type="text",
                                 id="pb-refs-input-offcanvas",
                                 placeholder="Enter references (optional)",
-                                className="bg-dark text-light"
+                                className="bg-halberd-dark halberd-input halberd-text"
                             )
                         ])
                     ], className="mb-4"),
 
                     # Steps section
-                    html.H4("Playbook Steps", className="mb-3"),
+                    html.H4("Playbook Steps", className="mb-3 halberd-brand-heading"),
                     html.Div(id="playbook-steps-container", children=[
                         # Initial step
                         generate_step_form(1)
@@ -578,16 +567,14 @@ def generate_playbook_creator_offcanvas():
                     dbc.Button(
                         [html.I(className="bi bi-plus-lg me-2"), "Add Step"],
                         id="add-playbook-step-button",
-                        color="secondary",
-                        className="mt-3 mb-4"
+                        className="mt-3 mb-4 halberd-button-secondary"
                     ),
 
                     # Create playbook button
                     dbc.Button(
                         [html.I(className="bi bi-save me-2"), "Create Playbook"],
                         id="create-playbook-offcanvas-button",
-                        color="danger",
-                        className="w-100"
+                        className="w-100 halberd-button"
                     )
                 ])
             ]
@@ -620,7 +607,7 @@ def generate_step_form(step_number):
                             for tid, technique in TechniqueRegistry.list_techniques().items()
                         ],
                         placeholder="Select module",
-                        className="bg-dark text-dark"
+                        className="bg-halberd-dark halberd-text halberd-dropdown"
                     )
                 ])
             ], className="mb-3"),
@@ -636,12 +623,12 @@ def generate_step_form(step_number):
                         id={"type": "step-wait-input", "index": step_number},
                         placeholder="0",
                         min=0,
-                        className="bg-dark text-light"
+                        className="bg-halberd-dark halberd-input halberd-text"
                     )
                 ])
             ], className="mb-3"),
         ])
-    ], className="mb-3")
+    ], className="mb-3 halberd-depth-card")
 
 def generate_playbook_editor_offcanvas():
     return dbc.Offcanvas(
@@ -655,7 +642,7 @@ def generate_playbook_editor_offcanvas():
                             type="text",
                             id="pb-name-input-editor",
                             placeholder="Enter playbook name",
-                            className="bg-dark text-light"
+                            className="bg-halberd-dark halberd-input halberd-text"
                         )
                     ])
                 ], className="mb-3"),
@@ -666,7 +653,7 @@ def generate_playbook_editor_offcanvas():
                         dbc.Textarea(
                             id="pb-desc-input-editor",
                             placeholder="Enter playbook description",
-                            className="bg-dark text-light"
+                            className="bg-halberd-dark halberd-input halberd-text"
                         )
                     ])
                 ], className="mb-3"),
@@ -678,7 +665,7 @@ def generate_playbook_editor_offcanvas():
                             type="text",
                             id="pb-author-input-editor",
                             placeholder="Enter author name",
-                            className="bg-dark text-light"
+                            className="bg-halberd-dark halberd-input halberd-text"
                         )
                     ])
                 ], className="mb-3"),
@@ -690,14 +677,14 @@ def generate_playbook_editor_offcanvas():
                             type="text",
                             id="pb-refs-input-editor",
                             placeholder="Enter references (optional)",
-                            className="bg-dark text-light"
+                            className="bg-halberd-dark halberd-input halberd-text"
                         )
                     ])
                 ], className="mb-4"),
 
                 # Steps section
                 html.Div([
-                    html.H4("Playbook Steps", className="mb-3"),
+                    html.H4("Playbook Steps", className="mb-3 halberd-brand-heading"),
                     html.Div(id="playbook-steps-editor-container"),
                     
                     # Add step button
@@ -713,20 +700,20 @@ def generate_playbook_editor_offcanvas():
                 dbc.Button(
                     [html.I(className="bi bi-save me-2"), "Update Playbook"],
                     id="update-playbook-editor-button",
-                    color="danger",
-                    className="w-100"
+                    className="w-100 halberd-button"
                 )
             ])
         ],
         id="playbook-editor-offcanvas",
-        title= html.H3("Edit Playbook", className="mb-4"),
+        title= html.H3("Playbook Editor"),
         is_open=False,
         placement="end",
         style={
             "width": "50%",
             "max-width": "none"
         },
-        className="bg-dark"
+        className="bg-halberd-dark halberd-text halberd-offcanvas",
+        backdropClassName="halberd-offcanvas-backdrop"
         )
 
 def playbook_editor_create_parameter_inputs(module_id, existing_params=None):
@@ -741,7 +728,7 @@ def playbook_editor_create_parameter_inputs(module_id, existing_params=None):
     params = technique.get_parameters()
     
     if not params:
-        return html.P("No parameters required", className="text-muted")
+        return html.P("No config required", className="halberd-text")
     
     param_inputs = []
     for param_name, param_config in params.items():
@@ -762,13 +749,13 @@ def playbook_editor_create_parameter_inputs(module_id, existing_params=None):
                 id={"type": "param-input-editor", "param": param_name},
                 value=existing_params.get(param_name, param_config.get("default", "")),
                 placeholder=param_config.get("default", ""),
-                className="bg-dark text-light"
+                className="bg-halberd-dark halberd-text halberd-input"
             )
         
         param_inputs.append(
             dbc.Row([
                 dbc.Col([
-                    dbc.Label(label_text),
+                    dbc.Label(label_text, className="halberd-text"),
                     input_elem
                 ])
             ], className="mb-3")
@@ -803,12 +790,12 @@ def create_execution_progress_offcanvas():
         ),
     ],
     id="execution-progress-offcanvas",
-    title=html.H4("Execution Progress", className="text-light"),
+    title=html.H3("Execution Progress"),
     placement="end",
     is_open=False,
     style={"width": "50%"},
-    className="bg-dark text-light",
-    backdrop=False,
+    className="bg-halberd-dark halberd-offcanvas",
+    backdropClassName="halberd-offcanvas-backdrop",
     scrollable=True
     )
 
@@ -821,7 +808,7 @@ def create_step_progress_card(step_number, module_name, status=None, is_active=F
             width=24,
             className="text-primary animate-spin"
         )
-        status_color = "text-primary"
+        status_color = "text-light"
     elif status == "success":
         icon = DashIconify(
             icon="mdi:check-circle",
@@ -853,7 +840,7 @@ def create_step_progress_card(step_number, module_name, status=None, is_active=F
                         dbc.Col(
                             html.H6(
                                 f"Step {step_number}: {module_name}",
-                                className="mb-0"
+                                className="mb-0 halberd-text"
                             ),
                             width=9
                         ),
@@ -871,6 +858,6 @@ def create_step_progress_card(step_number, module_name, status=None, is_active=F
                         className="text-danger"
                     ) if message else None,
                 ], width=11)
-            ], className="align-items-center")
+            ], className="align-items-center halberd-text")
         ])
-    ], className=f"mb-2 {'border-primary' if is_active else ''} bg-dark")
+    ], className=f"mb-2 {'border-primary' if is_active else ''} bg-halberd-dark")
