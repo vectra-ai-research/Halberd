@@ -1,3 +1,8 @@
+'''
+Page Navigation url : app/attack-analyse
+Page Description : Analyse Halberd attack executions.
+'''
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
@@ -99,7 +104,7 @@ THEME = {
     'paper': '#2d2d2d',      # Card background
     'text': '#e0e0e0',       # Primary text
     'secondary_text': '#a0a0a0', # Secondary text
-    'accent': '#d9534f',     # Halberd's accent red
+    'accent': '#dc3545',     # Halberd's accent red
     'border': '#404040',     # Border color
     'plot_colors': ['#00ff9d', '#00bcd4', '#7c4dff', '#ff4081', '#ffc107'], # Chart colors
     'success': '#00ff9d',    # Success color
@@ -111,8 +116,8 @@ THEME = {
 def create_dark_theme_template():
     return {
         'layout': {
-            'paper_bgcolor': THEME['paper'],
-            'plot_bgcolor': THEME['paper'],
+            'paper_bgcolor': "#1a1a1a",
+            'plot_bgcolor': "#1a1a1a",
             'font': {'color': THEME['text']},
             'xaxis': {
                 'gridcolor': THEME['border'],
@@ -187,13 +192,12 @@ def create_metric_card(title, value, icon, color):
             html.H4(title, style={'marginLeft': '10px', 'color': THEME['text']})
         ], style={'display': 'flex', 'alignItems': 'center'}),
         html.H2(value, style={'marginTop': '10px', 'color': color})
-    ], style={
-        'backgroundColor': THEME['paper'],
+    ], 
+    style={
         'padding': '20px',
         'borderRadius': '10px',
-        'boxShadow': f'0 2px 4px {THEME["border"]}',
-        'border': f'1px solid {THEME["border"]}'
-    })
+    },
+    className="halberd-depth-card")
 
 def create_error_layout(error_message: str) -> html.Div:
     """Creates an error layout with the provided message"""
@@ -396,39 +400,35 @@ def create_layout():
         # Header with Date Range Picker
         html.Div([
             html.Div([
-                html.H1('Halberd Attack Analysis Dashboard'),
                 html.Div([
-                    html.Div([
-                        html.Label('Select Date Range:', 
-                                 style={'marginRight': '10px', 'color': THEME['text']}),
-                        dcc.DatePickerRange(
-                            id='date-picker-range',
-                            min_date_allowed=min_date,
-                            max_date_allowed=max_date,
-                            start_date=min_date,
-                            end_date=max_date,
-                            style={'color': THEME['text']},
-                        ),
-                    ], style={'display': 'inline-block', 'marginRight': '20px'}),
-                    dbc.Button(
-                        [
-                            DashIconify(
-                                icon="mdi:file-report-outline",
-                                width=20,
-                                className="me-1"
-                            ),
-                            "Export Report"
-                        ],
-                        color="primary",
-                        className="ms-2",
-                        id="download-halberd-report-button",
-                        n_clicks=0,
+                    html.Label('Select Date Range:', 
+                                style={'marginRight': '10px', 'color': THEME['text']}),
+                    dcc.DatePickerRange(
+                        id='date-picker-range',
+                        min_date_allowed=min_date,
+                        max_date_allowed=max_date,
+                        start_date=min_date,
+                        end_date=max_date,
+                        style={'color': THEME['text']}
                     ),
-                    dcc.Download(id="download-report")
-                ], style={'marginTop': '20px'})
-            ]),
+                ], style={'display': 'inline-block', 'marginRight': '20px'}),
+                dbc.Button(
+                    [
+                        DashIconify(
+                            icon="mdi:file-report-outline",
+                            width=20,
+                            className="me-1"
+                        ),
+                        "Export Report"
+                    ],
+                    className="ms-2 halberd-button-secondary",
+                    id="download-halberd-report-button",
+                    n_clicks=0,
+                ),
+                dcc.Download(id="download-report")
+            ])
         ], 
-        style={'textAlign': 'center', 'marginBottom': '30px', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}, className="bg-dark"),
+        style={'textAlign': 'center', 'marginBottom': '30px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}, className="bg-halberd-dark"),
         # Key Metrics Row
         html.Div([
             html.Div([
@@ -441,4 +441,4 @@ def create_layout():
         
         # Footer with execution statistics
         html.Div(id='footer-stats')
-    ], style={'padding': '20px', 'minHeight': '100vh'}, className="bg-dark")
+    ], style={'padding': '20px', 'minHeight': '100vh'}, className="bg-halberd-dark")
