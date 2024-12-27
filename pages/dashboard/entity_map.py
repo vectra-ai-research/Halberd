@@ -156,7 +156,7 @@ page_layout = html.Div([
     dbc.Row([
         # input fields for map type
         dbc.Col([
-            dbc.Select(
+            dcc.Dropdown(
                 id='map-layout-select',
                 options=[
                     {'label': 'Circular', 'value': 'circle'},
@@ -164,12 +164,12 @@ page_layout = html.Div([
                     {'label': 'Force-directed', 'value': 'cose'},
                 ],
                 value='cose',
-                className="mb-3"
+                className="mb-3 halberd-text halberd-dropdown"
             ),
         ],width=3),
         # input fields for filter
         dbc.Col([
-            dbc.Select(
+            dcc.Dropdown(
                 id='filter-select',
                 options=[
                     {'label': 'All', 'value': 'all'},
@@ -179,41 +179,37 @@ page_layout = html.Div([
                     {'label': 'Data Repos', 'value': 'Data Repos'},
                 ],
                 value='all',
-                className="mb-3"
+                className="halberd-text halberd-dropdown"
             ),
         ],width=3),
-        # generate map button
+        # Generate map & export result button
         dbc.Col([
-            dbc.Button("Generate Entity Map", id="generate-entity-map-button", color="danger", className="mb-3"),
-        ], width=3),
-        # export result button
-        dbc.Col(
-            dbc.Button("Export Results", color="primary", className="mb-3", id="export-button"),
-            width=3
-        )
-    ]),
+            dbc.Button("Generate Entity Map", id="generate-entity-map-button", className="me-3 halberd-button"),
+            dbc.Button("Export Results", color="primary", className="me-3 halberd-button-secondary", id="export-button")
+        ], width=6),
+    ], className="mb-3"),
     
     dbc.Col([
         dbc.Card([
-            dbc.CardHeader("Entity Map", className="bg-dark text-light"),
+            dbc.CardHeader("Entity Map", className="bg-halberd-dark text-light"),
             dbc.CardBody([
                 dcc.Loading(
                     id="entity-map-loading",
                     type="default",
                     children=html.Div(id="entity-map-display-div", style={"height": "60vh", "overflow": "auto"})
                 )
-            ], className="bg-dark")
+            ], className="bg-halberd-dark")
         ], className="mb-4 border-secondary"),
 
         # display node info
         dbc.Card([
-            dbc.CardHeader("Node Info", className="bg-dark text-light"),
+            dbc.CardHeader("Node Info", className="bg-halberd-dark text-light"),
             dbc.CardBody([
                 html.Div(id="entity-map-node-info-div", className="mt-3 text-light"),
-            ], className="bg-dark")
+            ], className="bg-halberd-dark")
         ], className="mb-4 border-secondary")
     ]),
-], className="bg-dark p-4")
+], className="bg-halberd-dark p-4 halberd-text")
 
 def GetUserInfo():
     endpoint_url = "https://graph.microsoft.com/v1.0/me"

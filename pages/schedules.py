@@ -6,6 +6,7 @@ Page Description : Displays currently configured playbook execution schedules
 from dash import html
 import dash_bootstrap_components as dbc
 import yaml
+from dash_iconify import DashIconify
 from core.Constants import AUTOMATOR_SCHEDULES_FILE
 
 def generate_automator_schedules_view():
@@ -30,6 +31,20 @@ def generate_automator_schedules_view():
 
     # Generate attack trace page layout
     return html.Div([
-        html.H3("Automator Schedules", style ={"textAlign": "center", "padding": "5px"}),
+        html.H2(
+            [
+                "Automator Schedules",
+                html.A(DashIconify(icon="mdi:help-circle-outline", width=18, height=18), href="https://github.com/vectra-ai-research/Halberd/wiki/UI-&-Navigation", target="_blank")
+            ], className="halberd-brand mb-3"
+        ),
         dbc.Table(table_content, bordered=True, dark=True, hover=True),
-        ], className="bg-dark", style= {"width": "100vw" , "height": "92vh", 'overflow': 'auto'})
+        ], 
+        className="bg-halberd-dark", 
+        style= {
+            "width": "100vw" , 
+            "height": "92vh", 
+            "overflow": "auto",
+            "padding-right": "20px", 
+            "padding-left": "20px",
+            }
+        )

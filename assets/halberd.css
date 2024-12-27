@@ -1,0 +1,661 @@
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+.bg-halberd-dark {
+    background-color: #1a1a1a !important;
+}
+.bg-halberd-navbar {
+  background-color: #000000 !important;
+}
+
+:root {
+    /* Font Families */
+    --font-brand: 'Orbitron', sans-serif;
+    --font-primary: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    --font-monospace: "SF Mono", SFMono-Regular, ui-monospace, Menlo, Consolas, monospace;
+
+    /* Halberd Colors */
+    --brand-red: #dc3545;
+    --secondary-red: #A2150C;
+  
+    /* Font Sizes */
+    --text-xs: 0.75rem;    /* 12px */
+    --text-sm: 0.875rem;   /* 14px */
+    --text-base: 1rem;     /* 16px */
+    --text-lg: 1.125rem;   /* 18px */
+    --text-xl: 1.25rem;    /* 20px */
+    --text-2xl: 1.5rem;    /* 24px */
+    --text-3xl: 1.875rem;  /* 30px */
+    --text-4xl: 2.25rem;   /* 36px */
+  
+    /* Line Heights */
+    --leading-none: 1;
+    --leading-tight: 1.25;
+    --leading-snug: 1.375;
+    --leading-normal: 1.5;
+    --leading-relaxed: 1.625;
+    --leading-loose: 2;
+  
+    /* Font Weights */
+    --font-thin: 100;
+    --font-light: 300;
+    --font-normal: 400;
+    --font-medium: 500;
+    --font-semibold: 600;
+    --font-bold: 700;
+  
+    /* Colors */
+    --text-primary: rgba(255, 255, 255, 0.95);
+    --text-secondary: rgba(255, 255, 255, 0.7);
+    --text-tertiary: rgba(255, 255, 255, 0.5);
+    --text-success: #66BB6A;
+    --text-warning: #FFA726;
+    --text-danger: #EF5350;
+    --text-info: #29B6F6;
+  }
+  
+  /* Text Size Utilities */
+  .text-xs { font-size: var(--text-xs); }
+  .text-sm { font-size: var(--text-sm); }
+  .text-base { font-size: var(--text-base); }
+  .text-lg { font-size: var(--text-lg); }
+  .text-xl { font-size: var(--text-xl); }
+  .text-2xl { font-size: var(--text-2xl); }
+  .text-3xl { font-size: var(--text-3xl); }
+  .text-4xl { font-size: var(--text-4xl); }
+  
+  /* Font Weight Utilities */
+  .font-thin { font-weight: var(--font-thin); }
+  .font-light { font-weight: var(--font-light); }
+  .font-normal { font-weight: var(--font-normal); }
+  .font-medium { font-weight: var(--font-medium); }
+  .font-semibold { font-weight: var(--font-semibold); }
+  .font-bold { font-weight: var(--font-bold); }
+  
+  /* Line Height Utilities */
+  .leading-none { line-height: var(--leading-none); }
+  .leading-tight { line-height: var(--leading-tight); }
+  .leading-snug { line-height: var(--leading-snug); }
+  .leading-normal { line-height: var(--leading-normal); }
+  .leading-relaxed { line-height: var(--leading-relaxed); }
+  .leading-loose { line-height: var(--leading-loose); }
+  
+  /* Text Color Utilities */
+  .text-primary { color: var(--text-primary); }
+  .text-secondary { color: var(--text-secondary); }
+  .text-tertiary { color: var(--text-tertiary); }
+  .text-success { color: var(--text-success); }
+  .text-warning { color: var(--text-warning); }
+  .text-danger { color: var(--text-danger); }
+  .text-info { color: var(--text-info); }
+  
+  /* Text Elements */
+  .halberd-brand {
+    font-family: var(--font-brand);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--brand-red);
+  }
+  
+  .halberd-brand-heading {
+    font-family: var(--font-brand);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-primary);
+  }
+  
+  /* Base Typography Styles */
+  .halberd-typography {
+    font-family: var(--font-primary);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .halberd-heading {
+    font-family: var(--font-primary);
+    font-weight: 600;  /* Increased from semibold for better visibility */
+    font-size: var(--text-xl); /* Increased base size */
+    line-height: 1.4;  /* Slightly increased for better readability */
+    margin-bottom: 0.75em;
+    color: var(--text-primary);
+    letter-spacing: 0.01em; /* Slight letter spacing for clarity */
+  }
+  
+  .halberd-subheading {
+    font-family: var(--font-primary);
+    font-weight: 500;
+    font-size: var(--text-lg);
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin-bottom: 1em;
+    opacity: 0.95;
+  }
+  
+  .halberd-text {
+    font-family: var(--font-primary);
+    font-size: var(--text-xl);  /* 20px xl size */
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--text-primary);
+  }
+  
+  .halberd-text-large {
+    font-size: var(--text-2xl);
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--text-primary);
+  }
+  
+  .halberd-code {
+    font-family: var(--font-monospace);
+    font-size: var(--text-base);
+    font-weight: 500;
+    padding: 0.3em 0.5em;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.15);
+    color: var(--text-primary);
+  }
+  
+  .halberd-label {
+    font-family: var(--font-primary);
+    font-size: var(--text-base);  /* Increased from sm */
+    font-weight: 600;  /* Increased weight */
+    color: var(--text-primary);  /* Increased contrast */
+    margin-bottom: 0.5em;
+    letter-spacing: 0.01em;
+  }
+  
+  .halberd-caption {
+    font-family: var(--font-primary);
+    font-size: var(--text-sm);  /* Increased from xs */
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    opacity: 0.9;  /* Increased opacity for better visibility */
+  }
+  
+  /* New utility classes for common text patterns */
+  .halberd-text-emphasis {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  
+  .halberd-text-success {
+    color: var(--text-success);
+    font-weight: 500;
+  }
+  
+  .halberd-text-warning {
+    color: var(--text-warning);
+    font-weight: 500;
+  }
+  
+  .halberd-text-error {
+    color: var(--text-danger);
+    font-weight: 500;
+  }
+  
+  /* Link Styles */
+  .halberd-link {
+    color: var(--text-info);
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid transparent;
+  }
+  
+  .halberd-link:hover {
+    color: var(--text-primary);
+    border-bottom-color: currentColor;
+  }
+  
+  /* Responsive Typography */
+  @media (max-width: 640px) {
+    :root {
+      --text-4xl: 2rem;
+      --text-3xl: 1.75rem;
+      --text-2xl: 1.375rem;
+      --text-xl: 1.125rem;
+    }
+  }
+
+  /* Cloud Platform Tags */
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: var(--text-xl);
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  /* Azure */
+  .tag-azure {
+    background-color: rgba(0, 137, 214, 0.15);
+    color: #00b7c3;
+    border: 1px solid rgba(0, 137, 214, 0.25);
+  }
+
+  /* Microsoft 365 */
+  .tag-m365 {
+    background-color: rgba(2, 175, 116, 0.15);
+    color: #02af74;
+    border: 1px solid rgba(2, 175, 116, 0.25);
+  }
+
+  /* Entra ID */
+  .tag-entraid {
+    background-color: rgba(0, 120, 212, 0.15);
+    color: #0078d4;
+    border: 1px solid rgba(0, 120, 212, 0.25);
+  }
+
+  /* AWS */
+  .tag-aws {
+    background-color: rgba(255, 153, 0, 0.15);
+    color: #ff9900;
+    border: 1px solid rgba(255, 153, 0, 0.25);
+  }
+
+  /* GCP */
+  .tag-gcp {
+    background-color: rgba(66, 133, 244, 0.15);
+    color: #4285f4;
+    border: 1px solid rgba(66, 133, 244, 0.25);
+  }
+
+  /* Card depth effect */
+  .halberd-depth-card {
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    box-shadow: 
+        0 4px 12px rgba(0, 0, 0, 0.3),
+        0 1px 3px rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.03);
+    transition: all 0.2s ease-in-out;
+    backdrop-filter: blur(10px);
+  }
+
+  .halberd-depth-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 
+      0 6px 16px rgba(0, 0, 0, 0.4),
+      0 2px 4px rgba(0, 0, 0, 0.3),
+      inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  }
+
+  .halberd-button {
+    background: linear-gradient(180deg, rgba(220, 53, 69, 0.9), rgba(180, 30, 45, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+        0 2px 6px rgba(220, 53, 69, 0.2),
+        0 1px 2px rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.3px;
+    font-weight: 500;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .halberd-button:hover {
+    background: linear-gradient(180deg, rgba(220, 53, 69, 1), rgba(180, 30, 45, 1));
+    box-shadow: 
+        0 3px 8px rgba(220, 53, 69, 0.3),
+        0 2px 3px rgba(0, 0, 0, 0.3),
+        inset 0 1px 1px rgba(255, 255, 255, 0.15);
+    transform: translateY(-1px);
+  }
+
+
+  .halberd-button:active {
+    transform: translateY(1px);
+    box-shadow: 
+        0 1px 3px rgba(220, 53, 69, 0.2),
+        0 1px 2px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Pulse effect */
+  .halberd-button.pulse {
+    animation: buttonPulse 2s infinite;
+  }
+
+  /* Secondary button */
+  .halberd-button-secondary {
+    background: linear-gradient(180deg, rgba(45, 45, 45, 0.9), rgba(35, 35, 35, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+        0 2px 6px rgba(0, 0, 0, 0.2),
+        0 1px 2px rgba(0, 0, 0, 0.1),
+        inset 0 1px 1px rgba(255, 255, 255, 0.05);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    letter-spacing: 0.3px;
+    font-weight: 500;
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .halberd-button-secondary:hover {
+    background: linear-gradient(180deg, rgba(55, 55, 55, 0.95), rgba(45, 45, 45, 0.95));
+    box-shadow: 
+        0 3px 8px rgba(0, 0, 0, 0.25),
+        0 2px 3px rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
+  }
+
+  .halberd-button-secondary:active {
+    transform: translateY(1px);
+    box-shadow: 
+        0 1px 3px rgba(0, 0, 0, 0.2),
+        0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Dropdown */
+  .halberd-dropdown .Select-control {
+    background-color: rgba(35, 35, 35, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px rgba(0, 0, 0, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  /* Dropdown hover state */
+  .halberd-dropdown .Select-control:hover {
+    border-color: rgba(240, 84, 84, 0.5);
+    box-shadow: 
+        0 2px 6px rgba(0, 0, 0, 0.25),
+        inset 0 1px 1px rgba(0, 0, 0, 0.1);
+  }
+
+  /* Focused state */
+  .halberd-dropdown .is-focused:not(.is-open) > .Select-control {
+    border-color: #f05454;
+    box-shadow: 
+        0 0 0 1px #f05454,
+        0 2px 6px rgba(240, 84, 84, 0.2);
+  }
+
+  /* Dropdown menu */
+  .halberd-dropdown .Select-menu-outer {
+    background-color: rgba(35, 35, 35, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-top-color: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Options in dropdown */
+  .halberd-dropdown .Select-option {
+    background-color: transparent;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  /* Hover state for options */
+  .halberd-dropdown .Select-option.is-focused {
+    background-color: rgba(240, 84, 84, 0.15);
+  }
+
+  /* Selected option */
+  .halberd-dropdown .Select-option.is-selected {
+    background-color: rgba(240, 84, 84, 0.3);
+    color: white;
+  }
+
+  /* Placeholder */
+  .halberd-dropdown .Select-placeholder {
+    color: rgba(255, 255, 255, 0.5);
+  }
+
+  /* Value text */
+  .halberd-dropdown .Select-value-label {
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  /* Arrow */
+  .halberd-dropdown .Select-arrow {
+    border-color: rgba(255, 255, 255, 0.5) transparent transparent;
+  }
+
+  /* Input field */
+  .halberd-input {
+    background-color: rgba(35, 35, 35, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    color: rgba(255, 255, 255, 0.9);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .halberd-input:hover {
+    border-color: rgba(240, 84, 84, 0.5);
+    box-shadow: 
+        0 2px 6px rgba(0, 0, 0, 0.25),
+        inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .halberd-input:focus {
+    border-color: #f05454;
+    outline: none;
+    box-shadow: 
+        0 0 0 1px #f05454,
+        0 2px 6px rgba(240, 84, 84, 0.2);
+  }
+
+  /* Placeholder styling */
+  .halberd-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  /* Disabled state */
+  .halberd-input:disabled {
+    background-color: rgba(35, 35, 35, 0.7);
+    border-color: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.4);
+    cursor: not-allowed;
+  }
+
+  @keyframes buttonPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.3);
+    }
+    70% {
+        box-shadow: 0 0 0 6px rgba(220, 53, 69, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+  }
+
+  /* RadioContainer */
+  .halberd-radio {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  /* Individual radio item container */
+  .halberd-radio .radio-item {
+    display: flex;
+    align-items: center;
+    margin: 8px 0;
+  }
+
+  /* Radio input */
+  .halberd-radio input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    margin-right: 10px;
+    position: relative;
+    cursor: pointer;
+    background: rgba(35, 35, 35, 0.95);
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Radio hover */
+  .halberd-radio input[type="radio"]:hover {
+    border-color: rgba(240, 84, 84, 0.5);
+  }
+
+  /* Radio checked */
+  .halberd-radio input[type="radio"]:checked {
+    border-color: #f05454;
+    background: rgba(35, 35, 35, 0.95);
+  }
+
+  /* Radio checked dot */
+  .halberd-radio input[type="radio"]:checked::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f05454;
+    box-shadow: 0 0 4px rgba(240, 84, 84, 0.3);
+  }
+
+  /* Radio label */
+  .halberd-radio label {
+    cursor: pointer;
+    font-weight: 400;
+  }
+
+  /* Disabled state */
+  .halberd-radio input[type="radio"]:disabled {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(35, 35, 35, 0.7);
+    cursor: not-allowed;
+  }
+
+  .halberd-radio input[type="radio"]:disabled + label {
+    color: rgba(255, 255, 255, 0.4);
+    cursor: not-allowed;
+  }
+
+  /* Accordion container */
+  .halberd-accordion {
+    background: transparent;
+    border-radius: 4px;
+  }
+
+  /* Accordion item */
+  .halberd-accordion .accordion-item {
+    background: rgba(35, 35, 35, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    margin-bottom: 8px;
+    border-radius: 4px;
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.03);
+  }
+
+  /* Accordion button/header */
+  .halberd-accordion .accordion-button {
+    background: rgba(35, 35, 35, 0.95);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 12px 16px;
+    box-shadow: none;
+    border: none;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Remove default focus outline and add custom one */
+  .halberd-accordion .accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(240, 84, 84, 0.5);
+  }
+
+  /* Hover state */
+  .halberd-accordion .accordion-button:not(.collapsed):hover,
+  .halberd-accordion .accordion-button:hover {
+    background: rgba(45, 45, 45, 0.95);
+  }
+
+  /* Active/expanded state */
+  .halberd-accordion .accordion-button:not(.collapsed) {
+    background: rgba(240, 84, 84, 0.1);
+    color: rgba(255, 255, 255, 0.95);
+    box-shadow: inset 0 -1px 0 rgba(240, 84, 84, 0.2);
+  }
+
+  /* Custom chevron color */
+  .halberd-accordion .accordion-button::after {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23F05454'%3e%3cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3e%3c/svg%3e");
+  }
+
+  /* Accordion body */
+  .halberd-accordion .accordion-body {
+    background: rgba(30, 30, 30, 0.95);
+    color: rgba(255, 255, 255, 0.85);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 16px;
+  }
+
+  /* Offcanvas container */
+  .halberd-offcanvas .offcanvas {
+    background: rgba(25, 25, 25, 0.98);
+    border-left: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 
+        -4px 0 15px rgba(0, 0, 0, 0.3),
+        inset 1px 0 0 rgba(255, 255, 255, 0.02);
+  }
+
+  /* Offcanvas header */
+  .halberd-offcanvas .offcanvas-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 1rem 1.5rem;
+  }
+
+  /* Offcanvas title */
+  .halberd-offcanvas .offcanvas-title {
+    color: var(--brand-red);
+    font-family: var(--font-brand);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* Close button */
+  .halberd-offcanvas .btn-close {
+    background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23F05454'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+  }
+
+  .halberd-offcanvas .btn-close:hover {
+    opacity: 1;
+    background-color: rgba(240, 84, 84, 0.1);
+  }
+
+  /* Offcanvas body */
+  .halberd-offcanvas .offcanvas-body {
+    color: rgba(255, 255, 255, 0.85);
+    padding: 1.5rem;
+  }
+
+  /* Backdrop */
+  .halberd-offcanvas-backdrop.show {
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(3px);
+  }

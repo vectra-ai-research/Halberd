@@ -16,3 +16,11 @@ REPORT_DIR = "./report"
 GRAPH_ENDPOINT_URL = "https://graph.microsoft.com/v1.0"
 
 LOGGING_CONFIG_FILE = "./core/logging/logging_config.yml"
+
+CATEGORY_MAPPING = {
+    "azure": "Azure",
+    "entra_id": "EntraID",
+    "m365": "M365",
+    "aws": "AWS", 
+    "gcp": "GCP"
+}

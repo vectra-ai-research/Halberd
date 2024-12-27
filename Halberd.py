@@ -39,16 +39,48 @@ app = dash.Dash(__name__,  external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTS
 navbar = dbc.NavbarSimple(
     id = "halberd-main-navbar",
     children=[
-        dbc.NavItem(dbc.NavLink("Attack", href="/attack")),
-        dbc.NavItem(dbc.NavLink("Recon", href="/recon")),
-        dbc.NavItem(dbc.NavLink("Automator", href="/automator")),
-        dbc.NavItem(dbc.NavLink("Analyse", href="/attack-analyse"))
+        dbc.NavItem(
+            dbc.NavLink(
+                "Attack", 
+                href="/attack",
+                id="nav-attack",
+                className="nav-link",
+                style={"font-weight": "500"}
+            )
+        ),
+        dbc.NavItem(
+            dbc.NavLink(
+                "Recon", 
+                href="/recon",
+                id="nav-recon",
+                className="nav-link",
+                style={"font-weight": "500"}
+            )
+        ),
+        dbc.NavItem(
+            dbc.NavLink(
+                "Automator", 
+                href="/automator",
+                id="nav-automator",
+                className="nav-link",
+                style={"font-weight": "500"}
+            )
+        ),
+        dbc.NavItem(
+            dbc.NavLink(
+                "Analyse", 
+                href="/attack-analyse",
+                id="nav-analyse", 
+                className="nav-link",
+                style={"font-weight": "500"}
+            )
+        )
     ],
     brand= html.Div([
         dbc.Row(
                 [
                     dbc.Col(html.Img(src="/assets/favicon.ico", height="30px")),
-                    dbc.Col(html.Div("Halberd", className="text-danger", style={'font-family':'horizon'})),
+                    dbc.Col(html.Div("Halberd", className="halberd-brand")),
                 ],
             ),
         ]),
@@ -56,6 +88,8 @@ navbar = dbc.NavbarSimple(
     color="dark",
     dark=True,
     sticky= "top",
+    className="bg-halberd-navbar mb-5",
+    style={'min-height': '48px', 'padding': '4px 16px'}
 )
 
 # App layout
@@ -64,7 +98,7 @@ app.layout = html.Div([
     html.Div(id='hidden-div', style={'display':'none'}),
     dcc.Location(id='url', refresh=False),
     navbar,
-    html.Div(id='page-content',className="bg-dark", style={'overflow': 'auto'}),
+    html.Div(id='page-content',className="bg-halberd-dark", style={'overflow': 'auto'}),
     dbc.Toast(
         children = "Hello!",
         id="app-welcome-notification",
@@ -123,6 +157,34 @@ app.layout = html.Div([
     is_open=False,
 )
 ])
+
+'''C000 - Callback to update the Navbar content based on the URL'''
+@app.callback(
+    [
+        Output("nav-attack", "className"),
+        Output("nav-recon", "className"),
+        Output("nav-automator", "className"),
+        Output("nav-analyse", "className")
+    ],
+    Input('url', 'pathname')
+)
+def update_nav_style(pathname):
+    # Active style adds Halberd red color to selected item
+    active_className = "halberd-brand text-xl"
+    
+    # Default style
+    styles = ["halberd-brand-heading"] * 4
+    
+    if pathname == '/attack':
+        styles[0] = active_className
+    elif pathname == '/recon':
+        styles[1] = active_className
+    elif pathname == '/automator':
+        styles[2] = active_className
+    elif pathname == '/attack-analyse':
+        styles[3] = active_className
+        
+    return styles
 
 '''C001 - Callback to update the page content based on the URL'''
 @app.callback(Output('page-content', 'children'), [Input('url', 'pathname')])
@@ -481,7 +543,8 @@ def generate_entra_token_dropdown_callback(title):
                 selected_value = {token_info.get('Entity') : token_info.get('Access Exp')}
                 all_tokens.append(
                     {
-                        'label': html.Div(f"{token_info['Entity']}-{token_info.get('Access Exp')}", className="text-dark"), 'value': json.dumps(selected_value)
+                        'label': html.Div(f"{token_info['Entity']}-{token_info.get('Access Exp')}", className="halberd-text"), 
+                        'value': json.dumps(selected_value)
                     }
                 )
 
@@ -589,7 +652,8 @@ def generate_azure_sub_dropdown_callback(title):
             selected_value = subs.get("id")
             all_subscriptions.append(
                 {
-                    'label': html.Div(subs.get("name"), className="text-dark"), 'value': selected_value
+                    'label': html.Div(subs.get("name"), className="halberd-text"), 
+                    'value': selected_value
                 }
             )
 
@@ -619,17 +683,30 @@ def update_visualization(n_clicks):
         pb_config = Playbook(playbook_id)
         # Return both the visualization and some playbook info
         return html.Div([
-            html.H4(f"Playbook: {pb_config.name}", className="mb-3 text-light"),
-            html.Div(playbook_viz_generator(pb_config.name), className="mb-3"),
+            
             dbc.Card([
+                dbc.CardHeader(
+                    html.Div(
+                        f"Playbook : {pb_config.name}", 
+                        className="mb-0 halberd-brand text-2xl"
+                    )
+                ),
                 dbc.CardBody([
-                    html.H5("Playbook Details", className="card-title"),
-                    html.P(f"Author: {pb_config.author}", className="mb-2"),
-                    html.P(f"Created: {pb_config.creation_date}", className="mb-2"),
-                    html.P(f"Total Steps: {pb_config.steps}", className="mb-2"),
-                    html.P(f"Description: {pb_config.description}", className="mb-0")
+                    html.H5("Description:", className="mb-2 halberd-typography"),
+                    html.P(pb_config.description, className="mb-3 halberd-text"),
+                    dbc.Row(
+                        [
+                            dbc.Col(html.P(f"Total Steps: {pb_config.steps}", className="mb-1 halberd-depth-card"), md=4),
+                            dbc.Col(html.P(f"Author: {pb_config.author}", className="mb-1 halberd-depth-card"), md=4),
+                            dbc.Col(html.P(f"Created: {pb_config.creation_date}", className="mb-1 halberd-depth-card"), md=4)
+                        ],
+                        style={
+                            'textAlign': 'center'
+                        }
+                    )
                 ])
-            ], className="bg-dark text-light border-secondary")
+            ], className="bg-halberd-dark halberd-depth-card"),
+            html.Div(playbook_viz_generator(pb_config.name), className="mb-3"),
         ])
     except Exception as e:
         return html.Div([
@@ -1005,8 +1082,9 @@ def update_playbook_list_callback(search_query):
                         height=48,
                         className="text-muted mb-3"
                     ),
-                    html.P("Create or Import a playbook", # Default message when no playbook is selected
-                            className="text-muted")
+                    html.P(
+                        "Create or Import a playbook", # Default message when no playbook is selected
+                        className="halberd-text text-muted")
                 ], className="text-center")
             ],
             className="d-flex justify-content-center align-items-center",
@@ -1210,7 +1288,7 @@ def generate_aws_session_options_dropdown_callback(session_name):
         for session in manager.list_sessions():
             all_sessions.append(
                 {
-                    'label': html.Div(session['session_name'], className="text-dark"), 
+                    'label': html.Div(session['session_name'], className="halberd-text"), 
                     'value': session['session_name']
                 }
             )
@@ -1367,20 +1445,26 @@ def display_access_info_in_modal_callback(n_clicks, active_tab):
         return html.Div(
             [
                 dbc.Row([
-                    dbc.Col([
-                        html.H4("Set Access", className="mt-2 mb-2"),    
-                    ], md=4),
-                    dbc.Col([
-                        dcc.Dropdown(id=dropdown_id, className="mb-2")
-                    ], md=8),
-                ]),
+                    dbc.Col(
+                        html.H4("Set Access"),   
+                        md=2
+                    ),
+                    dbc.Col(
+                        dcc.Dropdown(id=dropdown_id, className="halberd-dropdown halberd-text"),
+                        md=8
+                    ),
+                    dbc.Col(
+                        dbc.Button("Remove Access", id=remove_button_id, color="danger", size="sm", className="halberd-button"),
+                        md=2
+                    )
+                ], className="mt-2 mb-3"),
                 dcc.Loading(
                     id=f"{info_div_id}-loading",
                     type="default",
-                    children=html.Div(id=info_div_id, className="p-3")
+                    children=html.Div(id=info_div_id, className="halberd-depth-card")
                 ),
-                dbc.Button("Remove Access", id=remove_button_id, color="danger", size="sm", className="mt-2")
-            ],className="mb-4")
+                
+            ],className="halberd-text")
             
     if active_tab in ["tab-attack-EntraID", "tab-attack-M365"]:    
         return True, create_access_section(
@@ -1473,52 +1557,71 @@ def update_graphs_callback(start_date, end_date):
     return [
         # Timeline Graph
         html.Div([
-            dcc.Graph(figure=create_timeline_graph(data)
+            dcc.Graph(
+                figure=create_timeline_graph(data),
+                className="halberd-depth-card"
             )
-        ], style={'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)', 'marginBottom': '20px'}, className="bg-dark"),
+        ], 
+        style={
+            'padding': '20px', 
+            'borderRadius': '10px', 
+            'boxShadow': '0 2px 4px rgba(0,0,0,0.1)', 
+            'marginBottom': '20px'
+        }, 
+        className="bg-halberd-dark"),
         
         # Surface Distribution and Success Rate Row
         html.Div([
             html.Div([
-                dcc.Graph(figure=create_pie_chart(
-                    data['surface_counts'].values,
-                    data['surface_counts'].index,
-                    'Attack Surface Distribution'
+                dcc.Graph(
+                    figure=create_pie_chart(
+                        data['surface_counts'].values,
+                        data['surface_counts'].index,
+                        'Attack Surface Distribution',
+                    ),
+                    className="halberd-depth-card"
                 )
-            )
-            ], style={'width': '48%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}),
+            ], 
+            style={'width': '48%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'},
+            ),
             
             html.Div([
-                dcc.Graph(figure=create_bar_chart(
-                    data['tactic_success'].index,
-                    data['tactic_success']['success_rate'],
-                    'Attack Success Rate by Tactic'
-                )
+                dcc.Graph(
+                    figure=create_bar_chart(
+                        data['tactic_success'].index,
+                        data['tactic_success']['success_rate'],
+                        'Attack Success Rate by Tactic'
+                    ),
+                    className="halberd-depth-card"
                 )
             ], style={'width': '48%', 'marginLeft': '4%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'})
-        ], style={'display': 'flex', 'marginBottom': '20px'}, className="bg-dark"),
+        ], style={'display': 'flex', 'marginBottom': '20px'}, className="bg-halberd-dark"),
         
         # MITRE Tactics and Source Distribution Row
         html.Div([
             html.Div([
-                dcc.Graph(figure=create_bar_chart(
-                    data['tactic_counts'].index,
-                    data['tactic_counts'].values,
-                    'Attacks Executed by MITRE Tactics'
-                )
+                dcc.Graph(
+                    figure=create_bar_chart(
+                        data['tactic_counts'].index,
+                        data['tactic_counts'].values,
+                        'Attacks Executed by MITRE Tactics'
+                    ),
+                    className="halberd-depth-card"
                 )
             ], style={'width': '48%', 'padding': '20px', 'borderRadius': '10px', 
                       'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}),
             
             html.Div([
-                dcc.Graph(figure=create_bar_chart(
-                    data['source_counts'].index,
-                    data['source_counts'].values,
-                    'Attacks Executed by Source Entity'
-                )
+                dcc.Graph(
+                    figure=create_bar_chart(
+                        data['source_counts'].index,
+                        data['source_counts'].values,
+                        'Attacks Executed by Source Entity'
+                    ),
+                    className="halberd-depth-card"
                 )
             ], style={'width': '48%', 'marginLeft': '4%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'})
-        ], style={'display': 'flex', 'marginBottom': '20px'}, className="bg-dark"),
+        ], style={'display': 'flex', 'marginBottom': '20px'}, className="bg-halberd-dark"),
         
         # Top Techniques Row
         html.Div([
@@ -1529,7 +1632,7 @@ def update_graphs_callback(start_date, end_date):
                 orientation='h'
             )
             )
-        ], style={'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)', 'marginBottom': '20px'}, className="bg-dark")
+        ], style={'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)', 'marginBottom': '20px'}, className="bg-halberd-dark")
     ]
 
 '''C050 - Callback to update footer stats in analyse dashboard'''
@@ -1550,7 +1653,7 @@ def update_footer_stats_callback(start_date, end_date):
             f"Unique Techniques: {data['unique_techniques']} | ",
             f"Average Success Rate: {(data['status_counts'].get('success', 0) / data['total_executions'] * 100):.1f}%" if data['total_executions'] > 0 else "N/A"
         ], style={'color': '#7f8c8d'})
-    ], style={'textAlign': 'center', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}, className="bg-dark")
+    ], style={'textAlign': 'center', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}, className="bg-halberd-dark")
 
 '''Create new playbook functionality callbacks'''
 '''C051 - [Playbook Creator] Callback to generate/update parameter fields from selected technique'''
@@ -1589,7 +1692,7 @@ def update_step_parameters(module_id):
                 "type": input_type,
                 "id": {"type": "param-input", "param": param_name},
                 "placeholder": param_config.get("default", ""),
-                "className": "bg-dark text-light",
+                "className": "bg-halberd-dark text-light",
                 "required": required
             }
             
@@ -1817,7 +1920,7 @@ def load_playbook_data(n_clicks):
                     # Step header
                     dbc.Row([
                         dbc.Col([
-                            html.H5(f"Step {step_no}", className="mb-3")
+                            html.H5(f"Step {step_no}", className="mb-3 text-success")
                         ], width=10),
                         dbc.Col([
                             html.Button(
@@ -1841,7 +1944,7 @@ def load_playbook_data(n_clicks):
                                 ],
                                 value=step_data.get('Module'),
                                 placeholder="Select module",
-                                className="bg-dark text-dark"
+                                className="bg-halberd-dark halberd-dropdown halberd-text"
                             )
                         ])
                     ], className="mb-3"),
@@ -1866,12 +1969,12 @@ def load_playbook_data(n_clicks):
                                 value=step_data.get('Wait', 0),
                                 placeholder="0",
                                 min=0,
-                                className="bg-dark text-light"
+                                className="bg-halberd-dark halberd-text halberd-input"
                             )
                         ])
                     ], className="mb-3"),
                 ])
-            ], className="mb-3")
+            ], className="mb-3 halberd-depth-card")
             steps.append(step_form)
                 
         return (
@@ -1900,7 +2003,7 @@ def add_playbook_step_editor(n_clicks, current_steps):
                 # Step header
                 dbc.Row([
                     dbc.Col([
-                        html.H5(f"Step {new_step_number}", className="mb-3")
+                        html.H5(f"Step {new_step_number}", className="mb-3 text-success")
                     ], width=10),
                     dbc.Col([
                         html.Button(
@@ -1923,7 +2026,7 @@ def add_playbook_step_editor(n_clicks, current_steps):
                                 for tid, technique in TechniqueRegistry.list_techniques().items()
                             ],
                             placeholder="Select module",
-                            className="bg-dark"
+                            className="bg-halberd-dark halberd-dropdown halberd-text"
                         )
                     ])
                 ], className="mb-3"),
@@ -1938,7 +2041,7 @@ def add_playbook_step_editor(n_clicks, current_steps):
                             placeholder="0",
                             min=0,
                             value=0,
-                            className="bg-dark text-light"
+                            className="bg-halberd-dark halberd-input"
                         )
                     ])
                 ], className="mb-3"),
@@ -1948,7 +2051,7 @@ def add_playbook_step_editor(n_clicks, current_steps):
                     id={"type": "step-params-container-editor", "index": new_step_number}
                 )
             ])
-        ], className="mb-3")
+        ], className="mb-3 halberd-depth-card")
         
         return current_steps + [new_step]
     return current_steps
@@ -2171,7 +2274,7 @@ def update_execution_progress(n_intervals, playbook_data):
                 ])
             ]),
             dbc.CardBody(step_cards)
-        ], className="bg-dark text-light mb-4")
+        ], className="bg-halberd-dark text-light mb-4")
         
         # Check if execution is complete
         is_complete = active_step == total_steps
