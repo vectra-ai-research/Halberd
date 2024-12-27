@@ -8,6 +8,9 @@ import dash_bootstrap_components as dbc
 from dash import html,dcc
 from collections import defaultdict
 from attack_techniques.technique_registry import TechniqueRegistry
+from core.Constants import CATEGORY_MAPPING
+from dash_iconify import DashIconify
+from version import __version__, __author__, __repository__
 
 # Initialize tactics_dict 
 tactics_dict = defaultdict(list)
@@ -51,57 +54,77 @@ page_layout = html.Div([
     # Home intro section
     dbc.Row([
         dbc.Col([
-            html.H1("Welcome to Halberd", className="display-4 mb-4 text-success"),
+            html.H1("Welcome to Halberd", className="display-4 mb-2 halberd-brand"),
             html.P(
-                "Execute multi-cloud security testing with advanced attack emulation.",
-                className="lead mb-4"
+                "Multi-cloud attack emulation for effective security testing ",
+                className="lead mb-5 halberd-brand text-secondary"
             ),
-            dbc.Button("Attack", href = dash.get_relative_path("/attack"), color="light", size="lg", className="me-2"),
-            dbc.Button("Halberd Wiki", href = "https://github.com/vectra-ai-research/Halberd/wiki", external_link=True, target='_blank', color="primary", size="lg"),
+            dbc.Button("Attack", href = dash.get_relative_path("/attack"), size="lg", className="me-2 halberd-button pulse halberd-brand-heading"),
+            dbc.Button("Halberd Wiki", href = "https://github.com/vectra-ai-research/Halberd/wiki", external_link=True, target='_blank', size="lg", className="halberd-button-secondary halberd-brand-heading"),
         ],
         md=8)
     ],
-    className="py-5"),
+    className="mb-5"),
     dbc.Row([
         dbc.Col([
+            # First card: Attack Surface Coverage
             dbc.Card([
-                html.H4(f"{len(TechniqueRegistry().list_techniques().keys())} Techniques", className="card-title"),
-                html.P("Covering a wide range of attack vectors", className="card-text")
+                html.H4([
+                    DashIconify(icon="mdi:shield-search", className="me-2"),
+                    f"{len(TechniqueRegistry().list_techniques().keys())} Attack Techniques"
+                ], className="d-flex align-items-center halberd-text"),
+                html.P(
+                    "Advanced attack emulation including privilege escalation, credential access, and lateral movement aligned with real-world TTPs.",
+                    className="halberd-text"
+                )
             ],
             body=True,
-            className="mb-3"),
+            className="mb-3 halberd-depth-card"),
         ],
         md=4),
         dbc.Col([
+            # Second card: Cloud Coverage
             dbc.Card([
-                html.H4(f"{len(set(technique['surface'] for techniques in tactics_dict.values() for technique in techniques))} Attack Surfaces", className="card-title"),
-                html.P("Coverage across major cloud platforms", className="card-text")
+                html.H4([
+                DashIconify(icon="mdi:cloud-sync", className="me-2"),
+                f"{len(set(technique['surface'] for techniques in tactics_dict.values() for technique in techniques))} Cloud Platforms"
+            ], className="d-flex align-items-center halberd-text"),
+                html.P(
+                    "Comprehensive coverage across AWS, Azure, GCP, Microsoft 365 & Entra ID. Test your entire cloud estate from a single tool.",
+                    className="halberd-text"
+                )
             ],
             body=True,
-            className="mb-3"),
+            className="mb-3 halberd-depth-card"),
         ],
         md=4),
         dbc.Col([
+            # Third card: MITRE Alignment
             dbc.Card([
-                html.H4(f"{len(tactics_dict)} Tactics", className="card-title"),
-                html.P("Aligned with the MITRE ATT&CK framework", className="card-text")
+                html.H4([
+                    DashIconify(icon="mdi:target-account", className="me-2"),
+                    f"{len(tactics_dict)} MITRE Tactics"
+                ], className="d-flex align-items-center halberd-text"),
+                html.P(
+                    "Full MITRE ATT&CK framework alignment with end-to-end attack chain coverage from initial access to impact.", 
+                    className="halberd-text"
+                )
             ],
             body=True,
-            className="mb-3"),
+            className="mb-3 halberd-depth-card"),
         ],
         md=4),
     ]),
     
     # Home main content
         dbc.Alert(
-            "This tool is for authorized security testing only. Ensure you have proper permissions before proceeding.",
+            "Halberd is for authorized security testing only. Ensure you have proper permissions before proceeding.",
             color="danger",
             dismissable=True,
             className="mb-4"
         ),
-        
         # Matrix section header
-        html.H2("Halberd Attack Matrix", className="mb-4"),
+        html.H2("Halberd Attack Matrix", className="mt-2"),
         
         # Tactics grid table
         html.Div(
@@ -116,7 +139,7 @@ page_layout = html.Div([
                                 html.Th(
                                     [
                                         # display tactic name as header
-                                        html.Div(tactic, className="font-weight-bold"),
+                                        html.Div(tactic, className="font-weight-bold halberd-brand"),
                                         # list techniques count under tactic name
                                         html.Div(f"{len(tactics_dict[tactic])} techniques", className="text-muted small")
                                     ],
@@ -133,16 +156,15 @@ page_layout = html.Div([
                                         [
                                             html.Div(
                                                 tactics_dict[tactic][i]['name'] if i < len(tactics_dict[tactic]) else "",
-                                                className="font-weight-bold"
+                                                className="halberd-typography text-lg"
                                             ),
-                                            html.Div(
-                                                f"[{tactics_dict[tactic][i]['surface']}]" if i < len(tactics_dict[tactic]) else "",
-                                                className="text-muted small"
+                                            html.Span(
+                                                CATEGORY_MAPPING.get(tactics_dict[tactic][i]['surface'], tactics_dict[tactic][i]['surface']) if i < len(tactics_dict[tactic]) else "", 
+                                                className=f"tag tag-{CATEGORY_MAPPING.get(tactics_dict[tactic][i]['surface'], tactics_dict[tactic][i]['surface']).lower()} mt-2"
                                             )
                                         ],
                                         id={'type': 'technique', 'index': tactics_dict[tactic][i]['id']} if i < len(tactics_dict[tactic]) else None,
-                                        color="light",
-                                        className="w-100 h-100 p-2",
+                                        className="w-100 h-100 p-2 halberd-depth-card",
                                         style={'cursor': 'pointer'} if i < len(tactics_dict[tactic]) else {}
                                     ) if i < len(tactics_dict[tactic]) else "",
                                     className="align-top p-1",
@@ -158,15 +180,24 @@ page_layout = html.Div([
     # Home footer
     dbc.Row([
         dbc.Col([
-            dcc.Link(html.P(f"Halberd : Multi-Cloud Attack Tool (v1.5)", className="text-muted"), href= "https://github.com/vectra-ai-research/Halberd", target="_blank")
+            dcc.Link(
+                html.P(f"Halberd : Multi-Cloud Attack Tool (v{__version__})", className="text-muted"), 
+                href= __repository__, 
+                target="_blank"
+            )
         ]),
         dbc.Col([
-            dcc.Link("Created by @openrec0n (Arpan Sarkar)", href= "https://github.com/openrec0n", target="_blank", style={'float': 'right'})
+            dcc.Link(
+                f"Created by {__author__}", 
+                href= "https://github.com/openrec0n", 
+                target="_blank", 
+                style={'float': 'right'}
+            )
         ])
     ],
     className="py-3 mt-5 border-top")
 ], 
-className="bg-dark min-vh-100", 
+className="bg-halberd-dark min-vh-100", 
 style={
     'minHeight': '100vh',
     "padding-right": "20px", 
