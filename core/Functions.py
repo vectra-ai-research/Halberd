@@ -31,11 +31,11 @@ def generate_technique_info(technique_id)-> list:
             mitre_card = dbc.Card([
                 dbc.CardBody([
                     html.P(f"Technique: {mitre_info.technique_name}", className="card-text"),
-                    html.P(f"Sub-technique: {mitre_info.sub_technique_name}", className="card-text"),
+                    html.P(f"Sub-Technique: {mitre_info.sub_technique_name}", className="card-text"),
                     html.P(f"Tactic: {', '.join(mitre_info.tactics)}", className="card-text"),
                     dcc.Link("Visit MITRE", href=mitre_info.mitre_url if mitre_info.mitre_url not in [None, "#"] else "#", target="_blank", className="halberd-link")
                 ])
-            ], className="mb-2")
+            ], className="mb-2 halberd-depth-card")
             mitre_cards.append(mitre_card)
         return html.Div(mitre_cards)
     
@@ -46,11 +46,11 @@ def generate_technique_info(technique_id)-> list:
             mitre_card = dbc.Card([
                 dbc.CardBody([
                     html.P(f"Technique: {azure_trm_info.technique_name}", className="card-text"),
-                    html.P(f"Sub-technique: {azure_trm_info.sub_technique_name}", className="card-text"),
+                    html.P(f"Sub-Technique: {azure_trm_info.sub_technique_name}", className="card-text"),
                     html.P(f"Tactic: {', '.join(azure_trm_info.tactics)}", className="card-text"),
                     dcc.Link("Visit Azure Threat Research Matrix", href=azure_trm_info.azure_trm_url if azure_trm_info.azure_trm_url not in [None, "#"] else "#", target="_blank", className="halberd-link")
                 ])
-            ], className="mb-2")
+            ], className="mb-2 halberd-depth-card")
             mitre_cards.append(mitre_card)
         return html.Div(mitre_cards)
     
@@ -60,21 +60,20 @@ def generate_technique_info(technique_id)-> list:
 
     # Main technique information card
     main_info_card = dbc.Card([
-        dbc.CardHeader(html.H4(f"Technique: {technique.name}", className="mb-0")),
-        
+        dbc.CardHeader(html.Div(technique.name, className="mb-0 halberd-brand text-2xl")),
         dbc.CardBody([
-            html.H5(f"Attack Surface: {technique_category}", className="mb-3"),
-            html.H5("Technique Description:", className="mb-2"),
-            html.P(technique.description, className="mb-3")
+            html.Span(CATEGORY_MAPPING.get(technique_category, technique_category), className=f"tag tag-{CATEGORY_MAPPING.get(technique_category, technique_category).lower()} mb-3"),
+            html.H5("Description:", className="mb-2 halberd-typography"),
+            html.P(technique.description, className="mb-3 halberd-text")
         ])
-    ], className="mb-3")
+    ], className="mb-3 halberd-depth-card")
 
     modal_content = [main_info_card]
     
     modal_content.append(
         dbc.Accordion([
-            dbc.AccordionItem(create_mitre_info_cards(technique.mitre_techniques), title="MITRE ATT&CK Reference")
-        ], start_collapsed=False, className="mb-3")
+            dbc.AccordionItem(create_mitre_info_cards(technique.mitre_techniques), title="MITRE ATT&CK Reference", className="halberd-accordion-item")
+        ], start_collapsed=False, className="mb-3 halberd-accordion")
     )
     
     # Display Azure threat research matrix info - only for Azure techniques
@@ -83,7 +82,7 @@ def generate_technique_info(technique_id)-> list:
             modal_content.append(
                 dbc.Accordion([
                     dbc.AccordionItem(create_azure_trm_info_cards(technique.azure_trm_techniques), title="Azure Threat Research Matrix Reference")
-                ], start_collapsed=True, className="mb-3")
+                ], start_collapsed=True, className="mb-3 halberd-accordion")
             )
     
     # Technique notes
@@ -94,7 +93,7 @@ def generate_technique_info(technique_id)-> list:
                     [html.Li(note.note) for note in technique.notes],
                     title="Technique Notes"
                 )
-            ], start_collapsed=True, className="mb-3")
+            ], start_collapsed=True, className="mb-3 halberd-accordion")
         )
 
     # Technique references
@@ -105,7 +104,7 @@ def generate_technique_info(technique_id)-> list:
                     [html.Li(dcc.Link(ref.title, href=ref.link if ref.link not in [None, "#"] else "#", target="_blank", className="halberd-link")) for ref in technique.references],
                     title="Technique References"
                 )
-            ], start_collapsed=True, className="mb-3")
+            ], start_collapsed=True, className="mb-3 halberd-accordion")
         )  
 
     # Return final modal body content
@@ -632,13 +631,12 @@ def playbook_viz_generator(playbook_name: Optional[str]) -> html.Div:
             html.Div(
                 legend_items,
                 style={
-                    'backgroundColor': '#2b2b2b',
-                    'padding': '10px',
-                    'marginBottom': '15px',
+                    'padding': '5px',
                     'display': 'flex',
                     'alignItems': 'center',
                     'justifyContent': 'center',
-                }
+                },
+                className="halberd-typography mb-0 halberd-depth-card"
             ),
             # Graph
             cyto.Cytoscape(
@@ -683,7 +681,7 @@ def generate_attack_tactics_options(tab):
     for tactic in tactics_options:
         tactic_dropdown_option.append(
             {
-                "label": html.Div([tactic], style={'font-size': 20}, className="text-dark"),
+                "label": html.Div([tactic],className="halberd-text"),
                 "value": tactic,
             }
         )
@@ -721,13 +719,19 @@ def generate_attack_technique_options(tab, tactic):
                     technique_tracker.append(technique_module)
                     technique_options_list.append(
                         {
-                            "label": html.Div([technique().name], style={"padding-left": "10px","padding-top": "5px", "padding-bottom": "5px", "font-size": 20}, className="bg-halberd-dark text-body"),
+                            "label": html.Div([technique().name], style={"padding-left": "10px","padding-top": "5px", "padding-bottom": "5px"}),
                             "value": technique_module,
                         }
                     )
 
     technique_options_element = [
-        dcc.RadioItems(id = "attack-options-radio", options = technique_options_list, value = technique_options_list[0]["value"], labelStyle={"display": "flex", "align-items": "center"})
+        dcc.RadioItems(
+            id = "attack-options-radio", 
+            options = technique_options_list, 
+            value = technique_options_list[0]["value"], 
+            labelStyle={"display": "flex", "align-items": "center"},
+            className="halberd-radio"
+        )
     ]
     
     return technique_options_element
@@ -751,29 +755,30 @@ def generate_attack_technique_config(technique):
         for input_field, input_config in technique_config.items():
             # Indicate required fields with * on GUI
             if input_config['required']:
-                config_div_elements.append(dbc.Label(input_config['name']+" *"))
+                config_div_elements.append(dbc.Label(input_config['name']+" *", className="halberd-text"))
             else:
-                config_div_elements.append(dbc.Label(input_config['name']))
+                config_div_elements.append(dbc.Label(input_config['name'], className="halberd-text"))
 
             if input_config['input_field_type'] in ["text", "email", "password", "number"]:
                 config_div_elements.append(dbc.Input(
                     type = input_config['input_field_type'],
-                    # Display default values in placeholder for technique param
-                    placeholder = input_config['default'] if input_config['default'] else "",
+                    placeholder = input_config['default'] if input_config['default'] else "", #default param value in placeholder
                     debounce = True,
                     id = {"type": "technique-config-display", "index": input_field},
-                    className="bg-halberd-dark border text-light",
+                    className="bg-halberd-dark border halberd-text halberd-input",
                 ))
             elif input_config['input_field_type'] == "bool":
-                config_div_elements.append(daq.BooleanSwitch(
-                    id = {"type": "technique-config-display-boolean-switch", "index": input_field}, 
-                    on=input_config['default'])
+                config_div_elements.append(
+                    daq.BooleanSwitch(
+                        id = {"type": "technique-config-display-boolean-switch", "index": input_field}, 
+                        on=input_config['default']
+                    )
                 )
             elif input_config['input_field_type'] == "upload":
                 config_div_elements.append(dcc.Upload(
                     id = {"type": "technique-config-display-file-upload", "index": input_field}, 
-                    children=html.Div([html.A('Select a file or Drag one here')]), 
-                    className="bg-halberd-dark",
+                    children=html.Div([html.A('Select a file or Drag one here', className="halberd-link")]), 
+                    className="bg-halberd-dark halberd-input",
                     style={'width': '50%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px'})
                 )
                 
@@ -783,24 +788,64 @@ def generate_attack_technique_config(technique):
         config_div_display.append(config_div)
     else:
         config_div_display.append(
-            html.Div(html.B("No config required! Hit 'Execute'"), className='d-grid col-6 mx-auto', style={'width' : '100%'})
+            html.Div(html.P("No config required! Hit 'Execute Technique'"), className='halberd-text d-grid col-6 mx-auto text-center', style={'width' : '100%'})
+        )
+
+    # Add access button
+    config_div_display.append(dbc.Label("Execute As", className="halberd-text"))
+    config_div_display.append(
+            dbc.Button(
+                "Establish Access", 
+                id="attack-access-info-dynamic-btn", 
+                color="success", 
+                className="mb-3",
+                outline=True,
+                style = {
+                    'width': '20vw',
+                    'display': 'flex',
+                    'justify-content': 'center',
+                    'align-items': 'center'
+                }
+            )
         )
 
     config_div_display.append(html.Br())
-
+    
     # Add technique execute button
     config_div_display.append(
         (html.Div([
-            dbc.Button("Execute Technique", id="technique-execute-button", n_clicks=0, color="danger"),
-            html.Br(),
-        ], className="d-grid col-3 mx-auto"))
+            dbc.Button([
+                DashIconify(
+                    icon="mdi:play",
+                    width=20,
+                    className="me-2"
+                ),
+                "Execute Technique"
+            ],
+            id="technique-execute-button",
+            n_clicks=0,
+            className="halberd-button mb-3"
+            )
+        ], className="d-grid col-3 mx-auto halberd-text"))
     )
 
     # Add add to playbook button
     config_div_display.append(
         html.Div([
-            dbc.Button("+ Add to Playbook", id="open-add-to-playbook-modal-button", n_clicks=0, color="secondary")
-        ], style={'display': 'flex', 'justify-content': 'center', 'gap': '10px'})
+            dbc.Button(
+                [
+                    DashIconify(
+                        icon="mdi:plus",
+                        width=20,
+                        className="me-2"
+                    ),
+                    "Add to Playbook"
+                ],
+                id="open-add-to-playbook-modal-button", 
+                n_clicks=0, 
+                className="halberd-button-secondary"
+            )
+        ], style={'display': 'flex', 'justify-content': 'center', 'gap': '10px'}, className="halberd-text")
     )
     
     # Create plabook modal dropdown content
@@ -808,7 +853,7 @@ def generate_attack_technique_config(technique):
     for pb in GetAllPlaybooks():
         playbook_dropdown_options.append(
             {
-                "label": html.Div([Playbook(pb).name], style={'font-size': 20}, className="text-dark"),
+                "label": html.Div([Playbook(pb).name], style={'font-size': 20}, className="halberd-text"),
                 "value": Playbook(pb).name,
             }
         )
@@ -825,21 +870,23 @@ def generate_attack_technique_config(technique):
                         value = None, 
                         id='att-pb-selector-dropdown',
                         placeholder="Select Playbook",
+                        className="halberd-dropdown halberd-text"
                         ),
                     html.Br(),
                     dbc.Label("Add to Step # (Optional)", className="text-light"),
-                    dbc.Input(id='pb-add-step-number-input', placeholder="3", type= "number", className="bg-halberd-dark text-light"),
+                    dbc.Input(id='pb-add-step-number-input', placeholder="3", type= "number", className="bg-halberd-dark text-light halberd-input"),
                     html.Br(),
                     dbc.Label("Wait in Seconds After Step Execution (Optional)", className="text-light"),
-                    dbc.Input(id='pb-add-step-wait-input', placeholder="120", type= "number", className="bg-halberd-dark text-light")
+                    dbc.Input(id='pb-add-step-wait-input', placeholder="120", type= "number", className="bg-halberd-dark text-light halberd-input")
                 ]),
                 dbc.ModalFooter([
-                    dbc.Button("Cancel", id="close-add-to-playbook-modal-button", className="ml-auto", color="danger", n_clicks=0),
-                    dbc.Button("Add to Playbook", id="confirm-add-to-playbook-modal-button", className="ml-2", color="danger", n_clicks=0)
+                    dbc.Button("Cancel", id="close-add-to-playbook-modal-button", className="ml-auto halberd-button-secondary", n_clicks=0),
+                    dbc.Button("Add to Playbook", id="confirm-add-to-playbook-modal-button", className="ml-2 halberd-button", n_clicks=0)
                 ])
             ],
             id="add-to-playbook-modal",
             is_open=False,
+            className="halberd-text"
         )
     )
     return config_div_display
@@ -1205,23 +1252,52 @@ def generate_attack_trace_table():
                 'overflowX': 'auto',
                 'backgroundColor': '#2F4F4F'
             },
+            style_data={
+                'backgroundColor': '#1a1a1a',
+                'color': 'white',
+                'border': '1px solid #3a3a3a',
+                'height': '50px',  # Row height
+                'lineHeight': '40px',
+                'whiteSpace': 'normal',  # Wrap text
+                'minWidth': '150px',  # Minimum width per column
+                'padding': '10px'  # Add some padding
+            },
             style_cell={
                 'textAlign': 'left',
-                'backgroundColor': '#2F4F4F',
+                'backgroundColor': '#1a1a1a',
                 'color': 'white',
                 'border': '1px solid #3a3a3a'
             },
             style_header={
-                'backgroundColor': '#000000',
+                'backgroundColor': '#2b2b2b',
                 'fontWeight': 'bold',
                 'border': '1px solid #3a3a3a'
             },
             style_data_conditional=[
                 {
                     'if': {'row_index': 'odd'},
-                    'backgroundColor': '#3D5C5C'
+                    'backgroundColor': '#202020',
+                },
+                {
+                    'if': {'state': 'selected'},
+                    'backgroundColor': '#363636',
+                    'border': '1px solid #3a3a3a',
+                },
+                {
+                    'if': {'state': 'active'},
+                    'backgroundColor': '#363636',
+                    'border': '1px solid #3a3a3a',
                 }
             ],
+            style_filter={
+                'backgroundColor': '#2b2b2b',
+                'color': 'white',  # Text color for the filter input
+            },
+            style_filter_conditional=[{
+                'if': {'column_id': c},
+                'backgroundColor': '#2b2b2b',
+                'color': 'white',
+            } for c in df.columns],
             sort_action='native',
             row_selectable='single',
             filter_action = 'native',
@@ -1229,7 +1305,7 @@ def generate_attack_trace_table():
             markdown_options={"html": True}  # Allow HTML in markdown
         ),
     ], 
-    className="bg-halberd-dark")
+    className="bg-halberd-dark halberd-text")
 
 def get_playbook_stats():
     """
