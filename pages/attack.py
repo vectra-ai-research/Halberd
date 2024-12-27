@@ -1,6 +1,6 @@
 '''
 Page Navigation url : app/attack
-Page Description : Allows interaction with Halberd attack modules and execution of attack techniques.
+Page Description : Configure and execute Halberd attack techniques and view technique response.
 '''
 
 import dash_bootstrap_components as dbc
@@ -8,19 +8,14 @@ from dash import html, dcc
 from dash_iconify import DashIconify
                    
 page_layout = html.Div([
-    html.H2(["Attack ",html.A(DashIconify(icon="mdi:help-circle-outline", width=18, height=18), href="https://github.com/vectra-ai-research/Halberd/wiki/UI-&-Navigation#attack-attack", target="_blank")], className="text-success mb-3"),
-
     html.Div([
         dbc.Row([
-            # Column 1: Display technique options radio buttons
+            # Column 1: Display technique selection options
             dbc.Col([
-                html.H5("Technique Options"),
-                html.Br(),
                 html.Div([
-                    dbc.Label("Attack Surface"),
                     dbc.Tabs(
                         [
-                            dbc.Tab(label="EntraID", tab_id="tab-attack-EntraID", labelClassName="text-success",
+                            dbc.Tab(label="Entra ID", tab_id="tab-attack-EntraID", labelClassName="halberd-brand-heading text-danger",
                                 tab_style={
                                     'borderRadius': '0px',
                                     'margin': '0px',
@@ -29,7 +24,7 @@ page_layout = html.Div([
                                 }
                             ),
                             dbc.Tab(
-                                label="M365", tab_id="tab-attack-M365", labelClassName="text-success",
+                                label="M365", tab_id="tab-attack-M365", labelClassName="halberd-brand-heading text-danger",
                                 tab_style={
                                     'borderRadius': '0px',
                                     'margin': '0px',
@@ -38,7 +33,7 @@ page_layout = html.Div([
                                 }
                             ),
                             dbc.Tab(
-                                label="AWS", tab_id="tab-attack-AWS", labelClassName="text-success",
+                                label="AWS", tab_id="tab-attack-AWS", labelClassName="halberd-brand-heading text-danger",
                                 tab_style={
                                     'borderRadius': '0px',
                                     'margin': '0px',
@@ -46,7 +41,7 @@ page_layout = html.Div([
                                     'marginRight': '0px'
                                 }
                             ),
-                                dbc.Tab(label="Azure", tab_id="tab-attack-Azure", labelClassName="text-success",
+                                dbc.Tab(label="Azure", tab_id="tab-attack-Azure", labelClassName="halberd-brand-heading text-danger",
                                 tab_style={
                                     'borderRadius': '0px',
                                     'margin': '0px',
@@ -56,56 +51,47 @@ page_layout = html.Div([
                             ),
                         ],
                         id="attack-surface-tabs",
-                        active_tab="tab-attack-EntraID",
-                        # class_name="bg-dark"
+                        active_tab="tab-attack-EntraID"
                     ),
-                    html.Br(),
-                    dbc.Label("Access"),
-                    dbc.Button(
-                        "Establish Access", 
-                        id="attack-access-info-dynamic-btn", 
-                        color="success", 
-                        className="mb-3 bg-dark",
-                        outline=True,
-                        style = {
-                            'width': '20vw',
-                            'display': 'flex',
-                            'justify-content': 'center',
-                            'align-items': 'center'
-                        }
+                    # Technique section heading
+                    html.P(
+                        "Technique", 
+                        className="halberd-brand-heading mt-4 mb-2"
                     ),
-                    dbc.Label("Tactics"),
-                    dcc.Dropdown(id = "tactic-dropdown", className= "bg-dark"),
-                    html.Br(),
-                    html.P("Techniques", style={"font-size": 20}),
-                    html.Div(id="attack-techniques-options-div", className= "bg-dark")
-                ], className= "bg-dark mx-3"),
-            ],  md=3, className="bg-dark border-end"),
+                    # Tactics dropdown
+                    dcc.Dropdown(
+                        id = "tactic-dropdown", 
+                        className= "halberd-dropdown mb-2"
+                    ),
+                    # Div to display techniques list
+                    html.Div(
+                        id="attack-techniques-options-div"
+                    )
+                ], className= "bg-halberd-dark mx-3"),
+            ],  md=3, className="bg-halberd-dark"),
             
-            # Column 2 : Display technique configuration
+            # Column 2 : Display technique information
             dbc.Col([
-                html.H5("Attack Technique Config"),
-                html.Br(),
-                html.Div(id="attack-config-div", className="mx-3")
-            ], md=6, className="bg-dark border-end"),
-            
-            # Column 3 : Display technique information
-            dbc.Col([
-                html.H5("Technique Information"),
-                html.Br(),
                 html.Div(id="attack-technique-info-div")
-            ],  md=3, className="bg-dark")
+            ],  md=4, className="bg-halberd-dark"),
+            
+            # Column 3 : Display technique configuration
+            dbc.Col([
+                html.H5("Technique Configuration", className="halberd-brand-heading text-2xl mb-4"),
+                html.Div(id="attack-config-div", className="p-4 halberd-depth-card")
+            ], md=5, className="bg-halberd-dark"),    
         ]),
-    ], style={"justify-content": "center", "align-items": "center"}),
+    ], style={"justify-content": "center", "align-items": "center"},
+    className="mb-3"
+    ),
     
-    html.Br(),
     # Display technique output
     dcc.Store(id="technique-output-memory-store"),
     dbc.Col([
         dbc.Row(
             [
                 dbc.Col(
-                    html.H4("Response")
+                    html.H4("Response", className="halberd-brand")
                 ),
                 dbc.Col(
                     html.A(
@@ -114,21 +100,22 @@ page_layout = html.Div([
                                 DashIconify(
                                     icon="mdi:history",
                                     width=20,
-                                    className="me-1"
+                                    className="me-2"
                                 ),
-                                "View Attack History"
+                                "Attack History"
                             ],
                             n_clicks=0,
-                            color="primary",
-                            className="ms-2",
+                            className="ms-2 halberd-button-secondary",
                             id="history-button",
                         ),
                         href="/attack-history", 
                         target="_blank", 
-                        style={'float': 'right', 'margin-left': '10px'}
+                        style={'float': 'right', 'margin-left': '10px'},
+                        className= "halberd-text"
                     )
                 )
-            ]
+            ],
+            className= "mb-2"
         ),
         dbc.Row(
             [
@@ -136,7 +123,42 @@ page_layout = html.Div([
                     dcc.Loading(
                         id="attack-output-loading",
                         type="default",
-                        children=html.Div(id= "execution-output-div", style={"height":"40vh", "overflowY": "auto", "border":"1px solid #ccc", "padding-right": "10px", "padding-left": "10px", "padding-top": "10px", "padding-bottom": "10px"})
+                        children=html.Div(
+                            [
+                                dbc.Col([
+                                    dbc.Row(
+                                        DashIconify(
+                                            icon="mdi:information-outline", #Information icon
+                                            width=48,
+                                            height=48,
+                                            className="text-muted mb-3 me-3"
+                                        ),
+                                    ),
+                                    dbc.Row(
+                                        html.P("Execute Technique to View Response") # Default message when no technique is executed
+                                    )
+                                ], 
+                                className="halberd-text text-muted",
+                                style={
+                                    'textAlign': 'center',
+                                    'height': '35vh',
+                                    'display': 'flex',
+                                    'alignItems': 'center',
+                                    'justifyContent': 'center',
+                                })
+                            ],
+                            id= "execution-output-div", 
+                            style={
+                                "height":"40vh", 
+                                "overflowY": "auto", 
+                                "border":"1px solid #ccc", 
+                                "padding-right": "10px", 
+                                "padding-left": "10px", 
+                                "padding-top": "10px", 
+                                "padding-bottom": "10px"
+                            },
+                            className="halberd-text"
+                        )
                     )
                 )
             ]
@@ -146,7 +168,7 @@ page_layout = html.Div([
     # Access details modal
     dbc.Modal(
         [
-            dbc.ModalHeader(dbc.ModalTitle("Access Manager", className="text-success")),
+            dbc.ModalHeader(dbc.ModalTitle("Access Manager", className="halberd-brand")),
             dbc.ModalBody(id = "attack-access-info-display-modal-body")
         ],
         id="attack-access-info-display-modal",
@@ -155,7 +177,7 @@ page_layout = html.Div([
         backdrop="static"
     ),
 ],
-className="bg-dark",
+className="bg-halberd-dark halberd-text",
 style={
     'minHeight': '100vh',
     "padding-right": "20px", 
