@@ -4,7 +4,7 @@
   <img src="assets/halberd_logo_banner.jpg" alt="logo" width="100%" align="center"/>
 </p>
 
-Halberd is a powerful, multi-cloud security testing tool. Born out of the need for a unified, easy-to-use tool, Halberd enables you to proactively assess your cloud defenses by executing a comprehensive array of attack techniques across Entra ID, M365, Azure, and AWS. With its intuitive web interface, you can simulate real-world attacks, generate valuable telemetry, and validate your security controls with ease & speed.
+Halberd is a powerful, multi-cloud security testing tool. It is a unified easy-to-use tool, that enables you to execute a comprehensive array of attack techniques across Entra ID, M365, Azure, AWS and GCP. With its intuitive web interface, you can emulate real-world attacks, generate valuable telemetry, and validate your security controls with ease & speed.
 
 ## What's the big deal? 🤔
 
@@ -12,11 +12,11 @@ Halberd lets you:
 
 - Execute attack techniques faster than you can say "cloud misconfiguration"
 - Generate telemetry that'll make your SOC team beam with joy
-- Validate your defenses across Entra ID, M365, Azure, and AWS
+- Validate your defenses across Entra ID, M365, Azure, AWS and GCP
 - Do it all through a slick web interface that won't make your eyes bleed
 
 <p align="center">
-  <img src="assets/Halberd_Attack_View_v2.png" width=100% align="center"/>
+  <img src="assets/Halberd_Attack_View_v2_0.png" width=100% align="center"/>
 </p>
 
 ## Features that make Halberd awesome! 😮
@@ -57,14 +57,14 @@ Halberd lets you:
 ## Using Halberd: Choose Your Own Adventure 🗺️
  
 1. **Attack**: Pick your poison – surface, tactic, technique – and start your testing! 
-- **Access**: Manage your tokens and sessions like a digital locksmith.
+- **Access Manager**: Manage your tokens and sessions like a digital locksmith.
 2. **Recon**: Gather intel with visual dashboards. Try the "Entity Map" for a nice visualization!
 3. **Automator**: Chain attacks together like a mastermind.
-4. **Trace**: Review your handiwork and generate reports.
+4. **Analyse**: Review your handwork and generate reports.
 
 Checkout [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) for more information on testing with Halberd. 
 
-Pro tip: Start with "Initial Access" under each attack surface. You can't hack what you can't reach!
+Pro tip: Start with "Initial Access" technique under an attack surface. You can't hack what you can't reach!
 
 ## Want to Join the Party? 🎉
 
