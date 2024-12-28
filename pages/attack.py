@@ -15,7 +15,7 @@ page_layout = html.Div([
                 html.Div([
                     dbc.Tabs(
                         [
-                            dbc.Tab(label="Entra ID", tab_id="tab-attack-EntraID", labelClassName="halberd-brand-heading text-danger",
+                            dbc.Tab(label="Entra ID", tab_id="tab-attack-EntraID", labelClassName="halberd-brand",
                                 tab_style={
                                     'borderRadius': '0px',
                                     'margin': '0px',
@@ -24,7 +24,7 @@ page_layout = html.Div([
                                 }
                             ),
                             dbc.Tab(
-                                label="M365", tab_id="tab-attack-M365", labelClassName="halberd-brand-heading text-danger",
+                                label="M365", tab_id="tab-attack-M365", labelClassName="halberd-brand",
                                 tab_style={
                                     'borderRadius': '0px',
                                     'margin': '0px',
@@ -33,7 +33,7 @@ page_layout = html.Div([
                                 }
                             ),
                             dbc.Tab(
-                                label="AWS", tab_id="tab-attack-AWS", labelClassName="halberd-brand-heading text-danger",
+                                label="AWS", tab_id="tab-attack-AWS", labelClassName="halberd-brand",
                                 tab_style={
                                     'borderRadius': '0px',
                                     'margin': '0px',
@@ -41,7 +41,7 @@ page_layout = html.Div([
                                     'marginRight': '0px'
                                 }
                             ),
-                                dbc.Tab(label="Azure", tab_id="tab-attack-Azure", labelClassName="halberd-brand-heading text-danger",
+                                dbc.Tab(label="Azure", tab_id="tab-attack-Azure", labelClassName="halberd-brand",
                                 tab_style={
                                     'borderRadius': '0px',
                                     'margin': '0px',
@@ -49,7 +49,7 @@ page_layout = html.Div([
                                     'marginRight': '0px'
                                 }
                             ),
-                                dbc.Tab(label="GCP", tab_id="tab-attack-GCP", labelClassName="text-success",
+                                dbc.Tab(label="GCP", tab_id="tab-attack-GCP", labelClassName="halberd-brand",
                                 tab_style={
                                     'borderRadius': '0px',
                                     'margin': '0px',
