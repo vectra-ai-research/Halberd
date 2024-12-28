@@ -31,7 +31,6 @@ def create_playbook_manager_layout():
                         ], 
                         id="open-creator-win-playbook-button", 
                         n_clicks=0,
-                        color="success",
                         className="me-2 halberd-button-secondary"
                     ),
                     # Import playbook button
@@ -73,14 +72,19 @@ def create_playbook_manager_layout():
                 html.Div([
                     dbc.InputGroup([
                         dbc.InputGroupText(
-                            DashIconify(icon="mdi:magnify", className="text-muted"),
-                            className="bg-halberd-dark border-secondary"
+                            DashIconify(
+                                icon="mdi:magnify", 
+                                width=24,
+                                height=24,
+                                className="text-muted"
+                            ),
+                            className="bg-halberd-dark"
                         ),
                         dbc.Input(
                             id="playbook-search",
-                            placeholder="Search playbooks...",
+                            placeholder="Search Playbook...",
                             type="text",
-                            className="bg-halberd-dark text-light border-secondary",
+                            className="bg-halberd-dark halberd-text halberd-input",
                         ),
                     ], className="w-100")
                 ], className="pb-3"),
