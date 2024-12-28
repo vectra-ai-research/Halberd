@@ -17,57 +17,70 @@ def create_playbook_manager_layout():
             # Left Panel - Playbook List
             dbc.Col([
                 # Primary management buttons       
-                html.Div([
-                    # New playbook button
-                    dbc.Button(
-                        [
-                            DashIconify(
-                                icon="mdi:plus",
-                                width=24,
-                                height=24,
-                                className="me-2"
-                            ),
-                            "New Playbook"
-                        ], 
-                        id="open-creator-win-playbook-button", 
-                        n_clicks=0,
-                        className="me-2 halberd-button-secondary"
-                    ),
-                    # Import playbook button
-                    dcc.Upload(
-                        id="upload-playbook",
-                        children=dbc.Button(
+                dbc.Row([
+                    dbc.Col(
+                        # New playbook button
+                        dbc.Button(
                             [
                                 DashIconify(
-                                    icon="material-symbols:upload-file",  # Upload file icon for import
+                                    icon="mdi:plus",
                                     width=24,
                                     height=24,
                                     className="me-2"
                                 ),
-                                "Import"
-                            ],
-                            id="import-pb-button", 
-                            n_clicks=0,  
-                            className="me-2 halberd-button-secondary"
+                                "New Playbook"
+                            ], 
+                            id="open-creator-win-playbook-button", 
+                            n_clicks=0,
+                            className="me-2 halberd-button-secondary",
+                            style={'width':'100%'}
                         ),
+                        md=4
                     ),
-                    html.Div(
-                        # View progress button
-                        dbc.Button([
-                            DashIconify(
-                                icon="mdi:progress-clock",
-                                width=20,
-                                className="me-2"
+                    dbc.Col(
+                        # Import playbook button
+                        dcc.Upload(
+                            id="upload-playbook",
+                            children=dbc.Button(
+                                [
+                                    DashIconify(
+                                        icon="material-symbols:upload-file",  # Upload file icon for import
+                                        width=24,
+                                        height=24,
+                                        className="me-2"
+                                    ),
+                                    "Import"
+                                ],
+                                id="import-pb-button", 
+                                n_clicks=0,  
+                                className="me-2 halberd-button-secondary",
+                                style={'width':'100%'}
                             ),
-                            "View Progress"
-                        ],
-                        id="view-progress-button",
-                        n_clicks=0,
-                        className="me-2 halberd-button-secondary"
                         ),
-                        id="view-progress-button-container"
+                        md=4
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            # View progress button
+                            dbc.Button(
+                                    [
+                                    DashIconify(
+                                        icon="mdi:progress-clock",
+                                        width=20,
+                                        className="me-2"
+                                    ),
+                                    "View Progress"
+                                ],
+                                id="view-progress-button",
+                                n_clicks=0,
+                                className="me-2 halberd-button-secondary",
+                                style={'width':'100%'}
+                            ),
+                            id="view-progress-button-container"
+                        ),
+                        md=4
                     )
-                ], className="d-flex justify-content-between align-items-center mb-3"),
+                ],className="mb-3"),
                 # Search bar
                 html.Div([
                     dbc.InputGroup([
