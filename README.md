@@ -16,7 +16,7 @@ Halberd lets you:
 - Do it all through a slick web interface that won't make your eyes bleed
 
 <p align="center">
-  <img src="assets/Halberd_Attack_View_v2_0.png" width=100% align="center"/>
+  <img src="assets/halberd_attack_view_v2_0.png" width=100% align="center"/>
 </p>
 
 ## Features that make Halberd awesome! 😮
