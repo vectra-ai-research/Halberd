@@ -686,7 +686,7 @@ def generate_attack_tactics_options(tab):
     for tactic in tactics_options:
         tactic_dropdown_option.append(
             {
-                "label": html.Div([tactic],className="halberd-text"),
+                "label": html.Div([tactic],className="halberd-brand"),
                 "value": tactic,
             }
         )

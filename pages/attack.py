@@ -12,6 +12,7 @@ page_layout = html.Div([
         dbc.Row([
             # Column 1: Display technique selection options
             dbc.Col([
+                # Attack surface tabs
                 html.Div([
                     dbc.Tabs(
                         [
@@ -59,17 +60,13 @@ page_layout = html.Div([
                             ),
                         ],
                         id="attack-surface-tabs",
-                        active_tab="tab-attack-EntraID"
-                    ),
-                    # Technique section heading
-                    html.P(
-                        "Technique", 
-                        className="halberd-brand-heading mt-4 mb-2"
+                        active_tab="tab-attack-EntraID",
+                        className="mb-2"
                     ),
                     # Tactics dropdown
                     dcc.Dropdown(
                         id = "tactic-dropdown", 
-                        className= "halberd-dropdown mb-2"
+                        className= "halberd-dropdown mb-4"
                     ),
                     # Div to display techniques list
                     html.Div(
