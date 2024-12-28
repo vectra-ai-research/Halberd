@@ -2382,4 +2382,4 @@ if __name__ == '__main__':
     # Initialize logger
     logger = setup_logger() 
     # Start application
-    app.run_server(debug = True)
+    app.run_server(debug = False)
