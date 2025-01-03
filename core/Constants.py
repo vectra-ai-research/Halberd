@@ -16,6 +16,7 @@ REPORT_DIR = "./report"
 GRAPH_ENDPOINT_URL = "https://graph.microsoft.com/v1.0"
 
 LOGGING_CONFIG_FILE = "./core/logging/logging_config.yml"
+SERVER_LOG_FILE = "./local/server.log"
 
 CATEGORY_MAPPING = {
     "azure": "Azure",

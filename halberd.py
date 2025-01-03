@@ -32,8 +32,17 @@ from core.output_manager.output_manager import OutputManager
 from pages.attack_analyse import process_attack_data, create_metric_card, create_df_from_attack_logs, create_bar_chart, create_pie_chart, create_timeline_graph
 from pages.automator import create_playbook_item, create_playbook_manager_layout, schedule_pb_div, export_pb_div, generate_playbook_creator_offcanvas, generate_step_form, playbook_editor_create_parameter_inputs, create_step_progress_card
 
-# Create Application
-app = dash.Dash(__name__,  external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP],title='Halberd', update_title='Loading...', suppress_callback_exceptions=True)
+run_initialization_check() # Run Halberd initialization checks
+logger = setup_logger() # Initialize Halberd logger
+
+# Create Halberd application
+app = dash.Dash(
+    __name__,  
+    external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP],
+    title='Halberd', 
+    update_title='Loading...', 
+    suppress_callback_exceptions=True
+    )
 
 # Navigation bar layout
 navbar = dbc.NavbarSimple(
@@ -2372,14 +2381,5 @@ def delete_gcp_credential_callback(credential_name, n_clicks):
     
     # Delete selected session
     manager.delete_current_credentials()
-    
 
     return True, "GCP Credential Deleted"
-
-if __name__ == '__main__':
-    # Run Initialization check
-    run_initialization_check()
-    # Initialize logger
-    logger = setup_logger() 
-    # Start application
-    app.run_server(debug = False)

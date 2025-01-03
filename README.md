@@ -49,10 +49,25 @@ Halberd lets you:
 
 4. Launch Halberd:
    ```
-   python3 Halberd.py
+   python3 run.py
    ```
 
 5. Point your browser to `http://127.0.0.1:8050/` and start testing
+
+   ```
+   Additional Server Options
+   # Custom Host & Port
+   python3 run.py --host 0.0.0.0 --port 8050
+
+   # Enable SSL (HTTPS)
+   python3 run.py --ssl-cert /path/to/cert.pem --ssl-key /path/to/key.pem
+
+   # Set Custom Log Level
+   python3 run.py --log-level debug
+
+   # Development Server with Debug Mode
+   python3 run.py --dev-server --dev-server-debug
+   ```
 
 ## Using Halberd: Choose Your Own Adventure 🗺️
  
@@ -68,11 +83,11 @@ Pro tip: Start with "Initial Access" technique under an attack surface. You can'
 
 ## Want to Join the Party? 🎉
 
-Got ideas? Found a bug? Want to add that one cool feature? We're all ears! Check out our [contribution guidelines](https://github.com/vectra-ai-research/Halberd/wiki/Contributions) and let's make Halberd even more awesome together.
+Got ideas? Found a bug? Want to add that one cool feature? Check out the [contribution guidelines](https://github.com/vectra-ai-research/Halberd/wiki/Contributions) and let's make Halberd even more awesome together.
 
 ## Who's Behind This Madness? 🕵️‍♂️
 
-Halberd is the brainchild of [Arpan Sarkar](https://www.linkedin.com/in/arpan-sarkar/), a cloud security enthusiast with a penchant for making life harder for attackers (and easier for defenders).
+Halberd is the brainchild of [Arpan Sarkar](https://www.linkedin.com/in/arpan-sarkar/)
 
 ## Standing on the Shoulders of Giants 🏔️
 
