@@ -1,32 +1,37 @@
-# Halberd: Multi-Cloud Security Testing Tool 🛡️
+# Halberd: Multi-Cloud Security Testing Platform 🛡️
 
 <p align="center">
   <img src="assets/halberd_logo_banner.jpg" alt="logo" width="100%" align="center"/>
 </p>
 
-Halberd is a powerful multi-cloud security testing tool. It is a unified easy-to-use tool, that enables you to execute a comprehensive array of attack techniques across Entra ID, M365, Azure, AWS and GCP. With its intuitive web interface, you can emulate real-world attacks, generate valuable telemetry, and validate your security controls with ease & speed.
+Halberd is an advanced security testing platform that enables security teams to validate cloud security controls through sophisticated attack emulation. By providing comprehensive coverage across Microsoft Entra ID, Microsoft 365, Microsoft Azure, Amazon Web Services (AWS), and Google Cloud Platform (GCP), Halberd helps organizations:
 
-## What's the big deal? 🤔
-
-Halberd lets you:
-
-- Execute attack techniques faster than you can say "cloud misconfiguration"
-- Generate telemetry that'll make your SOC team beam with joy
-- Validate your defenses across Entra ID, M365, Azure, AWS and GCP
-- Do it all through a slick web interface that won't make your eyes bleed
+* **Validate Security Controls** : Test detection and prevention capabilities across your cloud infrastructure
+* **Generate Attack Telemetry**: Create realistic security events to tune and optimize your security monitoring
+* **Automate Security Testing**: Build and execute complex attack chains to assess security resilience
+* **Accelerate Red Team Operations**: Rapidly deploy testing scenarios through an intuitive interface
 
 <p align="center">
   <img src="assets/halberd_attack_view_v2_0.png" width=100% align="center"/>
 </p>
 
-## Getting Started: 0 to Testing in 5 Minutes ⏱️
+## Key Capabilities
 
-1. Clone that repo:
+* 🔬 **Advanced Attack Framework**: Execute sophisticated attack techniques mapped to MITRE ATT&CK
+* 📊 **Intelligence Dashboards**: Gather deep insights into security posture through visual analysis
+* 🔄 **Automated Playbooks**: Chain multiple techniques into comprehensive attack scenarios
+* 📈 **Detailed Reporting**: Generate executive and technical reports on security testing outcomes
+* 🔌 **Extensible Architecture**: Add custom techniques through a robust development framework
+* 🌐 **Cross-Platform Support**: Test security controls across all major cloud providers
+
+## Quick Start Guide
+
+1. Clone the repository:
    ```
    git clone https://github.com/vectra-ai-research/Halberd.git
    ```
 
-2. Set up your playground:
+2. Configure the environment::
    ```
    cd Halberd
    python3 -m venv venv
@@ -35,62 +40,64 @@ Halberd lets you:
    ```
 
 3. Install Azure CLI:
-   - Windows: [Official Microsoft guide](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows?tabs=azure-cli)
-   - Linux: `curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash`
-   - macOS: `brew update && brew install azure-cli`
+   * Windows: [Official Microsoft guide](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli-windows?tabs=azure-cli)
+   * Linux: `curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash`
+   * macOS: `brew update && brew install azure-cli`
 
-4. Launch Halberd server:
+4. Launch Halberd:
    ```
    python3 run.py
    ```
 
-5. Open `http://127.0.0.1:8050/` in your browser and start testing
+5. Access the interface at `http://127.0.0.1:8050/` and begin testing
 
-   ```
-   Additional Server Options
-   # Custom Host & Port
-   python3 run.py --host 0.0.0.0 --port 8050
+#### Advanced Deployment Options
 
-   # Enable SSL (HTTPS)
-   python3 run.py --ssl-cert /path/to/cert.pem --ssl-key /path/to/key.pem
+```
+# Custom Host & Port
+python3 run.py --host 0.0.0.0 --port 8050
 
-   # Set Custom Log Level
-   python3 run.py --log-level debug
+# Enable TLS
+python3 run.py --ssl-cert /path/to/cert.pem --ssl-key /path/to/key.pem
 
-   # Development Server with Debug Mode
-   python3 run.py --dev-server --dev-server-debug
-   ```
+# Configure Logging
+python3 run.py --log-level debug
 
-## Using Halberd: Choose Your Own Adventure 🗺️
- 
-1. **Attack**: Pick your poison – surface, tactic, technique – and start your testing! 
-- **Access Manager**: Manage your tokens and sessions like a digital locksmith.
-2. **Recon**: Gather intel with visual dashboards. Try the "Entity Map" for a nice visualization!
-3. **Automator**: Chain attacks together like a mastermind.
-4. **Analyse**: Review your handwork and generate reports.
+# Development Mode
+python3 run.py --dev-server --dev-server-debug
+```
 
-Checkout [usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage) for more information on testing with Halberd. 
+## Core Workflows
 
-Pro tip: Start with "Initial Access" technique under an attack surface. You can't hack what you can't reach!
+1. **Attack Execution & Testing**:
+   * Select target environment (Entra ID/M365/Azure/AWS/GCP)
+   * Browse techniques by MITRE ATT&CK tactics
+   * Execute attacks across multiple clouds
+   * Manage access with built-in access manager
+   * View results with rich output formatting
+   * Generate attack telemetry
 
-## Features that make Halberd awesome! 😮
+2. **Attack Automation**:
+   * Create automated attack playbooks
+   * Chain multiple techniques into attack sequences
+   * Import/Export playbooks for sharing
+   * Schedule recurring security tests
 
-- 🎭 Realistic attack simulations across multiple cloud platforms
-- 🧠 Smart recon dashboards for gathering intel like a pro
-- 🎬 Attack playbooks to channel your inner hacker
-- 📊 Insightful reports to impress your boss (or your cat)
-- 🖥️ CLI access for when you're feeling extra geeky
+3. **Security Analysis**:
+   * Track testing metrics through intuitive dashboards
+   * Visualize attack paths and impact
+   * Identify security gaps
+   * Generate comprehensive test reports
+   * Export results for compliance evidence
+
+For detailed usage instructions, visit [Halberd Wiki - Usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage).
 
 ## Want to Join the Party? 🎉
 
-Got ideas? Found a bug? Want to add that one cool feature? Check out the [contribution guidelines](https://github.com/vectra-ai-research/Halberd/wiki/Contributions) and let's make Halberd even more awesome together.
+Got ideas? Found a bug? Want to add that new cool feature? Check out the [contribution guidelines](https://github.com/vectra-ai-research/Halberd/wiki/Contributions) and let's make Halberd even more awesome together.
 
-## Who's Behind This Madness? 🕵️‍♂️
+## About
+Halberd is developed by [Arpan Sarkar](https://www.linkedin.com/in/arpan-sarkar/) and is [inspired](https://github.com/vectra-ai-research/Halberd/wiki/Additional-(Amazing)-Resources) by the excellent work of the cloud security community.
 
-Halberd is the brainchild of [Arpan Sarkar](https://www.linkedin.com/in/arpan-sarkar/)
-
-## Standing on the Shoulders of Giants 🏔️
-
-We didn't reinvent the wheel – we just made it roll smoother. Check out our [inspirations](https://github.com/vectra-ai-research/Halberd/wiki/Additional-(Amazing)-Resources) and show some love to the amazing security tools that paved the way.
-
-Now go forth and hack responsibly! 🚀
+***
+**Now go forth and hack responsibly! 🚀**
