@@ -1,4 +1,4 @@
-from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique
+from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, TechniqueReference, TechniqueNote
 from ..technique_registry import TechniqueRegistry
 from typing import Dict, Any, Tuple
 from core.entra.entra_token_manager import EntraTokenManager
@@ -16,8 +16,9 @@ def AcquireDeviceCodeFlowToken(token_url, token_data, polling_interval):
         if token_response.status_code == 200:
             token_json = token_response.json()
             access_token = token_json['access_token']
-            # save access token
-            EntraTokenManager().add_token(access_token)
+            refresh_token = token_json['refresh_token']
+            # save access and refresh token
+            EntraTokenManager().add_token(access_token=access_token,refresh_token=refresh_token)
             break
         elif token_response.status_code == 400 and 'error' in token_response.json() and token_response.json()['error'] == 'authorization_pending':
             # continue polling
@@ -36,7 +37,23 @@ class EntraDeviceCodeFlowAuth(BaseTechnique):
                 sub_technique_name="Cloud Accounts"
             )
         ]
-        super().__init__("Establish Access via Device Code Flow", "Authenticates to target tenant using Entra ID device code flow", mitre_techniques)
+        technique_ref = [
+            TechniqueReference(
+                ref_title="First-party Microsoft applications reference",
+                ref_link="https://learn.microsoft.com/en-us/troubleshoot/entra/entra-id/governance/verify-first-party-apps-sign-in#application-ids-of-commonly-used-microsoft-applications"
+            ),
+            TechniqueReference(
+                ref_title="Microsoft Graph permissions reference",
+                ref_link="https://learn.microsoft.com/en-us/graph/permissions-reference"
+            )
+        ]
+        technique_note = [
+            TechniqueNote(
+                "[Input] Scope: Provide Microsoft Graph permissions. Add multiple permissions separated by space. Example Input: openid File.Read.All Directory.Read.All"
+            )
+        ]
+        
+        super().__init__("Establish Access via Device Code Flow", "Authenticates to target tenant using Entra ID device code flow", mitre_techniques, references=technique_ref, notes=technique_note)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
@@ -61,7 +78,7 @@ class EntraDeviceCodeFlowAuth(BaseTechnique):
             
             data = {
                 "client_id": client_id,
-                "scope": scope,
+                "scope": scope+" "+"offline_access", # offline_access to request refresh token
             }
 
             generate_device_code_flow = requests.post(url=endpoint_url, data=data).json()
@@ -106,8 +123,8 @@ class EntraDeviceCodeFlowAuth(BaseTechnique):
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            "tenant_id": {"type": "str", "required": True, "default":None, "name": "Tenant ID", "input_field_type" : "text"},
+            "tenant_id": {"type": "str", "required": True, "default":None, "name": "Tenant ID or Domain", "input_field_type" : "text"},
             "client_id": {"type": "str", "required": False, "default":"d3590ed6-52b3-4102-aeff-aad2292ab01c", "name": "Client ID", "input_field_type" : "text"},
-            "scope": {"type": "str", "required": False, "default":"https://graph.microsoft.com/.default", "name": "Scope", "input_field_type" : "text"}
+            "scope": {"type": "str", "required": False, "default":"https://graph.microsoft.com/.default", "name": "Graph Permissions", "input_field_type" : "text"}
         }
 
