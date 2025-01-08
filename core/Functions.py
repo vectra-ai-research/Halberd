@@ -770,11 +770,19 @@ def generate_attack_technique_config(technique):
             if input_config['input_field_type'] in ["text", "email", "password", "number"]:
                 config_div_elements.append(dbc.Input(
                     type = input_config['input_field_type'],
-                    placeholder = input_config['default'] if input_config['default'] else "", #default param value in placeholder
+                    placeholder = f"default: {input_config['default']}" if input_config['default'] else "", #default param value in placeholder
                     debounce = True,
                     id = {"type": "technique-config-display", "index": input_field},
-                    className="bg-halberd-dark border halberd-text halberd-input",
+                    className="bg-halberd-dark border halberd-text halberd-input"
                 ))
+            elif input_config['input_field_type'] == "select":
+                config_div_elements.append(
+                    dbc.Select(
+                        id = {"type": "technique-config-display", "index": input_field},
+                        options=input_config["input_list"],
+                        className="bg-halberd-dark border halberd-text halberd-input",
+                    )
+                )
             elif input_config['input_field_type'] == "bool":
                 config_div_elements.append(
                     daq.BooleanSwitch(
