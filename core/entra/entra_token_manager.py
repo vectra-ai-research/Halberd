@@ -31,7 +31,6 @@ class EntraTokenManager:
         # Start token refresh monitoring in a separate thread
         self._stop_monitoring = False
         self._monitor_thread = threading.Thread(target=self._token_monitor, daemon=True)
-        self._monitor_thread.start()
 
     def __del__(self):
         """Ensure monitoring thread is stopped when object is destroyed"""

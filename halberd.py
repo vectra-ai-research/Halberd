@@ -34,6 +34,8 @@ from pages.automator import create_playbook_item, create_playbook_manager_layout
 
 run_initialization_check() # Run Halberd initialization checks
 logger = setup_logger() # Initialize Halberd logger
+entra_token_manager = EntraTokenManager() # Initialize Entra token manager
+entra_token_manager._monitor_thread.start() #Start token refresh monitoring
 
 # Create Halberd application
 app = dash.Dash(
