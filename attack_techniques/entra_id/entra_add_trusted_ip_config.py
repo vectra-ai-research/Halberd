@@ -76,6 +76,6 @@ class EntraAddTrustedIPConfig(BaseTechnique):
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            "ip_addr": {"type": "str", "required": True, "default":None, "name": "IP Address", "input_field_type" : "text"},
+            "ip_addr": {"type": "str", "required": True, "default":None, "name": "IP/CIDR", "input_field_type" : "text"},
             "trusted_policy_name": {"type": "str", "required": True, "default":None, "name": "New Policy Name", "input_field_type" : "text"}
         }

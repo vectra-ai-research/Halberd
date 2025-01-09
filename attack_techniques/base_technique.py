@@ -41,7 +41,7 @@ class TechniqueReference:
 
 class TechniqueNote:
     """
-    List of notes and any additional information related to the technique
+    Class for defining a single note or any additional information related to the technique
     """
     def __init__(self, note: str):
         self.note = note

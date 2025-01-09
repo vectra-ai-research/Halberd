@@ -24,8 +24,6 @@ class AzureEnumerateRoleAssignment(BaseTechnique):
             scope: str = kwargs.get("scope", None)
             principal_id: str = kwargs.get("principal_id", None)
 
-            print(principal_id)
-
             # Validate principal_type if provided
             valid_principal_types = ["User", "Group", "ServicePrincipal", "Application"]
             if principal_type and principal_type not in valid_principal_types:

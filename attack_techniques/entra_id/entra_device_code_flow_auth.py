@@ -15,8 +15,8 @@ def AcquireDeviceCodeFlowToken(token_url, token_data, polling_interval):
 
         if token_response.status_code == 200:
             token_json = token_response.json()
-            access_token = token_json['access_token']
-            refresh_token = token_json['refresh_token']
+            access_token = token_json.get('access_token')
+            refresh_token = token_json.get('refresh_token', None)
             # save access and refresh token
             EntraTokenManager().add_token(access_token=access_token,refresh_token=refresh_token)
             break
@@ -59,22 +59,16 @@ class EntraDeviceCodeFlowAuth(BaseTechnique):
         self.validate_parameters(kwargs)
         
         try:
-            tenant_id: str = kwargs['tenant_id']
             client_id: str = kwargs.get('client_id', 'd3590ed6-52b3-4102-aeff-aad2292ab01c')
             scope: str = kwargs.get('scope', 'https://graph.microsoft.com/.default')
             
-            if tenant_id in [None, ""]:
-                return ExecutionStatus.FAILURE, {
-                    "error": "Invalid Technique Input : Tenant ID",
-                    "message": "Invalid Technique Input : Tenant ID"
-                }
             if client_id in [None, ""]:
                 client_id = "d3590ed6-52b3-4102-aeff-aad2292ab01c" #set default client id
 
             if scope in [None, ""]:
                 scope = "https://graph.microsoft.com/.default"
 
-            endpoint_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/devicecode"
+            endpoint_url = f"https://login.microsoftonline.com/common/oauth2/v2.0/devicecode"
             
             data = {
                 "client_id": client_id,
@@ -88,7 +82,8 @@ class EntraDeviceCodeFlowAuth(BaseTechnique):
             device_code = generate_device_code_flow['device_code']
             polling_interval = generate_device_code_flow['interval']
 
-            token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
+            token_url = f"https://login.microsoftonline.com/common/oauth2/v2.0/token"
+
             token_data = {
                 "grant_type": "urn:ietf:params:oauth:grant-type:device_code",
                 "client_id": client_id,
@@ -123,7 +118,6 @@ class EntraDeviceCodeFlowAuth(BaseTechnique):
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            "tenant_id": {"type": "str", "required": True, "default":None, "name": "Tenant ID or Domain", "input_field_type" : "text"},
             "client_id": {"type": "str", "required": False, "default":"d3590ed6-52b3-4102-aeff-aad2292ab01c", "name": "Client ID", "input_field_type" : "text"},
             "scope": {"type": "str", "required": False, "default":"https://graph.microsoft.com/.default", "name": "Graph Permissions", "input_field_type" : "text"}
         }
