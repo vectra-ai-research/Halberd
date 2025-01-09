@@ -86,7 +86,7 @@ class M365DeployEmailFrwdRule(BaseTechnique):
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
             "user_id": {
-                "type": "str", 
+                "type": "email", 
                 "required": True, 
                 "default":None, 
                 "name": "Forwarding Mailbox", 
@@ -100,10 +100,10 @@ class M365DeployEmailFrwdRule(BaseTechnique):
                 "input_field_type" : "text"
             },
             "recipient_address": {
-                "type": "str", 
+                "type": "email", 
                 "required": True, 
                 "default":None, 
-                "name": "Recipient Name", 
+                "name": "Recipient Mailbox", 
                 "input_field_type" : "email"
             },
             "rule_name": {
