@@ -69,7 +69,7 @@ class EntraEstablishAccessAsUser(BaseTechnique):
                 token_manager = EntraTokenManager()
                 token = raw_response.json()
                 access_token = token.get('access_token')
-                refresh_token = token.get('refresh_token')
+                refresh_token = token.get('refresh_token', None)
                 # save access token
                 if save_token:
                     # save token to app
