@@ -780,6 +780,7 @@ def generate_attack_technique_config(technique):
                     dbc.Select(
                         id = {"type": "technique-config-display", "index": input_field},
                         options=input_config["input_list"],
+                        placeholder = f"default: {input_config['default']}" if input_config['default'] else "", #default param value in placeholder
                         className="bg-halberd-dark border halberd-text halberd-input",
                     )
                 )
