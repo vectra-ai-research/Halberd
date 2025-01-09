@@ -50,12 +50,13 @@ from .azure.azure_deploy_malicious_extension_on_vm import AzureDeployMaliciousEx
 from .azure.azure_execute_script_on_vm import AzureExecuteScriptOnVM
 from .azure.azure_remove_role_asignment import AzureRemoveRoleAssignment
 from .azure.azure_disable_storage_account_firewall import AzureDisableStorageAccountFirewall
-from.azure.azure_enable_storage_account_public_access import  AzureEnableStorageAccountPublicAccess
+from .azure.azure_enable_storage_account_public_access import  AzureEnableStorageAccountPublicAccess
 from .azure.azure_expose_storage_account_container_public import AzureExposeStorageAccountContainerPublic
 from .azure.azure_exfil_storage_account_container import AzureExfilStorageAccountContainer
 from .azure.azure_exfil_vm_disk import AzureExfilVMDisk
 from .azure.azure_disable_resource_diagnostic_logging import AzureDisableResourceDiagnosticLogging
 from .azure.azure_scan_logic_apps_for_credentials import AzureScanLogicAppsForCredentials
+from .azure.azure_extract_cache_tokens import AzureExtractCacheTokens
 
 # Entra ID Techniques
 from .entra_id.entra_recon_tenant_info import EntraReconTenantInfo
@@ -84,6 +85,7 @@ from .entra_id.entra_invite_external_user import EntraInviteExternalUser
 from .entra_id.entra_create_new_app import EntraCreateNewApp
 from .entra_id.entra_add_trusted_ip_config import EntraAddTrustedIPConfig
 from .entra_id.entra_remove_account_access import EntraRemoveAccountAccess
+from .entra_id.entra_abuse_family_refresh_token import EntraAbuseFamilyRefreshToken
 
 # M365 Techniques
 from .m365.m365_deploy_email_deletion_rule import M365DeployEmailDelRule
@@ -94,6 +96,7 @@ from .m365.m365_search_teams_chat import M365SearchTeamsChat
 from .m365.m365_search_teams_messages import M365SearchTeamsMessages
 from .m365.m365_search_user_one_drive import M365SearchUserOneDrive
 from .m365.m365_send_outlook_email import M365SendOutlookEmail
+from .m365.m365_exfil_sharepoint_data import M365ExfilSharepointData
 
 # GCP Techniques
 from .gcp.gcp_establish_access_as_sa import GCPEstablishAccessAsServiceAccount
