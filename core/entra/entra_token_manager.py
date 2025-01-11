@@ -3,13 +3,10 @@ import threading
 import time
 import datetime
 import requests
-import logging
 from typing import Optional, Dict, Tuple, Union
-from core.Constants import MSFT_TOKENS_FILE, SERVER_LOG_FILE
+from core.Constants import MSFT_TOKENS_FILE
 from core.entra.token_info import Msft_Token
-
-token_logger = logging.getLogger(__name__)
-logging.basicConfig(filename=SERVER_LOG_FILE, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.WARNING)
+from core.logging.logger import graph_logger
 
 class TokenRefreshError(Exception):
     """Custom exception for token refresh failures"""
@@ -48,7 +45,7 @@ class EntraTokenManager:
             try:
                 self._check_and_refresh_tokens()
             except Exception as e:
-                token_logger.error(f"Error in token monitor: {str(e)}")
+                graph_logger.error(f"Error in token monitor: {str(e)}")
             time.sleep(self.check_interval)
 
     def _check_and_refresh_tokens(self):
@@ -75,16 +72,16 @@ class EntraTokenManager:
                     if refresh_token:
                         tokens_to_refresh.append((access_token, refresh_token, token_info))
                     else:
-                        token_logger.info(f"Token near expiration but no refresh token available: {access_token[:10]}...")
+                        graph_logger.info(f"Token near expiration but no refresh token available: {access_token[:10]}...")
             except Exception as e:
-                token_logger.error(f"Error checking token expiration: {str(e)}")
+                graph_logger.error(f"Error checking token expiration: {str(e)}")
 
         # Refresh collected tokens
         for access_token, refresh_token, token_info in tokens_to_refresh:
             try:
                 self._refresh_token(access_token, refresh_token, token_info)
             except TokenRefreshError as e:
-                token_logger.error(f"Failed to refresh token: {str(e)}")
+                graph_logger.error(f"Failed to refresh token: {str(e)}")
 
     def _refresh_token(self, access_token: str, refresh_token: str, token_info: Dict) -> None:
         """
@@ -124,7 +121,7 @@ class EntraTokenManager:
                 
                 # Update token in storage
                 self._update_token(access_token, new_access_token, new_refresh_token)
-                token_logger.info(f"Successfully refreshed token: {access_token[:10]}...")
+                graph_logger.info(f"Successfully refreshed token: {access_token[:10]}...")
             else:
                 error_desc = response.json().get('error_description', 'Unknown error')
                 raise TokenRefreshError(f"Token refresh failed: {error_desc}")
