@@ -22,7 +22,14 @@ def create_df_from_attack_logs():
     for line in log_data.split('\n'):
         if line.strip():
             try:
-                timestamp, action, data = line.split(' - core.logging.logger - INFO - Technique Execution ', 1)[0], "Technique Execution", line.split(' - core.logging.logger - INFO - Technique Execution ', 1)[1]
+                parts = line.split(' - INFO - Technique Execution ', 1)
+                if len(parts) != 2:
+                    continue
+                    
+                timestamp = parts[0].split(' - ')[0]  # Get timestamp from first part
+                action = "Technique Execution"
+                data = parts[1]
+                
                 event = json.loads(data)
                 event['timestamp'] = pd.to_datetime(timestamp)
                 events.append(event)

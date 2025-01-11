@@ -5,7 +5,7 @@ from datetime import datetime
 def parse_log_entry(line):
     """Function to parse a line of log"""
     try:
-        _, log_data = line.split(" - core.logging.logger - INFO - Technique Execution ")
+        _, log_data = line.split(" - INFO - Technique Execution ")
         return json.loads(log_data)
     except:
         return None
