@@ -48,12 +48,11 @@ from hypercorn.asyncio import serve
 import asyncio
 import argparse
 import os
-from core.Constants import SERVER_LOG_FILE
-from halberd import app
+from core.bootstrap import Bootstrapper
 
 class Server:
     """Halberd Server Configuration"""
-    def __init__(self, host="127.0.0.1", port=8050, ssl_cert=None, ssl_key=None, log_level = "warning"):
+    def __init__(self, host="127.0.0.1", port=8050, ssl_cert=None, ssl_key=None, log_level = "warning", server_log_file= "./local/server.log"):
         
         # Port number validation
         if not (0 <= port <= 65535):
@@ -62,7 +61,8 @@ class Server:
         self.port = port
         self.ssl_cert = ssl_cert
         self.ssl_key = ssl_key
-        self.app = app.server
+        self.app = None
+        self.server_log_file = server_log_file
         self.log_level = log_level
             
     def _validate_ssl(self):
@@ -85,8 +85,8 @@ class Server:
         
         # Additional settings
         config.loglevel = self.log_level # Defaults to 'warning'
-        config.accesslog = SERVER_LOG_FILE  # Log to server log file
-        config.errorlog = SERVER_LOG_FILE   # Log to server log file
+        config.accesslog = self.server_log_file  # Log to server log file
+        config.errorlog = self.server_log_file   # Log to server log file
         config.worker_class = "asyncio"
         config.keep_alive_timeout = 65
         
@@ -97,6 +97,11 @@ class Server:
         try:
             # SSL check
             self._validate_ssl()
+
+            if self.app is None:
+                # Import Halberd application
+                from halberd import app
+                self.app = app.server
 
             # Log server configuration
             protocol = "https" if self.ssl_cert else "http"
@@ -121,9 +126,14 @@ def main():
     parser.add_argument("--dev-server", action="store_true", help="Flag launches Flask development server instead of Hypercorn")
     parser.add_argument("--dev-server-debug", action="store_true", help="Flag enables debug mode for development server")
     args = parser.parse_args()
-    
+
+    # Initialize application requirements
+    bootstrapper = Bootstrapper()
+    bootstrapper.initialize()
+
     if args.dev_server:
         # Start development server
+        from halberd import app
         app.run(
             host=args.host or "127.0.0.1", 
             port=args.port or "8050", 
