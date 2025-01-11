@@ -17,23 +17,20 @@ import pandas as pd
 from core.entra.entra_token_manager import EntraTokenManager
 from core.azure.azure_access import AzureAccess
 from core.gcp.gcp_access import GCPAccess
-
 from pages.dashboard.entity_map import GenerateEntityMappingGraph
-from core.Functions import generate_technique_info, run_initialization_check, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary, get_playbook_stats, parse_execution_report, generate_gcp_access_info
+from core.Functions import generate_technique_info, AddNewSchedule, GetAllPlaybooks, ParseTechniqueResponse, playbook_viz_generator, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, parse_app_log_file, group_app_log_events, create_app_log_event_summary, get_playbook_stats, parse_execution_report, generate_gcp_access_info
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
 from core.playbook.playbook_error import PlaybookError
 from core.Constants import *
 from core.aws.aws_session_manager import SessionManager
 from attack_techniques.technique_registry import *
-from core.logging.logger import setup_logger,StructuredAppLog
+from core.logging.logger import app_logger,StructuredAppLog
 from core.logging.report import read_log_file, analyze_log, generate_html_report
 from core.output_manager.output_manager import OutputManager
 from pages.attack_analyse import process_attack_data, create_metric_card, create_df_from_attack_logs, create_bar_chart, create_pie_chart, create_timeline_graph
 from pages.automator import create_playbook_item, create_playbook_manager_layout, schedule_pb_div, export_pb_div, generate_playbook_creator_offcanvas, generate_step_form, playbook_editor_create_parameter_inputs, create_step_progress_card
 
-run_initialization_check() # Run Halberd initialization checks
-logger = setup_logger() # Initialize Halberd logger
 entra_token_manager = EntraTokenManager() # Initialize Entra token manager
 entra_token_manager._monitor_thread.start() #Start token refresh monitoring
 
@@ -358,7 +355,7 @@ def execute_technique_callback(n_clicks, tactic, t_id, values, bool_on, file_con
     # Log technique execution start
     event_id = str(uuid.uuid4()) #Generate unique event_id for the execution
     
-    logger.info(StructuredAppLog("Technique Execution",
+    app_logger.info(StructuredAppLog("Technique Execution",
         event_id = event_id,
         source = active_entity,
         status = "started",
@@ -379,7 +376,7 @@ def execute_technique_callback(n_clicks, tactic, t_id, values, bool_on, file_con
 
         if result.value == "success":
             # Log technique execution success
-            logger.info(StructuredAppLog("Technique Execution",
+            app_logger.info(StructuredAppLog("Technique Execution",
                 event_id = event_id,
                 source = active_entity,
                 status = "completed",
@@ -401,7 +398,7 @@ def execute_technique_callback(n_clicks, tactic, t_id, values, bool_on, file_con
             return ParseTechniqueResponse(response['value']), True, "Technique Execution Successful"
         
         # Log technique execution failure
-        logger.info(StructuredAppLog("Technique Execution",
+        app_logger.info(StructuredAppLog("Technique Execution",
             event_id = event_id,
             source = active_entity,
             status = "completed",
