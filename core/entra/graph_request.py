@@ -3,12 +3,8 @@ import json
 import re
 import time
 from typing import Optional, Dict, Any, Union, List
-import logging
 from .entra_token_manager import EntraTokenManager
-from core.Constants import SERVER_LOG_FILE
-
-logger = logging.getLogger(__name__)
-logging.basicConfig(filename=SERVER_LOG_FILE, format='%(asctime)s - %(levelname)s - %(message)s', level=logging.WARNING)
+from core.logging.logger import graph_logger
 
 class RateLimiter:
     """Handles rate limiting for Graph API requests"""
@@ -37,14 +33,14 @@ class RateLimiter:
 
             if retry_after is not None:
                 self._throttle_until = current_time + int(retry_after)
-                logger.warning(f"Rate limit hit. Waiting {retry_after} seconds.")
+                graph_logger.warning(f"Rate limit hit. Waiting {retry_after} seconds.")
                 time.sleep(int(retry_after))
                 return
 
         # If in a throttle window, wait
         if self._throttle_until and current_time < self._throttle_until:
             wait_time = self._throttle_until - current_time
-            logger.debug(f"In throttle window. Waiting {wait_time:.2f} seconds.")
+            graph_logger.debug(f"In throttle window. Waiting {wait_time:.2f} seconds.")
             time.sleep(wait_time)
             return
 
@@ -97,7 +93,7 @@ class GraphRequest:
             self.rate_limiter.wait_if_needed(response)
             if response.status_code == 429:  # Too Many Requests
                 retry_after = int(response.headers.get('Retry-After', 30))
-                logger.warning(f"Rate limit exceeded. Retrying after {retry_after} seconds")
+                graph_logger.warning(f"Rate limit exceeded. Retrying after {retry_after} seconds")
                 time.sleep(retry_after)
                 return self._make_request(method, url, **kwargs)
                 
@@ -105,7 +101,7 @@ class GraphRequest:
             return response
             
         except requests.exceptions.RequestException as e:
-            logger.error(f"Request failed: {str(e)}")
+            graph_logger.error(f"Request failed: {str(e)}")
             return response
 
     def get(self, url: str, params: Optional[Dict] = None, 
@@ -141,7 +137,7 @@ class GraphRequest:
                 url = result.get('@odata.nextLink') if pagination else None
                 
             except Exception as e:
-                logger.error(f"GET request failed: {str(e)}")
+                graph_logger.error(f"GET request failed: {str(e)}")
                 return e
 
         return graph_results
@@ -154,7 +150,7 @@ class GraphRequest:
             return self._make_request('POST', url, headers=headers, 
                                     data=json.dumps(data))
         except Exception as e:
-            logger.error(f"POST request failed: {str(e)}")
+            graph_logger.error(f"POST request failed: {str(e)}")
             return e
 
     def delete(self, url: str, access_token: Optional[str] = None) -> requests.Response:
@@ -163,7 +159,7 @@ class GraphRequest:
         try:
             return self._make_request('DELETE', url, headers=headers)
         except Exception as e:
-            logger.error(f"DELETE request failed: {str(e)}")
+            graph_logger.error(f"DELETE request failed: {str(e)}")
             return e
 
     def patch(self, url: str, data: Dict[str, Any], 
@@ -174,7 +170,7 @@ class GraphRequest:
             return self._make_request('PATCH', url, headers=headers, 
                                     data=json.dumps(data))
         except Exception as e:
-            logger.error(f"PATCH request failed: {str(e)}")
+            graph_logger.error(f"PATCH request failed: {str(e)}")
             return e
 
     def put(self, url: str, data: Dict[str, Any], 
@@ -186,7 +182,7 @@ class GraphRequest:
                                         data=json.dumps(data))
             return response.json()
         except Exception as e:
-            logger.error(f"PUT request failed: {str(e)}")
+            graph_logger.error(f"PUT request failed: {str(e)}")
             return e
 
     @staticmethod
