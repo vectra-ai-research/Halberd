@@ -3,14 +3,23 @@ Page Navigation url : app/home
 Page Description : Hosts the launch page of Halberd. Displays information regarding the tool and overview of included modules.
 '''
 
-import dash
-import dash_bootstrap_components as dbc
-from dash import html,dcc
 from collections import defaultdict
-from attack_techniques.technique_registry import TechniqueRegistry
-from core.Constants import CATEGORY_MAPPING
+
+import dash
+from dash import dcc, html, register_page, callback
+from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
+import dash_bootstrap_components as dbc
 from dash_iconify import DashIconify
+
+from attack_techniques.technique_registry import TechniqueRegistry
+
+from core.Functions import generate_technique_info
+from core.Constants import CATEGORY_MAPPING
 from version import __version__, __author__, __repository__
+
+# Register page to app
+register_page(__name__, path='/home', name='Home')
 
 # Initialize tactics_dict 
 tactics_dict = defaultdict(list)
@@ -50,7 +59,7 @@ tactics_order = [
 max_techniques = max(len(techniques) for techniques in tactics_dict.values())
 
 # Home layout
-page_layout = html.Div([
+layout = html.Div([
     # Home intro section
     dbc.Row([
         dbc.Col([
@@ -204,3 +213,28 @@ style={
     "padding-left": "20px"
     }
 )
+
+'''Callback to open modal and display technique information from home techniques matrix'''
+@callback(
+    Output("app-technique-info-display-modal", "is_open", allow_duplicate=True),
+    Output("app-technique-info-display-modal-body", "children", allow_duplicate = True),
+    Input({"type": "technique", "index": dash.ALL}, "n_clicks"),
+    State("app-technique-info-display-modal", "is_open"),
+    prevent_initial_call=True
+)
+def toggle_app_modal_from_home_matrix_callback(n_clicks, is_open):
+    # Prevent call back on page load
+    if any(item is not None for item in n_clicks):
+        if not dash.callback_context.triggered:
+            return is_open, ""
+        
+        # Extract technique id
+        triggered_id = dash.callback_context.triggered[0]["prop_id"]
+        technique_id = eval(triggered_id.split(".")[0])["index"]
+
+        # Generate technique information
+        technique_details = generate_technique_info(technique_id)
+        
+        return not is_open, technique_details
+    else:
+        raise PreventUpdate

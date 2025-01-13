@@ -3,11 +3,16 @@ Page Navigation URL : app/schedules
 Page Description : Displays currently configured playbook execution schedules
 '''
 
-from dash import html
-import dash_bootstrap_components as dbc
 import yaml
+
+from dash import html, register_page
+import dash_bootstrap_components as dbc
 from dash_iconify import DashIconify
+
 from core.Constants import AUTOMATOR_SCHEDULES_FILE
+
+# Register page to app
+register_page(__name__, path='/schedules', name='Schedules')
 
 def generate_automator_schedules_view():
 
@@ -39,7 +44,7 @@ def generate_automator_schedules_view():
         ),
         dbc.Table(table_content, bordered=True, dark=True, hover=True),
         ], 
-        className="bg-halberd-dark", 
+        className="bg-halberd-dark halberd-text", 
         style= {
             "width": "100vw" , 
             "height": "92vh", 
@@ -48,3 +53,5 @@ def generate_automator_schedules_view():
             "padding-left": "20px",
             }
         )
+
+layout = generate_automator_schedules_view
