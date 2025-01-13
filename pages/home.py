@@ -19,7 +19,7 @@ from core.Constants import CATEGORY_MAPPING
 from version import __version__, __author__, __repository__
 
 # Register page to app
-register_page(__name__, path='/home', name='Home')
+register_page(__name__, path='/', name='Home')
 
 # Initialize tactics_dict 
 tactics_dict = defaultdict(list)
