@@ -3,15 +3,23 @@ Page Navigation url : app/attack-analyse
 Page Description : Analyse Halberd attack executions.
 '''
 
+import json
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-import json
+from datetime import timedelta
+
+from dash import dcc, html, register_page, callback
+from dash.dependencies import Input, Output
+from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 from dash_iconify import DashIconify
-from datetime import timedelta
-from dash import dcc, html
-from core.Constants import APP_LOG_FILE
+
+from core.Constants import APP_LOG_FILE, REPORT_DIR
+from core.logging.report import read_log_file, analyze_log, generate_html_report
+
+# Register page to app
+register_page(__name__, path='/attack-analyse', name='Analyze')
 
 def create_df_from_attack_logs():
     # Read log file
@@ -449,3 +457,169 @@ def create_layout():
         # Footer with execution statistics
         html.Div(id='footer-stats')
     ], style={'padding': '20px', 'minHeight': '100vh'}, className="bg-halberd-dark")
+
+# Create attack analyse layout
+layout = create_layout
+
+'''Callback to update metrics card in analyse dashboard'''
+@callback(
+    Output('metric-cards', 'children'),
+    [Input('date-picker-range', 'start_date'),
+     Input('date-picker-range', 'end_date')]
+)
+def update_metric_cards_callback(start_date, end_date):
+    df = create_df_from_attack_logs()
+    data = process_attack_data(df, pd.to_datetime(start_date), pd.to_datetime(end_date))
+    
+    return [
+        html.Div([
+            create_metric_card("Total Executions", data['total_executions'], "fa-flask", "#3498db"),
+        ], style={'width': '23%', 'marginRight': '2%'}),
+        html.Div([
+            create_metric_card("Unique Techniques Executed", data['unique_techniques'], "fa-code-branch", "#2ecc71"),
+        ], style={'width': '23%', 'marginRight': '2%'}),
+        html.Div([
+            create_metric_card("Attack Success Rate", 
+                             f"{(data['status_counts'].get('success', 0) / data['total_executions'] * 100):.1f}%" if data['total_executions'] > 0 else "N/A", 
+                             "fa-check-circle", "#e74c3c"),
+        ], style={'width': '23%', 'marginRight': '2%'}),
+        html.Div([
+            create_metric_card("Avg Interval", 
+                             f"{data['median_interval'].total_seconds()/60:.1f}min" if 'median_interval' in data else "N/A", 
+                             "fa-clock", "#9b59b6"),
+        ], style={'width': '23%'})
+    ]
+
+'''Callback to update graphs container in analyse dashboard'''
+@callback(
+    Output('graphs-container', 'children'),
+    [Input('date-picker-range', 'start_date'),
+     Input('date-picker-range', 'end_date')]
+)
+def update_graphs_callback(start_date, end_date):
+    df = create_df_from_attack_logs()
+    data = process_attack_data(df, pd.to_datetime(start_date), pd.to_datetime(end_date))
+    
+    return [
+        # Timeline Graph
+        html.Div([
+            dcc.Graph(
+                figure=create_timeline_graph(data),
+                className="halberd-depth-card"
+            )
+        ], 
+        style={
+            'padding': '20px', 
+            'borderRadius': '10px', 
+            'boxShadow': '0 2px 4px rgba(0,0,0,0.1)', 
+            'marginBottom': '20px'
+        }, 
+        className="bg-halberd-dark"),
+        
+        # Surface Distribution and Success Rate Row
+        html.Div([
+            html.Div([
+                dcc.Graph(
+                    figure=create_pie_chart(
+                        data['surface_counts'].values,
+                        data['surface_counts'].index,
+                        'Attack Surface Distribution',
+                    ),
+                    className="halberd-depth-card"
+                )
+            ], 
+            style={'width': '48%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'},
+            ),
+            
+            html.Div([
+                dcc.Graph(
+                    figure=create_bar_chart(
+                        data['tactic_success'].index,
+                        data['tactic_success']['success_rate'],
+                        'Attack Success Rate by Tactic'
+                    ),
+                    className="halberd-depth-card"
+                )
+            ], style={'width': '48%', 'marginLeft': '4%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'})
+        ], style={'display': 'flex', 'marginBottom': '20px'}, className="bg-halberd-dark"),
+        
+        # MITRE Tactics and Source Distribution Row
+        html.Div([
+            html.Div([
+                dcc.Graph(
+                    figure=create_bar_chart(
+                        data['tactic_counts'].index,
+                        data['tactic_counts'].values,
+                        'Attacks Executed by MITRE Tactics'
+                    ),
+                    className="halberd-depth-card"
+                )
+            ], style={'width': '48%', 'padding': '20px', 'borderRadius': '10px', 
+                      'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}),
+            
+            html.Div([
+                dcc.Graph(
+                    figure=create_bar_chart(
+                        data['source_counts'].index,
+                        data['source_counts'].values,
+                        'Attacks Executed by Source Entity'
+                    ),
+                    className="halberd-depth-card"
+                )
+            ], style={'width': '48%', 'marginLeft': '4%', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'})
+        ], style={'display': 'flex', 'marginBottom': '20px'}, className="bg-halberd-dark"),
+        
+        # Top Techniques Row
+        html.Div([
+            dcc.Graph(figure=create_bar_chart(
+                data['technique_counts'].values,
+                data['technique_counts'].index,
+                'Most Executed Techniques',
+                orientation='h'
+            )
+            )
+        ], style={'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)', 'marginBottom': '20px'}, className="bg-halberd-dark")
+    ]
+
+'''Callback to update footer stats in analyse dashboard'''
+@callback(
+    Output('footer-stats', 'children'),
+    [Input('date-picker-range', 'start_date'),
+     Input('date-picker-range', 'end_date')]
+)
+def update_footer_stats_callback(start_date, end_date):
+    df = create_df_from_attack_logs()
+    data = process_attack_data(df, pd.to_datetime(start_date), pd.to_datetime(end_date))
+    
+    return html.Div([
+        html.H3('Execution Statistics', style={'marginBottom': '15px'}),
+        html.P([
+            f"Test Duration: {str(data['testing_period']['duration']).split('.')[0]} | ",
+            f"Total Attacks: {data['total_executions']} | ",
+            f"Unique Techniques: {data['unique_techniques']} | ",
+            f"Average Success Rate: {(data['status_counts'].get('success', 0) / data['total_executions'] * 100):.1f}%" if data['total_executions'] > 0 else "N/A"
+        ], style={'color': '#7f8c8d'})
+    ], style={'textAlign': 'center', 'padding': '20px', 'borderRadius': '10px', 'boxShadow': '0 2px 4px rgba(0,0,0,0.1)'}, className="bg-halberd-dark")
+
+'''Callback to generate analyze report'''
+@callback(
+    Output(component_id = "app-download-sink", component_property = "data", allow_duplicate=True),
+    Input(component_id= "download-halberd-report-button", component_property= "n_clicks"),
+    prevent_initial_call = True
+)
+def generate_trace_report_callback(n_clicks):
+    if n_clicks == 0:
+        raise PreventUpdate
+    try:
+        log_lines = read_log_file(APP_LOG_FILE)
+        analysis_results = analyze_log(log_lines)
+        html_report = generate_html_report(analysis_results)
+        
+        # Save the HTML report
+        with open(f'{REPORT_DIR}/halberd_security_report.html', 'w', encoding='utf-8') as report_file:
+            report_file.write(html_report)
+        return dcc.send_file(f'{REPORT_DIR}/halberd_security_report.html')
+    except FileNotFoundError:
+        return (f"Error: The file '{APP_LOG_FILE}' was not found. Ensure the log file exists and the path is correct.")
+    except Exception:
+        raise PreventUpdate
