@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import dash
-from dash import dcc, html, page_container, page_registry
+from dash import dcc, html, page_container
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 
