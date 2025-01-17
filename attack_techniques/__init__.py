@@ -97,3 +97,6 @@ from .m365.m365_send_outlook_email import M365SendOutlookEmail
 
 # GCP Techniques
 from .gcp.gcp_establish_access_as_sa import GCPEstablishAccessAsServiceAccount
+from .gcp.gcp_enumerate_cloud_storage_buckets import GCPEnumerateCloudStorageBuckets
+from .gcp.gcp_enumerate_cloud_storage_a_buckets import GCPEnumerateCloudStorageABucket
+from .gcp.gcp_exfilterate_cloud_storage_objects import GCPExfiltrateCloudStorageObjects
