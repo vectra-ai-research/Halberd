@@ -19,7 +19,7 @@ class GCPExfiltrateCloudStorageObjects(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
-                technique_id="T1223",
+                technique_id="T1530",
                 technique_name="Data from Cloud Storage",
                 tactics=["Collection"],
                 sub_technique_name=None
@@ -43,19 +43,19 @@ class GCPExfiltrateCloudStorageObjects(BaseTechnique):
             credential.refresh(request=request)
             
             client = storage.Client(credentials=credential)
-
             bucket = client.bucket(bucket_name=name)
-
             
-            objects_path = []
+            objects_path: list[str] = []
+            requsted_blob: list[str] = []
 
-            if path == "":
-                all_blobs = [blob.name for blob in bucket.list_blobs()]
-                for blob in all_blobs:
-                    objects_path.append(blob)
-            else :
-                objects_path.append(path)
+            if path.startswith("/"):
+                path = path.lstrip("/")
 
+            requsted_blob = [blob.name for blob in bucket.list_blobs(prefix=path)]
+            
+            for blob in requsted_blob:
+                objects_path.append(blob)
+            
             current_time = str(time.time())
 
             hash_object = hashlib.sha256(current_time.encode())
@@ -88,5 +88,5 @@ class GCPExfiltrateCloudStorageObjects(BaseTechnique):
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
             "name": {"type": "str", "required": True, "default": None, "name": "Name", "input_field_type" : "text"},
-            "path": {"type": "str", "required": False, "default": None, "name": "Path", "input_field_type" : "textarea"}
+            "path": {"type": "str", "required": False, "default": None, "name": "Path", "input_field_type" : "text"}
         }

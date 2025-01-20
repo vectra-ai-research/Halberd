@@ -12,12 +12,12 @@ from google.auth.transport.requests import Request
 
 
 @TechniqueRegistry.register
-class GCPEnumerateCloudStorageABucket(BaseTechnique):
+class GCPEnumerateCloudStorageObjects(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
-                technique_id="T1223",
-                technique_name="Data from Cloud Storage",
+                technique_id="T1619",
+                technique_name="Cloud Storage Object Discovery",
                 tactics=["Discovery"],
                 sub_technique_name=None
             )

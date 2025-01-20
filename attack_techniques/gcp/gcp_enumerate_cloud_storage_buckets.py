@@ -16,8 +16,8 @@ class GCPEnumerateCloudStorageBuckets(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
-                technique_id="T1223",
-                technique_name="Data from Cloud Storage",
+                technique_id="T1619",
+                technique_name="Cloud Storage Object Discovery",
                 tactics=["Discovery"],
                 sub_technique_name=None
             )
@@ -49,7 +49,7 @@ class GCPEnumerateCloudStorageBuckets(BaseTechnique):
                     "zone" : bucket.location
                 }
 
-                if location != "" :
+                if location:
                     if bucket.location == location.upper() :
                         enumerated_buckets.append(bucket_detail)
                 else: 

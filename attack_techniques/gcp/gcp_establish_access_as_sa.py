@@ -13,7 +13,7 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
-                technique_id="T1222",
+                technique_id="T1078.004",
                 technique_name="Valid Accounts",
                 tactics=["Defense Evasion", "Persistence", "Privilege Escalation", "Initial Access"],
                 sub_technique_name="Cloud Accounts"
