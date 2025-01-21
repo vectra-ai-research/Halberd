@@ -2,8 +2,10 @@ from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, Tec
 from ..technique_registry import TechniqueRegistry
 
 from typing import Dict, Any, Tuple, List
+from datetime import datetime
 import json
 import base64
+import bisect
 
 from core.gcp.gcp_access import GCPAccess
 from google.cloud import storage
@@ -62,7 +64,7 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
             notes=technique_notes
         )
 
-    def _list_objects(self, bucket: storage.Bucket, folder_path: str = None, recursive: bool = False) -> List[Dict[str, Any]]:
+    def _list_objects(self, bucket: storage.Bucket, folder_path: str = None, recursive: bool = False, versions: bool = None) -> List[Dict[str, Any]]:
         """Helper function to list objects in bucket with optional folder filtering"""
         objects = []
         
@@ -71,7 +73,7 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
             if not folder_path.endswith('/'):
                 folder_path += '/'
         
-        blobs = bucket.list_blobs(prefix=folder_path)
+        blobs = bucket.list_blobs(prefix=folder_path, versions=versions)
         
         for blob in blobs:
             # Skip folders themselves in non-recursive mode
@@ -81,16 +83,44 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
             # Skip the folder prefix itself
             if folder_path and blob.name == folder_path:
                 continue
-                
-            objects.append({
-                'name': blob.name,
-                'size': blob.size,
-                'content_type': blob.content_type,
-                'created': blob.time_created.isoformat() if blob.time_created else None,
-                'updated': blob.updated.isoformat() if blob.updated else None,
-                'md5_hash': blob.md5_hash,
-                'storage_class': blob.storage_class,
-            })
+            
+            if any(object.get("name") == blob.name for object in objects) :
+                for object in objects :
+                    if object.get("name") == blob.name:
+                        date_to_compare = []
+                        for version in object.get("versions"):
+                            updated_date = datetime.fromisoformat(version.get("updated"))
+                            date_to_compare.append(updated_date)
+                        index = len(object["versions"]) - bisect.bisect_right(date_to_compare, blob.updated)
+                        version =  {
+                            "updated": blob.updated.isoformat() if blob.updated else None,
+                            "revision": blob.generation,
+                            'md5_hash': blob.md5_hash
+                        }
+                        object["versions"].insert(index, version)
+            else :
+                objects.append({
+                    'name': blob.name,
+                    'size': blob.size,
+                    'content_type': blob.content_type,
+                    'created': blob.time_created.isoformat() if blob.time_created else None,
+                    'storage_class': blob.storage_class,
+                    "versions": [
+                        {
+                            "updated": blob.updated.isoformat() if blob.updated else None,
+                            "revision": blob.generation,
+                            'md5_hash': blob.md5_hash
+                        }
+                    ]
+                })
+
+
+        for object in objects:
+            versions = object["versions"]
+            version_number = len(versions)
+            for index, version in enumerate(versions): 
+                version["version_number"] = version_number
+                version_number -= 1
             
         return objects
 
@@ -100,6 +130,7 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
             bucket_name: str = kwargs.get("bucket_name", None)
             folder_path: str = kwargs.get("folder_path", None)
             recursive: bool = kwargs.get("recursive", False)
+            all_version: bool = kwargs.get("all_versions", False)
             
             # Input validation
             if bucket_name in [None, ""]:
@@ -132,7 +163,7 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
                 }
             
             # List objects based on parameters
-            objects = self._list_objects(bucket, folder_path, recursive)
+            objects = self._list_objects(bucket, folder_path, recursive, all_version)
             
             # Create output statistics
             stats = {
@@ -189,5 +220,13 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
                 "default": False,
                 "name": "Recursive Search",
                 "input_field_type": "bool"
-            }
+            },
+            "all_versions": {
+                "type": "bool",
+                "required": False,
+                "default": False,
+                "name": "All Versions",
+                "input_field_type": "bool"
+            },
+            
         }
