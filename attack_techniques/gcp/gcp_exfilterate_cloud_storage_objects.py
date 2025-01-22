@@ -71,7 +71,7 @@ class GCPExfilStorageBuckets(BaseTechnique):
             )
         ]
         super().__init__(
-            name="Exfiltrate Cloud Storage Bucket",
+            name="Exfiltrate Storage Bucket",
             description="""Downloads and exfiltrates data from Google Cloud Storage buckets while maintaining original folder hierarchies. This 
             technique enables attackers to quickly extract large amounts of data from cloud storage, with options for targeted 
             exfiltration of specific folders or limiting download volumes to avoid detection. The multi-threaded download capability 

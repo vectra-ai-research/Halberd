@@ -51,7 +51,7 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
         ]
 
         super().__init__(
-            "Enumerate Cloud Storage Objects", 
+            "Enumerate Storage Objects", 
             ("Performs reconnaissance of Google Cloud Storage buckets to identify potentially sensitive or "
              "exposed data. This technique enumerates objects within target buckets, collecting metadata "
              "like object names, sizes, storage classes, and timestamps. The enumeration can target specific "

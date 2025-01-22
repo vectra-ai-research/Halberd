@@ -63,7 +63,7 @@ class GCPEnumerateCloudStorageBuckets(BaseTechnique):
         ]
 
         super().__init__(
-            name="Enumerate Cloud Storage Buckets",
+            name="Enumerate Storage Buckets",
             description=("Performs comprehensive storage bucket enumeration across GCP projects. "
             
             "The technique supports targeted enumeration in large environments through multiple filtering options: "
