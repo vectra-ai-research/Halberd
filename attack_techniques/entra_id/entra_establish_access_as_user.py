@@ -66,14 +66,17 @@ class EntraEstablishAccessAsUser(BaseTechnique):
 
             # Create account successfull
             if 200 <= raw_response.status_code < 300:
-                access_token = raw_response.json().get('access_token')
+                token_manager = EntraTokenManager()
+                token = raw_response.json()
+                access_token = token.get('access_token')
+                refresh_token = token.get('refresh_token', None)
                 # save access token
                 if save_token:
                     # save token to app
-                    EntraTokenManager().add_token(access_token)
+                    token_manager.add_token(access_token=access_token, refresh_token=refresh_token)
                     if set_as_active_token:
                         # set as active token to use
-                        EntraTokenManager().set_active_token(access_token)
+                        token_manager.set_active_token(access_token)
                 return ExecutionStatus.SUCCESS, {
                     "message": f"Successfully established access as {username}",
                     "value": {

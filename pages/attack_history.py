@@ -3,10 +3,16 @@ Page Navigation url : app/attack-history
 Page Description : Page to view outputs from all technique executions.
 '''
 
+from dash import html, dcc, register_page, callback
+from dash.dependencies import Input, Output
 import dash_bootstrap_components as dbc
-from dash import html, dcc
 from dash_iconify import DashIconify
-from core.Functions import generate_attack_trace_table
+
+from core.Functions import generate_attack_trace_table, ParseTechniqueResponse
+from core.output_manager.output_manager import OutputManager
+
+# Register page to app
+register_page(__name__, path='/attack-history', name='Attack History')
 
 def generate_attack_history_page():
     return html.Div([
@@ -99,3 +105,30 @@ def generate_attack_history_page():
             "padding-left": "20px",
         }
     )
+
+# Create attack history layout
+layout = generate_attack_history_page
+
+# Callbacks
+'''Callback to display technique output in technique output viewer'''
+@callback(
+        Output(component_id = "output-viewer-display-div", component_property = "children", allow_duplicate=True),
+        Input(component_id = "trace-table", component_property = "selected_rows"),
+        Input(component_id = "trace-table", component_property = "data"),
+        prevent_initial_call=True
+)
+def display_technique_output_in_output_viewer_callback(selected_rows, data):
+    if not selected_rows:
+        return 'No cell selected'
+    
+    # Get the selected row's data and extract event ID
+    selected_data = (data[selected_rows[0]])
+    event_id = selected_data['Event ID']
+
+    # Initialize output manager
+    output_manager = OutputManager()
+    # Get technique execution output by event id
+    event_output = output_manager.get_output_by_event_id(event_id=event_id)
+
+    # Display output
+    return ParseTechniqueResponse(event_output['data'])

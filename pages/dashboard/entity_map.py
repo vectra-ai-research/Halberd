@@ -2,14 +2,16 @@
 Dashboard Name: Entity Map
 Dashboard Description: Displays an interactive graph of access & privilege of an entra ID entity. Content is dynamically generated 
 '''
+
 from dash import html, dcc
 import dash_bootstrap_components as dbc
-from core.entra.entra_token_manager import EntraTokenManager
-from core.entra.graph_request import GraphRequest
 import dash_cytoscape as cyto
 
+from core.entra.entra_token_manager import EntraTokenManager
+from core.entra.graph_request import GraphRequest
+
 # generate entity map
-def GenerateEntityMappingGraph(map_layout = 'cose', filter_category = None):
+def generate_entity_mapping_graph(map_layout = 'cose', filter_category = None):
     manager = EntraTokenManager()
     active_token = manager.get_active_token()
     active_token_info = manager.decode_jwt_token(active_token)
@@ -284,3 +286,4 @@ def ListDrives():
         return output_list
     except:
         return None
+    

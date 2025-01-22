@@ -50,7 +50,7 @@ def load_config(config_path: str) -> Dict[str, Any]:
     with open(config_path, 'r') as config_file:
         return yaml.safe_load(config_file)
 
-def setup_logger(config_path: str = LOGGING_CONFIG_FILE) -> logging.Logger:
+def setup_logger(logger_name: str, config_path: str = LOGGING_CONFIG_FILE) -> logging.Logger:
     """
     Set up and configure a logger based on a YAML configuration file.
 
@@ -63,9 +63,10 @@ def setup_logger(config_path: str = LOGGING_CONFIG_FILE) -> logging.Logger:
     Returns:
         logging.Logger: A configured logger instance.
     """
-    config = load_config(config_path)
-    logger = logging.getLogger(__name__)
-    logger.setLevel(config['logger_level'])
+    full_config = load_config(config_path)
+    config = full_config['loggers'][logger_name]
+    logger = logging.getLogger(name=logger_name)
+    logger.setLevel(full_config['logger_level'])
 
     # Console handler
     if config['console_handler']['enabled']:
@@ -88,3 +89,7 @@ def setup_logger(config_path: str = LOGGING_CONFIG_FILE) -> logging.Logger:
         logger.addHandler(file_handler)
 
     return logger
+
+# Intialize loggers
+app_logger = setup_logger("app") # Initialize Halberd logger
+graph_logger = setup_logger("ms_graph") # Initialize graph requests logger

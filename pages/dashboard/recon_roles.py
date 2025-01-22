@@ -1,5 +1,6 @@
-import dash_bootstrap_components as dbc
 from dash import dcc,html
+import dash_bootstrap_components as dbc
+
 from core.entra.graph_request import GraphRequest
 
 # find role ID
@@ -60,7 +61,7 @@ page_layout = html.Div([
         dbc.Col(
             dbc.Input(
                 type = "text",
-                placeholder = "Security Administrator",
+                placeholder = "Example: Security Administrator",
                 debounce = True,
                 id = "role-recon-input",
                 className="bg-halberd-dark border halberd-text halberd-input mb-3",
