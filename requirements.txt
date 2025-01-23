@@ -167,3 +167,4 @@ hypercorn==0.17.3
 gunicorn==23.0.0; platform_system != "Windows"
 wsproto==1.2.0
 asgiref==3.8.1
+google-cloud-storage==2.19.0
