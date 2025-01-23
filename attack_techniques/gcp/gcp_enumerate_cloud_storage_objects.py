@@ -98,6 +98,8 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
                             'md5_hash': blob.md5_hash
                         }
                         object["versions"].insert(index, version)
+            elif blob.name.endswith("/"):
+                continue
             else :
                 objects.append({
                     'name': blob.name,
@@ -130,7 +132,7 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
             bucket_name: str = kwargs.get("bucket_name", None)
             folder_path: str = kwargs.get("folder_path", None)
             recursive: bool = kwargs.get("recursive", False)
-            all_version: bool = kwargs.get("all_versions", False)
+            all_versions: bool = kwargs.get("all_versions", False)
             
             # Input validation
             if bucket_name in [None, ""]:
@@ -163,7 +165,7 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
                 }
             
             # List objects based on parameters
-            objects = self._list_objects(bucket, folder_path, recursive, all_version)
+            objects = self._list_objects(bucket, folder_path, recursive, all_versions)
             
             # Create output statistics
             stats = {
