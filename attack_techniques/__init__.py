@@ -57,6 +57,7 @@ from .azure.azure_exfil_vm_disk import AzureExfilVMDisk
 from .azure.azure_disable_resource_diagnostic_logging import AzureDisableResourceDiagnosticLogging
 from .azure.azure_scan_logic_apps_for_credentials import AzureScanLogicAppsForCredentials
 from .azure.azure_extract_cache_tokens import AzureExtractCacheTokens
+from .azure.azure_enumerate_storage_containers import AzureEnumerateStorageContainers
 
 # Entra ID Techniques
 from .entra_id.entra_recon_tenant_info import EntraReconTenantInfo
