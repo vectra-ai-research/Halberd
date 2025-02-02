@@ -91,8 +91,7 @@ class AzureEnumerateStorageContainers(BaseTechnique):
             account_url = f"https://{storage_account_name}.blob.core.windows.net"
             blob_service_client = BlobServiceClient(
                 account_url=account_url, 
-                credential=storage_key,
-                connection_verify=False
+                credential=storage_key
             )
             
             # List all containers and their properties
