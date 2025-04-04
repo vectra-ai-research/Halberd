@@ -58,7 +58,16 @@ navbar = dbc.NavbarSimple(
                 className="nav-link",
                 style={"font-weight": "500"}
             )
-        )
+        ),
+        dbc.NavItem(
+            dbc.NavLink(
+                "Agent", 
+                href="/attack-agent",
+                id="nav-agent",
+                className="nav-link",
+                style={"font-weight": "500"}
+            )
+        ),
     ],
     brand= html.Div([
         dbc.Row(
@@ -148,7 +157,8 @@ app.layout = html.Div([
         Output("nav-attack", "className"),
         Output("nav-recon", "className"),
         Output("nav-automator", "className"),
-        Output("nav-analyse", "className")
+        Output("nav-analyse", "className"),
+        Output("nav-agent", "className")
     ],
     Input('url', 'pathname')
 )
@@ -157,7 +167,7 @@ def update_nav_style(pathname):
     active_className = "halberd-brand text-xl"
     
     # Default style
-    styles = ["halberd-brand-heading"] * 4
+    styles = ["halberd-brand-heading"] * 5
     
     if pathname == '/attack':
         styles[0] = active_className
@@ -167,6 +177,8 @@ def update_nav_style(pathname):
         styles[2] = active_className
     elif pathname == '/attack-analyse':
         styles[3] = active_className
+    elif pathname == '/attack-agent':
+        styles[4] = active_className
         
     return styles
     
