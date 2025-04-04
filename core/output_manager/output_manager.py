@@ -92,7 +92,7 @@ class OutputManager:
             }
             self._save_event_index()
             
-            return event_id
+            return file_path
         
         except Exception as e:
             print(f"Error storing technique output: {str(e)}")
