@@ -23,6 +23,7 @@ Halberd is an advanced security testing platform that enables security teams to 
 * 📈 **Detailed Reporting**: Generate executive and technical reports on security testing outcomes
 * 🔌 **Extensible Architecture**: Add custom techniques through a robust development framework
 * 🌐 **Cross-Platform Support**: Test security controls across all major cloud providers
+* 🤖 **Halberd-Attack Agent**: Leverage LLM and agentic framework to supercharge security testing
 
 ## Quick Start Guide
 
@@ -50,6 +51,8 @@ Halberd is an advanced security testing platform that enables security teams to 
    ```
 
 5. Access the interface at `http://127.0.0.1:8050/` and begin testing
+
+> Optionally, see steps to enable Halberd Attack Agent [here](https://github.com/vectra-ai-research/Halberd/wiki/Deployment-Guide#setup-halberd-attack-agent)
 
 #### Advanced Deployment Options
 
