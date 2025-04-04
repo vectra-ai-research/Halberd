@@ -2,11 +2,10 @@ import dash
 from dash import html, dcc, Input, Output, State, callback, register_page
 import dash_bootstrap_components as dbc
 from dash_iconify import DashIconify
-import time
 from dataclasses import dataclass, field
+import time
 from typing import List, Dict, Any
-
-from agent.chatbot import ChatBot
+from agent.attack_agent import AttackAgent
 
 # Session state to maintain conversation history
 @dataclass
@@ -25,7 +24,7 @@ session_state.messages = [
         {"role": "assistant", "content": [{"type": "text", "text": welcome_message["message"]}]}
     ]
 
-chatbot_agent = ChatBot(session_state)
+chatbot_agent = AttackAgent(session_state)
 
 # Register page to app       
 register_page(__name__, path='/attack-agent', name='Agent')
