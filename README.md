@@ -4,7 +4,7 @@
   <img src="assets/halberd_logo_banner.jpg" alt="logo" width="100%" align="center"/>
 </p>
 
-Halberd is an advanced security testing platform that enables security teams to validate cloud security controls through sophisticated attack emulation. By providing comprehensive coverage across Microsoft Entra ID, Microsoft 365, Microsoft Azure, Amazon Web Services (AWS), and Google Cloud Platform (GCP), Halberd helps organizations:
+Halberd is an advanced security testing platform that enables security teams to validate cloud security through sophisticated attack emulation. By providing comprehensive coverage across Microsoft Entra ID, Microsoft 365, Microsoft Azure, Amazon Web Services (AWS), and Google Cloud Platform (GCP), Halberd helps organizations:
 
 * **Validate Security Controls** : Test detection and prevention capabilities across your cloud infrastructure
 * **Generate Attack Telemetry**: Create realistic security events to tune and optimize your security monitoring
@@ -18,12 +18,12 @@ Halberd is an advanced security testing platform that enables security teams to 
 ## Key Capabilities
 
 * 🔬 **Advanced Attack Framework**: Execute sophisticated attack techniques mapped to MITRE ATT&CK
-* 📊 **Intelligence Dashboards**: Gather deep insights into security posture through visual analysis
-* 🔄 **Automated Playbooks**: Chain multiple techniques into comprehensive attack scenarios
-* 📈 **Detailed Reporting**: Generate executive and technical reports on security testing outcomes
+* 🔄 **Automated Playbooks**: Execute attack playbooks and schedule tests for future continuous testing
+* 📈 **Detailed Anaysis**: Review testing through interactive dashboard providing rich insights
+* 📈 **Detailed Reporting & Anaysis**: Generate executive and technical reports on security testing outcomes
 * 🔌 **Extensible Architecture**: Add custom techniques through a robust development framework
 * 🌐 **Cross-Platform Support**: Test security controls across all major cloud providers
-* 🤖 **Halberd-Attack Agent**: Leverage LLM and agentic framework to supercharge security testing
+* 🤖 **Halberd Attack Agent**: Leverage LLM and agentic framework to supercharge security testing
 
 ## Quick Start Guide
 
