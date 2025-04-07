@@ -1,5 +1,3 @@
-from email import policy
-from numpy import sort
 from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, TechniqueNote, TechniqueReference
 from ..technique_registry import TechniqueRegistry
 
@@ -42,33 +40,28 @@ class GCPEnumerateComputeEngineInstances(BaseTechnique):
             )
         ]
         technique_notes = [
-            TechniqueNote("Project filtering requires Storage Admin role on the project level"),
-            TechniqueNote("Location filtering uses bucket's geographical placement, not data residency"),
-            TechniqueNote("Storage Classes available: STANDARD, NEARLINE, COLDLINE, ARCHIVE"),
-            TechniqueNote("Public buckets include both allUsers and allAuthenticatedUsers permission"),
-            TechniqueNote("IAM policy checks require additional storage.buckets.getIamPolicy permission"),
-            TechniqueNote("Label filtering is case-sensitive and must match exactly")
+            TechniqueNote("Enumerate any instance require compute.instances.list permission"),
+            TechniqueNote("List all zone require compute.zones.list permission"),
+            TechniqueNote("Obtain effective firewalls require compute.instances.getEffectiveFirewalls permission")
         ]
 
         technique_refs = [
-            TechniqueReference("Google Cloud Storage Best Practices", "https://cloud.google.com/storage/docs/best-practices"),
-            TechniqueReference("GCP Bucket Naming Requirements", "https://cloud.google.com/storage/docs/naming-buckets"),
-            TechniqueReference("Cloud Storage Access Control", "https://cloud.google.com/storage/docs/access-control"),
-            TechniqueReference("GCP Storage Locations", "https://cloud.google.com/storage/docs/locations"),
-            TechniqueReference("Google Cloud Storage Public Access Prevention", "https://cloud.google.com/storage/docs/public-access-prevention"),
+            TechniqueReference("GCP SDK Documentation: gcloud compute instances list", "https://cloud.google.com/sdk/gcloud/reference/compute/instances/list"),
+            TechniqueReference("GCP CE Regions and Zones", "https://cloud.google.com/compute/docs/regions-zones"),
+            TechniqueReference("GCP CE Instance Types", "https://cloud.google.com/compute/docs/machine-resource"),
+            TechniqueReference("GCP NGFW VPC Firewall Rules", "https://cloud.google.com/firewall/docs/firewalls"),
+            TechniqueReference("GCP NGFW Firewall Policies", "https://cloud.google.com/firewall/docs/firewall-policies-overview"),
         ]
 
         super().__init__(
             name="Enumerate Compute Engines",
-            description=("Performs comprehensive storage bucket enumeration across GCP projects. "
+            description=("Performs comprehensive compute engine instance enumeration. "
             
             "The technique supports targeted enumeration in large environments through multiple filtering options: "
             "1. Project ID: Limit scope to specific projects "
-            "2. Location: Target specific geographic regions "
-            "3. Labels: Filter by environment, application, or team tags "
-            "4. Prefix: Search buckets matching naming patterns "
-            "5. Storage Class: Focus on specific storage tiers "
-            "6. Public Access: Identify exposure risks"),
+            "2. Location: Target specific geographic zones"
+            "3. Network Tags: Filter by network tags "
+            "4. Firewall Detail: Boolean options to enumerate instance firewall"),
             mitre_techniques=mitre_techniques,
             references=technique_refs,
             notes=technique_notes
@@ -79,7 +72,7 @@ class GCPEnumerateComputeEngineInstances(BaseTechnique):
         instances_collected = compute_client.list(zone=location, project=project_id)
         for instance in instances_collected._response.items:
             if network_tags:
-                if not any(tag in instance.tags.items() for tag in network_tags):
+                if not any(tag in instance.tags.items for tag in network_tags):
                     continue
             instance_disks = []
             instance_network_interfaces = []
@@ -186,26 +179,35 @@ class GCPEnumerateComputeEngineInstances(BaseTechnique):
                                     ]
                                     if firewall_policy_rule.match.dest_region_codes :
                                         for dest_region_code in firewall_policy_rule.match.dest_region_codes:
-                                            region_name = ""
-                                            for count, region in enumerate(not_listed_region_code):
-                                                if dest_region_code == region["code"]:
-                                                    region_name = region["name"]
+                                            region_name = None
+                                            match = None
+                                            for region in not_listed_region_code:
+                                                if region["code"] == dest_region_code:
+                                                    match = region
                                                     break
-                                                if count == len(not_listed_region_code) - 1:
-                                                    region_name = pycountry.countries.get(alpha_2=dest_region_code).name
-                                                    break
+                                            if match:
+                                                region_name = match["name"]
+                                            else:
+                                                country = pycountry.countries.get(alpha_2=dest_region_code)
+                                                region_name = country.name if country else dest_region_code
+
                                             region = f"{dest_region_code} - {region_name}"
                                             firewall_policy_rule_dest_region.append(region)
                                 
                                     if firewall_policy_rule.match.src_region_codes :
                                         for src_region_code in firewall_policy_rule.match.src_region_codes:
-                                            region_name = ""
-                                            for count, region in enumerate(not_listed_region_code):
-                                                if src_region_code == region["code"]:
-                                                    region_name = region["name"]
+                                            region_name = None
+                                            match = None
+                                            for region in not_listed_region_code:
+                                                if region["code"] == src_region_code:
+                                                    match = region
                                                     break
-                                                if count == len(not_listed_region_code) - 1:
-                                                    region_name = pycountry.countries.get(alpha_2=src_region_code).name
+                                            if match:
+                                                region_name = match["name"]
+                                            else:
+                                                country = pycountry.countries.get(alpha_2=src_region_code)
+                                                region_name = country.name if country else src_region_code
+                                            
                                             region = f"{src_region_code} - {region_name}"
                                             firewall_policy_rule_src_region.append(region)
 
