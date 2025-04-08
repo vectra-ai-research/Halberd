@@ -659,3 +659,119 @@
     background-color: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(3px);
   }
+
+  /* Custom scrollbar for webkit browsers */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e1e1e;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3a3a3a;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e74c3c;
+}
+
+/* Chat message animations */
+@keyframes message-fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-message {
+  animation: message-fade-in 0.3s ease-out forwards;
+}
+
+.user-message {
+  background: linear-gradient(135deg, #2c3e50, #1a252f);
+  border-radius: 18px 18px 4px 18px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-left: 3px solid #3498db;
+  border: 3px solid #3498db;
+}
+
+.bot-message {
+  border-radius: 18px 18px 18px 4px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-left: 3px solid #e74c3c;
+  border: 3px solid #e74c3c;
+}
+
+.bot-message-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.halberd-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(231, 76, 60, 0.25);
+  border-color: #e74c3c;
+}
+
+.suggestion-chip {
+  background: rgba(30, 30, 30, 0.95);
+  color: white;
+  border-radius: 16px;
+  padding: 6px 12px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-block;
+  border: 1px solid #424242;
+}
+
+.suggestion-chip:hover {
+  background: var(--brand-red);
+  border-color: var(--brand-red);
+}
+
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+}
+
+.typing-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #e74c3c;
+  margin-right: 4px;
+  animation: typing-dot 1.4s infinite ease-in-out both;
+}
+
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing-dot {
+  0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+.command-output {
+  background: #1a1a1a;
+  border-radius: 4px;
+  padding: 12px;
+  font-family: monospace;
+  margin: 8px 0;
+  border-left: 3px solid #e74c3c;
+  overflow-x: auto;
+}
