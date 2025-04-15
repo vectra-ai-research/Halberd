@@ -87,6 +87,9 @@ from .entra_id.entra_create_new_app import EntraCreateNewApp
 from .entra_id.entra_add_trusted_ip_config import EntraAddTrustedIPConfig
 from .entra_id.entra_remove_account_access import EntraRemoveAccountAccess
 from .entra_id.entra_abuse_family_refresh_token import EntraAbuseFamilyRefreshToken
+from .entra_id.entra_enumerate_licenses import EntraEnumerateLicenses
+from .entra_id.entra_remove_user_license import EntraRemoveUserLicense
+from .entra_id.entra_assign_license import EntraAssignLicense
 
 # M365 Techniques
 from .m365.m365_deploy_email_deletion_rule import M365DeployEmailDelRule
@@ -98,6 +101,10 @@ from .m365.m365_search_teams_messages import M365SearchTeamsMessages
 from .m365.m365_search_user_one_drive import M365SearchUserOneDrive
 from .m365.m365_send_outlook_email import M365SendOutlookEmail
 from .m365.m365_exfil_sharepoint_data import M365ExfilSharepointData
+from .m365.m365_add_team_member import M365AddTeamMember
+from .m365.m365_enumerate_teams import M365EnumerateTeams
+from .m365.m365_add_external_user_to_teams import M365AddExternalUserToTeam
+from .m365.m365_enumerate_team_members import M365EnumerateTeamMembers
 
 # GCP Techniques
 from .gcp.gcp_establish_access_as_sa import GCPEstablishAccessAsServiceAccount
