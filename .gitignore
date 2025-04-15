@@ -682,3 +682,6 @@ automator/Playbooks/
 automator/Exports/
 automator/Schedules.yml
 .vscode/*
+package-lock.json
+package.json
+commitlint.config.js

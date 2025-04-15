@@ -111,3 +111,4 @@ from .gcp.gcp_establish_access_as_sa import GCPEstablishAccessAsServiceAccount
 from .gcp.gcp_enumerate_cloud_storage_buckets import GCPEnumerateCloudStorageBuckets
 from .gcp.gcp_enumerate_cloud_storage_objects import GCPEnumerateCloudStorageObjects
 from .gcp.gcp_exfilterate_cloud_storage_objects import GCPExfilStorageBuckets
+from .gcp.gcp_enumerate_compute_engine_instances import GCPEnumerateComputeEngineInstances
