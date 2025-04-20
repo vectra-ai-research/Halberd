@@ -6,7 +6,7 @@ from azure.mgmt.resource import ResourceManagementClient
 from core.azure.azure_access import AzureAccess
 
 @TechniqueRegistry.register
-class AzureFindKeyVaults(BaseTechnique):
+class AzureEnumerateKeyVaults(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
