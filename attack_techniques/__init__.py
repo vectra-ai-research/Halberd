@@ -35,6 +35,8 @@ from .azure.azure_enumerate_assigned_roles import AzureEnumerateRoleAssignment
 from .azure.azure_enumerate_vmss import AzureEnumerateVMSS
 from .azure.azure_enumerate_vm_in_vmss import AzureEnumerateVMInVMSS
 from .azure.azure_enumerate_storage_accounts import AzureEnumerateStorageAccounts
+from .azure.azure_enumerate_key_vaults import AzureEnumerateKeyVaults
+from .azure.azure_enumerate_logic_apps import AzureEnumerateLogicApps
 from .azure.azure_assign_role import AzureAssignRole
 from .azure.azure_create_new_resource_group import AzureCreateNewResourceGroup
 from .azure.azure_dump_automation_accounts import AzureDumpAutomationAccounts
@@ -42,13 +44,13 @@ from .azure.azure_dump_keyvault import AzureDumpKeyVault
 from .azure.azure_dump_storage_account import AzureDumpStorageAccount
 from .azure.azure_elevate_access_from_entra_id import AzureElevateAccessFromEntraId
 from .azure.azure_modify_keyvault_access import AzureModifyKeyVaultAccess
-from .azure.azure_delete_vm import AzureDeleteVm
+
 from .azure.azure_generate_storage_container_sas import AzureGenerateStorageContainerSAS
 from .azure.azure_generate_vm_disk_sas_url import AzureGenerateVMDiskSASUrl
 from .azure.azure_abuse_azure_policy_to_disable_logging import AzureAbuseAzurePolicyToDisableLogging
 from .azure.azure_deploy_malicious_extension_on_vm import AzureDeployMaliciousExtensionOnVM
 from .azure.azure_execute_script_on_vm import AzureExecuteScriptOnVM
-from .azure.azure_remove_role_asignment import AzureRemoveRoleAssignment
+from .azure.azure_modify_logic_app_trigger import AzureModifyLogicAppTrigger
 from .azure.azure_disable_storage_account_firewall import AzureDisableStorageAccountFirewall
 from .azure.azure_enable_storage_account_public_access import  AzureEnableStorageAccountPublicAccess
 from .azure.azure_expose_storage_account_container_public import AzureExposeStorageAccountContainerPublic
@@ -58,6 +60,9 @@ from .azure.azure_disable_resource_diagnostic_logging import AzureDisableResourc
 from .azure.azure_scan_logic_apps_for_credentials import AzureScanLogicAppsForCredentials
 from .azure.azure_extract_cache_tokens import AzureExtractCacheTokens
 from .azure.azure_enumerate_storage_containers import AzureEnumerateStorageContainers
+from .azure.azure_remove_role_asignment import AzureRemoveRoleAssignment
+from .azure.azure_delete_vm import AzureDeleteVm
+from .azure.azure_mass_resource_deletion import AzureMassResourceDeletion
 
 # Entra ID Techniques
 from .entra_id.entra_recon_tenant_info import EntraReconTenantInfo
