@@ -27,7 +27,7 @@ session_state.messages = [
 chatbot_agent = AttackAgent(session_state)
 
 # Register page to app       
-register_page(__name__, path='/attack-agent', name='Agent')
+register_page(__name__, path='/attack-agent', name='Attack Agent')
 
 # Function to create security technique suggestions
 def create_suggestion_chips():
@@ -151,11 +151,7 @@ layout = html.Div([
                             dbc.Button([
                                 DashIconify(icon="mdi:send", width=18)
                             ], id="send-button", n_clicks=0, color="danger", className="halberd-button send-button-hover")
-                        ]),
-                        html.Small(
-                            "Ask me about cloud security testing, attack paths, technique suggestions or to execute techniques.",
-                            className="text-muted mt-2 d-block"
-                        )
+                        ])
                     ], className="bg-halberd-dark halberd-text", style={"background": "rgba(25, 25, 25, 0.7)", "borderTop": "1px solid #333"})
                 ], className=" mb-3 halberd-depth-card"
                 ),
@@ -174,7 +170,7 @@ layout = html.Div([
 ],
 className="bg-halberd-dark halberd-text",
 style={
-    'minHeight': '100vh',
+    'minHeight': '92vh',
     "padding-right": "20px", 
     "padding-left": "20px"
 })
