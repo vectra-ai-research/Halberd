@@ -117,3 +117,4 @@ from .gcp.gcp_enumerate_cloud_storage_buckets import GCPEnumerateCloudStorageBuc
 from .gcp.gcp_enumerate_cloud_storage_objects import GCPEnumerateCloudStorageObjects
 from .gcp.gcp_exfilterate_cloud_storage_objects import GCPExfilStorageBuckets
 from .gcp.gcp_enumerate_compute_engine_instances import GCPEnumerateComputeEngineInstances
+from .gcp.gcp_persistence_via_ssh_key_addition import GCPPersistenceViaSSHKeyAddition
