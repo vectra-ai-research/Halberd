@@ -24,8 +24,38 @@ Halberd is an advanced security testing platform that enables security teams to 
 * 🔌 **Extensible Architecture**: Add custom techniques through a robust development framework
 * 🌐 **Cross-Platform Support**: Test security controls across all major cloud providers
 * 🤖 **Halberd Attack Agent**: Leverage LLM and agentic framework to supercharge security testing
+* 🐳 **Docker Support**: Easy deployment with optimized container configuration
 
 ## Quick Start Guide
+
+### Option 1: Docker Deployment (Recommended)
+
+1. Clone the repository:
+   ```
+   git clone https://github.com/vectra-ai-research/Halberd.git
+   ```
+
+2. Build and run with Docker:
+   ```bash
+   # Enable BuildKit for faster builds
+   export DOCKER_BUILDKIT=1
+   export COMPOSE_DOCKER_CLI_BUILD=1
+
+   # Build and start the container
+   docker compose up --build
+   ```
+
+3. Access the interface at `http://localhost:8050`
+
+Docker Features:
+- Multi-stage builds for optimized image size
+- Automatic health checks
+- Resource limits and reservations
+- Volume mounts for persistent data
+- Build caching for faster deployments
+- Azure CLI pre-installed
+
+### Option 2: Manual Installation
 
 1. Clone the repository:
    ```
