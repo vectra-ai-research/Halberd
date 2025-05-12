@@ -110,8 +110,8 @@ class GCPPersistenceViaSSHKeyAddition(BaseTechnique):
                 "https://cloud.google.com/iam/docs/understanding-roles"
             ),
             TechniqueReference(
-                "GCP Security Best Practices",
-                "https://cloud.google.com/security/best-practices"
+                "Generate SSH Keys",
+                "https://cloud.google.com/compute/docs/connect/create-ssh-keys"
             )
         ]
         
