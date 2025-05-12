@@ -318,7 +318,7 @@ class GCPPersistenceViaSSHKeyAddition(BaseTechnique):
         return {
             "project_id": {
                 "type": "str",
-                "required": False,
+                "required": True,
                 "default": None,
                 "name": "Project ID",
                 "input_field_type": "text"
