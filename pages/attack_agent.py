@@ -1,5 +1,5 @@
 import dash
-from dash import html, dcc, Input, Output, State, callback, register_page
+from dash import html, dcc, Input, Output, State, callback, register_page, clientside_callback
 import dash_bootstrap_components as dbc
 from dash_iconify import DashIconify
 from dataclasses import dataclass, field
@@ -15,7 +15,7 @@ class SessionState:
 # Default welcome message
 welcome_message = {
     "sender": "bot", 
-    "message": "Hello! I'm Halberd Attack Agent. How can I assist you with cloud security testing today?",
+    "message": "Hi, how can I assist you with cloud security testing today?",
 }
 
 # Initialize the session state
@@ -85,39 +85,13 @@ layout = html.Div([
             dbc.Col([
                 # Chat display area
                 dbc.Card([
-                    # Chat header
-                    dbc.CardHeader([
-                        dbc.Row([
-                            dbc.Col([
-                                html.Div([
-                                    DashIconify(icon="mdi:robot", className="me-2", width=20),
-                                    html.Span("Halberd Attack Agent", className="fw-bold halberd-brand")
-                                ], className="d-flex align-items-center halberd-text"),
-                            ], width=8
-                            ),
-                            dbc.Col([
-                                html.Div([
-                                    dbc.Button([
-                                        DashIconify(icon="mdi:content-save", width=18, className="me-2"),
-                                        "Save Chat"
-                                    ], id="save-chat-btn", className="me-2 halberd-button-secondary"),
-                                    dbc.Button([
-                                        DashIconify(icon="mdi:refresh", width=18, className="me-1"),
-                                        "New Conversation"
-                                    ], id="new-conversation-btn", className="halberd-button-secondary")
-                                ], className="d-flex justify-content-end")
-                            ], width=4
-                            )
-                        ]),
-                    ], className="halberd-toolbar halberd-text"),
-                    
                     # Chat messages area
                     dbc.CardBody([
                         html.Div(
                             id="chat-display", 
                             children=default_welcome_display,
                             style={
-                                'height': '65vh',
+                                'height': '75vh',
                                 'overflowY': 'auto',
                                 'padding': '16px',
                                 'scrollBehavior': 'smooth'
@@ -130,30 +104,59 @@ layout = html.Div([
                     # Input area
                     dbc.CardFooter([
                         # Quick suggestion chips
-                        create_suggestion_chips(),
-                        
-                        # Input group
-                        dbc.InputGroup([
-                            dbc.Input(
-                                id="user-input",
-                                placeholder="Type your message here...",
-                                type="text",
-                                className="bg-halberd-dark halberd-text halberd-input border-end-0"
-                            ),
-                            dbc.InputGroupText([
-                                DashIconify(
-                                    icon="mdi:file-upload-outline",
-                                    width=20,
-                                    className="me-2",
-                                    style={"cursor": "pointer"}
+                        # create_suggestion_chips(),
+
+                        dbc.Col([
+                            dbc.Row(
+                                dcc.Textarea(
+                                    id="user-input",
+                                    placeholder="Reply to Halberd Agent...",
+                                    rows=1,
+                                    className="bg-halberd-dark halberd-text halberd-input",
+                                    style={'border': 'none', 'boxShadow': 'none'}
                                 ),
-                            ], style={"background": "rgba(30, 30, 30, 0.7)", "border": "1px solid #333", "borderLeft": "none"}),
-                            dbc.Button([
-                                DashIconify(icon="mdi:send", width=18)
-                            ], id="send-button", n_clicks=0, color="danger", className="halberd-button send-button-hover")
+                                class_name="mb-2"
+                            ),
+
+                            dbc.Row([
+                                dbc.Col([
+                                    html.Div([
+                                        dbc.DropdownMenu(
+                                            children=[
+                                                dbc.DropdownMenuItem("Upload Image", id="upload-image-to-agent", class_name="dropdown-item"),
+                                                dbc.DropdownMenuItem("Upload PDF", id="upload-pdf-to-agent", class_name="dropdown-item"),
+                                                dbc.DropdownMenuItem(divider=True, class_name="dropdown-divider"),
+                                                dbc.DropdownMenuItem("Clear", id="clear-agent-input", class_name="dropdown-item")
+                                            ],
+                                            label = DashIconify(
+                                                    icon="mdi:plus",
+                                                    className="me-2",
+                                                    style={"cursor": "pointer"}
+                                                ),
+                                            caret = False,
+                                            direction="up",
+                                            toggle_style={"border": "1px solid #333"},
+                                            size="sm",
+                                            className="me-2"
+                                        ),
+                                        dbc.Button([
+                                            DashIconify(icon="mdi:content-save", width=18, className="me-2"),
+                                        ], id="save-chat-btn", className="me-2 halberd-button-secondary"),
+                                        dbc.Button([
+                                            DashIconify(icon="mdi:refresh", width=18, className="me-1"),
+                                        ], id="new-conversation-btn", className="halberd-button-secondary")
+                                    ], className="d-flex")
+                                ], width=4),
+                                dbc.Col(
+                                    dbc.Button([
+                                        DashIconify(icon="mdi:arrow-up")
+                                    ], id="send-button", n_clicks=0, color="danger", className="halberd-button send-button-hover float-end")
+                                )
+                            ])
                         ])
-                    ], className="bg-halberd-dark halberd-text", style={"background": "rgba(25, 25, 25, 0.7)", "borderTop": "1px solid #333"})
-                ], className=" mb-3 halberd-depth-card"
+                    ], className="bg-halberd-dark halberd-text halberd-depth-card"
+                    )
+                ], className="mb-3", style={"border":0}
                 ),
             ], width=12),
         ]),
@@ -165,7 +168,7 @@ layout = html.Div([
         dcc.Store(id="typing-state", data={"is_typing": False}),
         
         # Hidden div for triggering bot response after user message
-        html.Div(id="trigger-bot-response", style={"display": "none"})
+        html.Div(id="trigger-bot-response", style={"display": "none"}),
     ], fluid=True)
 ],
 className="bg-halberd-dark halberd-text",
@@ -373,3 +376,30 @@ for i in range(5):  # We have 5 suggestion chips
         if n_clicks:
             return suggestion_text
         return dash.no_update
+    
+# Client-side callback to auto-adjust the height of the textarea
+clientside_callback(
+    """
+    function(value) {
+        // Short delay to ensure input has rendered
+        setTimeout(function() {
+            const textarea = document.getElementById("user-input");
+            if (textarea) {
+                // Reset height to default first
+                textarea.style.height = "38px";
+                
+                // Expand if content present
+                if (value && value.length > 0) {
+                    // Set height to scroll height to expand vertically
+                    textarea.style.height = textarea.scrollHeight + "px";
+                }
+                // If no content, keep height at default 38px
+            }
+        }, 10);
+        
+        return window.dash_clientside.no_update;
+    }
+    """,
+    Output("user-input", "style"),
+    [Input("user-input", "value")]
+)
