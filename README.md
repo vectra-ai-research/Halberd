@@ -47,14 +47,6 @@ Halberd is an advanced security testing platform that enables security teams to 
 
 3. Access the interface at `http://localhost:8050`
 
-Docker Features:
-- Multi-stage builds for optimized image size
-- Automatic health checks
-- Resource limits and reservations
-- Volume mounts for persistent data
-- Build caching for faster deployments
-- Azure CLI pre-installed
-
 ### Option 2: Manual Installation
 
 1. Clone the repository:
