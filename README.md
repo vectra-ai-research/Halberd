@@ -30,22 +30,16 @@ Halberd is an advanced security testing platform that enables security teams to 
 
 ### Option 1: Docker Deployment (Recommended)
 
-1. Clone the repository:
-   ```
-   git clone https://github.com/vectra-ai-research/Halberd.git
-   ```
+```bash
+# Quick start with pre-built image
+docker run -d --name halberd -p 8050:8050 ghcr.io/vectra-ai-research/halberd:latest
 
-2. Build and run with Docker:
-   ```bash
-   # Enable BuildKit for faster builds
-   export DOCKER_BUILDKIT=1
-   export COMPOSE_DOCKER_CLI_BUILD=1
+# Or build from source
+git clone https://github.com/vectra-ai-research/Halberd.git && cd Halberd
+docker compose up --build
+```
 
-   # Build and start the container
-   docker compose up --build
-   ```
-
-3. Access the interface at `http://localhost:8050`
+Access the interface at `http://localhost:8050`
 
 ### Option 2: Manual Installation
 
@@ -116,6 +110,44 @@ python3 run.py --dev-server --dev-server-debug
    * Export results for compliance evidence
 
 For detailed usage instructions, visit [Halberd Wiki - Usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage).
+
+## Docker Deployment Details
+
+### Advanced Docker Options
+
+```bash
+# With persistent volumes for data retention
+docker run -d \
+  --name halberd \
+  -p 8050:8050 \
+  -v $(pwd)/local:/app/local \
+  -v $(pwd)/output:/app/output \
+  -v $(pwd)/report:/app/report \
+  ghcr.io/vectra-ai-research/halberd:latest
+
+# Custom configuration
+docker run -d \
+  --name halberd \
+  -p 8080:8080 \
+  -e HALBERD_HOST=0.0.0.0 \
+  -e HALBERD_PORT=8080 \
+  ghcr.io/vectra-ai-research/halberd:v2.2.0
+```
+
+### Docker Features
+
+- **Multi-stage builds**: Optimized container size with separate build and runtime stages
+- **Security hardened**: Runs as non-root user with minimal attack surface
+- **Health checks**: Built-in health monitoring for container orchestration
+- **Resource limits**: Configurable CPU and memory constraints via docker-compose
+- **Multi-architecture**: Supports both AMD64 and ARM64 platforms
+- **Automated builds**: CI/CD pipeline automatically builds and publishes images to GitHub Container Registry
+
+### Available Tags
+
+- `latest` - Latest stable release from main branch
+- `v2.2.0` - Specific version release
+- `main` - Latest development build
 
 ## Want to Join the Party? 🎉
 
