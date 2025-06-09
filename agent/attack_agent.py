@@ -66,6 +66,7 @@ MAX_TOOL_RESPONSE_TOKENS = 15000  # Max size for tool responses
 
 # Rate limiting parameters
 RATE_LIMIT_TOKENS_PER_MIN = 20000  # Anthropic's rate limit (tokens per minute)
+OUTPUT_RATE_LIMIT_TOKENS_PER_MIN = 8000  # Output tokens rate limit
 MIN_DELAY_BETWEEN_CALLS = 3  # Minimum delay in seconds between API calls
 
 class RateLimiter:
@@ -134,9 +135,9 @@ class RateLimiter:
         # Calculate delays for each constraint
         request_delay = self._calculate_request_delay(current_time)
         input_token_delay = self._calculate_token_delay(
-            input_tokens, self.input_token_usage, 20000, current_time)
+            input_tokens, self.input_token_usage, RATE_LIMIT_TOKENS_PER_MIN, current_time)
         output_token_delay = self._calculate_token_delay(
-            est_output_tokens, self.output_token_usage, 8000, current_time)
+            est_output_tokens, self.output_token_usage, OUTPUT_RATE_LIMIT_TOKENS_PER_MIN, current_time)
         
         # Get maximum delay required
         max_delay = max(request_delay, input_token_delay, output_token_delay)
@@ -242,9 +243,19 @@ class AttackAgent:
         # Get required delay from rate limiter
         required_delay = self.rate_limiter.get_required_delay(total_tokens, estimated_output_tokens)
         
-        # Apply delay if needed
+        # Apply delay if needed (either from rate limits or minimum delay)
         if required_delay > 0:
             time.sleep(required_delay)
+        else:
+            # Ensure minimum delay between consecutive calls
+            time_since_last_call = time.time() - self.last_api_call_time
+            if time_since_last_call < MIN_DELAY_BETWEEN_CALLS and self.last_api_call_time > 0:
+                minimum_delay = MIN_DELAY_BETWEEN_CALLS - time_since_last_call
+                time.sleep(minimum_delay)
+                print(f"Enforcing minimum delay: {minimum_delay:.2f}s between API calls")
+
+        # Update last API call time before making the call
+        self.last_api_call_time = time.time()
         
         # Retry parameters
         max_retries = 5
@@ -297,21 +308,25 @@ class AttackAgent:
                     
                     # After a rate limit, update our internal tracking to be more cautious
                     if hasattr(self, 'rate_limiter'):
-                        # Simulate a very recent high usage to ensure we back off appropriately
+                        # Record a more moderate artificial usage to ensure we back off appropriately
+                        # Use portion of the actual request
                         now = time.time()
+                        cautious_input_tokens = int(total_tokens * 0.5)  # 50% of the actual input tokens
+                        cautious_output_tokens = int(estimated_output_tokens * 0.5)  # 50% of estimated output
                         self.rate_limiter.record_usage(
-                            10000,  # Record substantial input token usage
-                            4000,   # Record substantial output token usage
+                            cautious_input_tokens,
+                            cautious_output_tokens,
                             now - 1  # Very recent timestamp
                         )
                 else:
                     # For non-rate-limit errors, don't retry
                     return {"error": error_str}
-       
+    
     def process_user_input(self, user_input):
         """
         Process user input, manage tool calls, and maintain a valid conversation structure.
-        """
+        """        
+        # Create main user message
         self.session_state.messages.append({"role": "user", "content": user_input})
         
         try:
@@ -459,6 +474,3 @@ class AttackAgent:
                 # Count tokens in the tool use block
                 total_tokens += self.count_tokens(json.dumps(content_block.input))
         return total_tokens
-    
-
-    
