@@ -1,4 +1,4 @@
-from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique
+from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, TechniqueNote
 from ..technique_registry import TechniqueRegistry
 import uuid
 import re
@@ -17,7 +17,10 @@ class AzureAssignRole(BaseTechnique):
                 sub_technique_name="Additional Cloud Roles"
             )
         ]
-        super().__init__("Assign Role", "Escalate privileges by assigning an Azure role", mitre_techniques)
+        notes = [
+            TechniqueNote("Valid values for scope : root, subscription, rg, resource")
+        ]
+        super().__init__("Assign Role", "Escalate privileges by assigning an Azure role", mitre_techniques, notes=notes)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
