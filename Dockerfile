@@ -48,8 +48,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/venv/bin:$PATH" \
     PYTHONPATH="/app"
 
-# Create non-root user for security
-RUN groupadd -r halberd && useradd -r -g halberd halberd
+# Create non-root user for security with home directory
+RUN groupadd -r halberd && useradd -r -g halberd -m -d /home/halberd halberd
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -68,7 +68,9 @@ COPY --chown=halberd:halberd . .
 
 # Create necessary directories with proper permissions
 RUN mkdir -p local output report \
-    && chown -R halberd:halberd /app
+    && chown -R halberd:halberd /app \
+    && mkdir -p /home/halberd/.azure \
+    && chown -R halberd:halberd /home/halberd
 
 # Switch to non-root user
 USER halberd
