@@ -48,7 +48,10 @@ from hypercorn.asyncio import serve
 import asyncio
 import argparse
 import os
+from datetime import datetime
 from core.bootstrap import Bootstrapper
+from version import __version__
+
 
 class Server:
     """Halberd Server Configuration"""
@@ -105,8 +108,11 @@ class Server:
 
             # Log server configuration
             protocol = "https" if self.ssl_cert else "http"
-            print("Starting Halberd: Multi-Cloud Attack Tool server...")
-            print(f"Server starting on {protocol}://{self.host}:{self.port}")
+            url= f"{protocol}://{self.host}:{self.port}"
+
+            # Display startup info
+            print_banner()
+            print_startup_info(self.host, self.port, url)
                 
             # Start Hypercorn
             config = self._get_hypercorn_config()
@@ -114,6 +120,34 @@ class Server:
             
         except Exception as e:
             raise RuntimeError(f"Server startup failed: {str(e)}")
+
+def print_banner():
+    """Print application banner"""
+    banner = """
+╔══════════════════════════════════════════════════════════════╗
+║                          HALBERD                             ║
+║               Multi-Cloud Agentic Attack Tool                ║
+╚══════════════════════════════════════════════════════════════╝
+    """
+    print(banner)
+
+def print_startup_info(host, port, url):
+    """Print startup information"""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    print(">> Application Status:")
+    print(f"   └─ Started at: {timestamp}")
+    print(f"   └─ Version: {__version__}")
+    print()
+    
+    print(">> Server Configuration:")
+    print(f"   └─ Host: {host}")
+    print(f"   └─ Port: {port}")
+    print(f"   └─ URL: {url}")
+    print()
+    
+    print("[Success] Initialization complete")
+    print("=" * 60)
 
 def main():
     """Command line interface for the server with defaults and environment variable support"""
