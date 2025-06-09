@@ -15,6 +15,7 @@ class Bootstrapper:
         self.APP_LOCAL_DIR = self.base_dir / "local"
         self.OUTPUT_DIR = self.base_dir / "output"
         self.REPORT_DIR = self.base_dir / "report"
+        self.CHATS_DIR = self.APP_LOCAL_DIR / "chats"
         self.APP_LOG_FILE = self.APP_LOCAL_DIR / "app.log"
         self.MSFT_TOKENS_FILE = self.APP_LOCAL_DIR / "MSFT_Graph_Tokens.yml"
         self.AUTOMATOR_DIR = self.base_dir / "automator"
@@ -39,7 +40,8 @@ class Bootstrapper:
         directories = [
             self.APP_LOCAL_DIR,
             self.OUTPUT_DIR,
-            self.REPORT_DIR
+            self.REPORT_DIR,
+            self.CHATS_DIR
         ]
         
         for directory in directories:
@@ -98,19 +100,17 @@ class Bootstrapper:
         """Check Azure CLI installation."""
         if not self._is_azure_cli_installed():
             warning = '''
-            !!!  WARNING: Azure CLI (az) not found !!!
-            --------------------------------------------
-            The Azure CLI is required to run the Azure modules but was not found on the system.
-            Please ensure that:
-            1. Azure CLI is installed on the system.
-            2. The installation directory is added to your system's PATH.
-            3. You have restarted your terminal or IDE after installation.
+            Warning : Azure CLI Not Detected
+            --------------------------------
+            Azure CLI (az) was not found on this system. This is only required if you plan to 
+            use Azure modules in your application.
 
-            For installation instructions, visit:
-            https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
+            If you will be testing Azure modules:
+            1. Install Azure CLI from: https://learn.microsoft.com/en-us/cli/azure/install-azure-cli
+            2. Ensure the installation directory is added to your system PATH
+            3. Restart your terminal or IDE after installation
 
-            After installation, you may need to restart your terminal or add the Azure CLI 
-            installation directory to your PATH manually.
+            If you are not using Azure modules, this warning can be safely ignored.
             '''
             print(warning)
             
