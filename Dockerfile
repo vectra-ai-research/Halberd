@@ -10,8 +10,20 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     gnupg \
     lsb-release \
-    && curl -sL https://aka.ms/InstallAzureCLIDeb | bash \
+    ca-certificates \
     && rm -rf /var/lib/apt/lists/*
+
+# Manual Azure CLI installation
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -sLS https://packages.microsoft.com/keys/microsoft.asc \
+    | gpg --dearmor | tee /etc/apt/keyrings/microsoft.gpg > /dev/null \
+    && chmod go+r /etc/apt/keyrings/microsoft.gpg \
+    && AZ_DIST=$(lsb_release -cs) \
+    && echo "Types: deb\nURIs: https://packages.microsoft.com/repos/azure-cli/\nSuites: ${AZ_DIST}\nComponents: main\nArchitectures: $(dpkg --print-architecture)\nSigned-by: /etc/apt/keyrings/microsoft.gpg" \
+    | tee /etc/apt/sources.list.d/azure-cli.sources \
+    && apt-get update \
+    && apt-get install -y azure-cli \
+    && az --version
 
 # Create and activate virtual environment
 RUN python -m venv /opt/venv
@@ -25,13 +37,13 @@ RUN pip install --no-cache-dir --upgrade pip \
 # Final stage
 FROM python:3.11-slim
 
-# Add metadata labels for container registry
+# Add metadata labels
 LABEL maintainer="Arpan Sarkar (@openrec0n)" \
       version="2.2.0" \
-      description="Halberd Multi-Cloud Attack Tool" \
+      description="Halberd Multi-Cloud Agentic Attack Tool" \
       repository="https://github.com/vectra-ai-research/Halberd" \
       org.opencontainers.image.title="Halberd" \
-      org.opencontainers.image.description="Multi-Cloud Attack Tool" \
+      org.opencontainers.image.description="Multi-Cloud Agentic Attack Tool" \
       org.opencontainers.image.version="2.2.0" \
       org.opencontainers.image.source="https://github.com/vectra-ai-research/Halberd" \
       org.opencontainers.image.vendor="Vectra AI Research" \
@@ -46,10 +58,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     HALBERD_HOST=0.0.0.0 \
     HALBERD_PORT=8050 \
     PATH="/opt/venv/bin:$PATH" \
-    PYTHONPATH="/app"
-
-# Create non-root user for security with home directory
-RUN groupadd -r halberd && useradd -r -g halberd -m -d /home/halberd halberd
+    PYTHONPATH="/app" \
+    AZURE_CONFIG_DIR="/home/halberd/.azure"
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -57,8 +67,22 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg \
     lsb-release \
     ca-certificates \
-    && curl -sL https://aka.ms/InstallAzureCLIDeb | bash \
     && rm -rf /var/lib/apt/lists/*
+
+# Manual Azure CLI installation (same as build stage)
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -sLS https://packages.microsoft.com/keys/microsoft.asc \
+    | gpg --dearmor | tee /etc/apt/keyrings/microsoft.gpg > /dev/null \
+    && chmod go+r /etc/apt/keyrings/microsoft.gpg \
+    && AZ_DIST=$(lsb_release -cs) \
+    && echo "Types: deb\nURIs: https://packages.microsoft.com/repos/azure-cli/\nSuites: ${AZ_DIST}\nComponents: main\nArchitectures: $(dpkg --print-architecture)\nSigned-by: /etc/apt/keyrings/microsoft.gpg" \
+    | tee /etc/apt/sources.list.d/azure-cli.sources \
+    && apt-get update \
+    && apt-get install -y azure-cli \
+    && az --version
+
+# Create non-root user for security
+RUN groupadd -r halberd && useradd -r -g halberd -m -d /home/halberd halberd
 
 # Copy virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
@@ -67,20 +91,18 @@ COPY --from=builder /opt/venv /opt/venv
 COPY --chown=halberd:halberd . .
 
 # Create necessary directories with proper permissions
-RUN mkdir -p local output report \
-    && chown -R halberd:halberd /app \
-    && mkdir -p /home/halberd/.azure \
-    && chown -R halberd:halberd /home/halberd
+RUN mkdir -p local output report /home/halberd/.azure \
+    && chown -R halberd:halberd /app /home/halberd
 
 # Switch to non-root user
 USER halberd
+
+# Final verification that Azure CLI works for non-root user
+RUN az --version
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:${HALBERD_PORT}/ || exit 1
 
-# Expose the port
 EXPOSE 8050
-
-# Command to run the application
 CMD ["python", "run.py"]
