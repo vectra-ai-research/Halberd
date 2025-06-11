@@ -196,17 +196,20 @@ jobs:
           subject-digest: ${{ steps.manifest.outputs.digest }}
           push-to-registry: true
 
-      - name: Extract and attest SBOM
+      - name: Generate SBOM with Syft
         run: |
-          # Extract SBOM from the AMD64 image (since both architectures have the same software components)
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-amd64.outputs.digest }} --format '{{json .SBOM}}' > /tmp/sbom.json
+          # Install Syft
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+          
+          # Generate SBOM for the final manifest
+          syft ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.manifest.outputs.digest }} -o spdx-json=/tmp/sbom.spdx.json
           
       - name: Generate SBOM attestation
         uses: actions/attest-sbom@v1
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.manifest.outputs.digest }}
-          sbom-path: /tmp/sbom.json
+          sbom-path: /tmp/sbom.spdx.json
           push-to-registry: true
 
       - name: Inspect image
