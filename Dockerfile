@@ -1,6 +1,3 @@
-# Define build arguments
-ARG HALBERD_VERSION=0.0.0
-
 # Build stage
 FROM python:3.11-slim AS builder
 
@@ -33,24 +30,18 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 # Install dependencies
-COPY requirements.txt version.py ./
+COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
-
-# Extract version
-RUN python -c "exec(open('version.py').read()); print(__version__)" > /tmp/version_value && \
-    echo "HALBERD_VERSION=$(cat /tmp/version_value)" > /tmp/version.env
 
 # Final stage
 FROM python:3.11-slim
 
-# Copy and set version
-COPY --from=builder /tmp/version.env /tmp/version.env
+# Set version
 ARG HALBERD_VERSION
-RUN . /tmp/version.env && \
-    echo "HALBERD_VERSION=$HALBERD_VERSION" > /etc/environment
+ENV HALBERD_VERSION=${HALBERD_VERSION}
 
-# Add metadata labels
+# Set labels
 LABEL maintainer="Arpan Sarkar (@openrec0n)" \
       version="${HALBERD_VERSION}" \
       description="Halberd Multi-Cloud Agentic Attack Tool" \

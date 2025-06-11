@@ -3,6 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        HALBERD_VERSION: ${HALBERD_VERSION:-2.2.0}
       cache_from:
         - python:3.11-slim
     ports:
