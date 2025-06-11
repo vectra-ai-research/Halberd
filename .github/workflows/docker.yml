@@ -58,7 +58,7 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=v${{ steps.version.outputs.version }},enable={{is_default_branch}}
+            type=raw,value=v${{ steps.version.outputs.version }}
 
   build-amd64:
     runs-on: ubuntu-latest
@@ -170,14 +170,12 @@ jobs:
 
       - name: Create manifest list and push
         id: manifest
-        working-directory: /tmp
         run: |
           docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-amd64.outputs.digest }} \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-arm64.outputs.digest }}
           
-          # Get the manifest list digest
-          MANIFEST_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }} --format '{{.Manifest.Digest}}')
+          MANIFEST_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.prepare.outputs.version }} --format '{{.Manifest.Digest}}')
           echo "digest=$MANIFEST_DIGEST" >> $GITHUB_OUTPUT
           echo "Manifest list digest: $MANIFEST_DIGEST"
         env:
@@ -185,7 +183,7 @@ jobs:
 
       - name: Inspect image
         run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ needs.prepare.outputs.version }}
+          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.prepare.outputs.version }}
 
       - name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
