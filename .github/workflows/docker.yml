@@ -67,7 +67,6 @@ jobs:
       contents: read
       packages: write
       id-token: write
-      attestations: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
@@ -105,8 +104,6 @@ jobs:
             type=gha,mode=max,scope=linux/amd64
             type=gha,mode=max,scope=wheels-${{ needs.prepare.outputs.requirements-hash }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
-          provenance: mode=max
-          sbom: true
 
   build-arm64:
     runs-on: ubuntu-24.04-arm
@@ -115,7 +112,6 @@ jobs:
       contents: read
       packages: write
       id-token: write
-      attestations: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
@@ -153,8 +149,6 @@ jobs:
             type=gha,mode=max,scope=linux/arm64
             type=gha,mode=max,scope=wheels-${{ needs.prepare.outputs.requirements-hash }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
-          provenance: mode=max
-          sbom: true
 
   merge:
     runs-on: ubuntu-latest
@@ -195,23 +189,3 @@ jobs:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           subject-digest: ${{ steps.manifest.outputs.digest }}
           push-to-registry: true
-
-      - name: Generate SBOM with Syft
-        run: |
-          # Install Syft
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
-          
-          # Generate SBOM for the final manifest
-          syft ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ steps.manifest.outputs.digest }} -o spdx-json=/tmp/sbom.spdx.json
-          
-      - name: Generate SBOM attestation
-        uses: actions/attest-sbom@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.manifest.outputs.digest }}
-          sbom-path: /tmp/sbom.spdx.json
-          push-to-registry: true
-
-      - name: Inspect image
-        run: |
-          docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.prepare.outputs.version }}
