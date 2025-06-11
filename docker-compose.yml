@@ -1,0 +1,34 @@
+services:
+  halberd:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        HALBERD_VERSION: ${HALBERD_VERSION:-2.2.0}
+      cache_from:
+        - python:3.11-slim
+    ports:
+      - "8050:8050"
+    volumes:
+      - ./local:/app/local
+      - ./output:/app/output
+      - ./report:/app/report
+    environment:
+      - HALBERD_HOST=0.0.0.0
+      - HALBERD_PORT=8050
+      - COMPOSE_BAKE=true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8050"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M 
