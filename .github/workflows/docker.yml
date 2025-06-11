@@ -66,6 +66,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
@@ -85,7 +87,7 @@ jobs:
 
       - name: Build and push AMD64
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -103,6 +105,8 @@ jobs:
             type=gha,mode=max,scope=linux/amd64
             type=gha,mode=max,scope=wheels-${{ needs.prepare.outputs.requirements-hash }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
+          provenance: mode=max
+          sbom: true
 
   build-arm64:
     runs-on: ubuntu-24.04-arm
@@ -110,6 +114,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
+      attestations: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
@@ -129,7 +135,7 @@ jobs:
 
       - name: Build and push ARM64
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -147,6 +153,8 @@ jobs:
             type=gha,mode=max,scope=linux/arm64
             type=gha,mode=max,scope=wheels-${{ needs.prepare.outputs.requirements-hash }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
+          provenance: mode=max
+          sbom: true
 
   merge:
     runs-on: ubuntu-latest
@@ -184,10 +192,3 @@ jobs:
       - name: Inspect image
         run: |
           docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.prepare.outputs.version }}
-
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
-        with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.manifest.outputs.digest }}
-          push-to-registry: true
