@@ -1,3 +1,6 @@
+# Define build arguments
+ARG HALBERD_VERSION=0.0.0
+
 # Build stage
 FROM python:3.11-slim AS builder
 
@@ -29,22 +32,32 @@ RUN mkdir -p /etc/apt/keyrings \
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Install Python dependencies
-COPY requirements.txt .
+# Install dependencies
+COPY requirements.txt version.py ./
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
+
+# Extract version
+RUN python -c "exec(open('version.py').read()); print(__version__)" > /tmp/version_value && \
+    echo "HALBERD_VERSION=$(cat /tmp/version_value)" > /tmp/version.env
 
 # Final stage
 FROM python:3.11-slim
 
+# Copy and set version
+COPY --from=builder /tmp/version.env /tmp/version.env
+ARG HALBERD_VERSION
+RUN . /tmp/version.env && \
+    echo "HALBERD_VERSION=$HALBERD_VERSION" > /etc/environment
+
 # Add metadata labels
 LABEL maintainer="Arpan Sarkar (@openrec0n)" \
-      version="2.2.0" \
+      version="${HALBERD_VERSION}" \
       description="Halberd Multi-Cloud Agentic Attack Tool" \
       repository="https://github.com/vectra-ai-research/Halberd" \
       org.opencontainers.image.title="Halberd" \
       org.opencontainers.image.description="Multi-Cloud Agentic Attack Tool" \
-      org.opencontainers.image.version="2.2.0" \
+      org.opencontainers.image.version="${HALBERD_VERSION}" \
       org.opencontainers.image.source="https://github.com/vectra-ai-research/Halberd" \
       org.opencontainers.image.vendor="Vectra AI Research" \
       org.opencontainers.image.licenses="MIT"
