@@ -73,17 +73,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
-# Manual Azure CLI installation (same as build stage)
-RUN mkdir -p /etc/apt/keyrings \
-    && curl -sLS https://packages.microsoft.com/keys/microsoft.asc \
-    | gpg --dearmor | tee /etc/apt/keyrings/microsoft.gpg > /dev/null \
-    && chmod go+r /etc/apt/keyrings/microsoft.gpg \
-    && AZ_DIST=$(lsb_release -cs) \
-    && echo "Types: deb\nURIs: https://packages.microsoft.com/repos/azure-cli/\nSuites: ${AZ_DIST}\nComponents: main\nArchitectures: $(dpkg --print-architecture)\nSigned-by: /etc/apt/keyrings/microsoft.gpg" \
-    | tee /etc/apt/sources.list.d/azure-cli.sources \
-    && apt-get update \
-    && apt-get install -y azure-cli \
-    && az --version
+# Copy Azure CLI from builder stage
+COPY --from=builder /usr/bin/az /usr/bin/az
+COPY --from=builder /usr/lib/azure-cli /usr/lib/azure-cli
+COPY --from=builder /etc/apt/sources.list.d/azure-cli.sources /etc/apt/sources.list.d/azure-cli.sources
+COPY --from=builder /etc/apt/keyrings/microsoft.gpg /etc/apt/keyrings/microsoft.gpg
 
 # Create non-root user for security
 RUN groupadd -r halberd && useradd -r -g halberd -m -d /home/halberd halberd
