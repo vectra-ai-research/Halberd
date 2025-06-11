@@ -25,9 +25,10 @@ from .aws.aws_modify_guardduty_trusted_ip import AWSModifyGuaddutyTrustedIP
 from .aws.aws_expose_s3_bucket_public import AWSExposeS3BucketPublic
 
 # Azure Techniques
-from .azure.azure_password_spray import AzurePasswordSpray
+from .azure.azure_establish_access_via_device_code import AzureEstablishAccessViaDeviceCode
 from .azure.azure_establish_access_as_user import AzureEstablishAccessAsUser
 from .azure.azure_establish_access_as_app import AzureEstablishAccessAsApp
+from .azure.azure_password_spray import AzurePasswordSpray
 from .azure.azure_enumerate_vm import AzureEnumerateVm
 from .azure.azure_enumerate_resources import AzureEnumerateResources
 from .azure.azure_enumerate_resource_groups import AzureEnumerateResourceGroups
@@ -44,7 +45,6 @@ from .azure.azure_dump_keyvault import AzureDumpKeyVault
 from .azure.azure_dump_storage_account import AzureDumpStorageAccount
 from .azure.azure_elevate_access_from_entra_id import AzureElevateAccessFromEntraId
 from .azure.azure_modify_keyvault_access import AzureModifyKeyVaultAccess
-
 from .azure.azure_generate_storage_container_sas import AzureGenerateStorageContainerSAS
 from .azure.azure_generate_vm_disk_sas_url import AzureGenerateVMDiskSASUrl
 from .azure.azure_abuse_azure_policy_to_disable_logging import AzureAbuseAzurePolicyToDisableLogging
