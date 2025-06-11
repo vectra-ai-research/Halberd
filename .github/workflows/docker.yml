@@ -183,9 +183,9 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-amd64.outputs.digest }} \
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-arm64.outputs.digest }}
           
-          MANIFEST_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.prepare.outputs.version }} --format '{{.Manifest.Digest}}')
-          echo "digest=$MANIFEST_DIGEST" >> $GITHUB_OUTPUT
-          echo "Manifest list digest: $MANIFEST_DIGEST"
+          MANIFEST_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.prepare.outputs.version }} --format '{{json .Manifest}}' | jq -r '.digest')
+          echo "digest=${MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
+          echo "Manifest list digest: ${MANIFEST_DIGEST}"
         env:
           DOCKER_METADATA_OUTPUT_JSON: ${{ needs.prepare.outputs.json }}
 
