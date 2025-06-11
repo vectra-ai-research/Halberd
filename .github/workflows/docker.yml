@@ -22,6 +22,7 @@ jobs:
       tags: ${{ steps.meta.outputs.tags }}
       labels: ${{ steps.meta.outputs.labels }}
       json: ${{ steps.meta.outputs.json }}
+      requirements-hash: ${{ steps.requirements.outputs.hash }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -37,6 +38,13 @@ jobs:
           VERSION=$(python3 -c "from version import __version__; print(__version__)")
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "Extracted version: ${VERSION}"
+
+      - name: Generate requirements hash
+        id: requirements
+        run: |
+          HASH=$(sha256sum requirements.txt | cut -d' ' -f1)
+          echo "hash=${HASH}" >> "$GITHUB_OUTPUT"
+          echo "Requirements hash: ${HASH}"
 
       - name: Extract metadata
         id: meta
@@ -88,8 +96,12 @@ jobs:
             org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
           build-args: |
             HALBERD_VERSION=${{ needs.prepare.outputs.version }}
-          cache-from: type=gha,scope=linux/amd64
-          cache-to: type=gha,mode=max,scope=linux/amd64
+          cache-from: |
+            type=gha,scope=linux/amd64
+            type=gha,scope=wheels-${{ needs.prepare.outputs.requirements-hash }}
+          cache-to: |
+            type=gha,mode=max,scope=linux/amd64
+            type=gha,mode=max,scope=wheels-${{ needs.prepare.outputs.requirements-hash }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
 
   build-arm64:
@@ -128,8 +140,12 @@ jobs:
             org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
           build-args: |
             HALBERD_VERSION=${{ needs.prepare.outputs.version }}
-          cache-from: type=gha,scope=linux/arm64
-          cache-to: type=gha,mode=max,scope=linux/arm64
+          cache-from: |
+            type=gha,scope=linux/arm64
+            type=gha,scope=wheels-${{ needs.prepare.outputs.requirements-hash }}
+          cache-to: |
+            type=gha,mode=max,scope=linux/arm64
+            type=gha,mode=max,scope=wheels-${{ needs.prepare.outputs.requirements-hash }}
           outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
 
   merge:

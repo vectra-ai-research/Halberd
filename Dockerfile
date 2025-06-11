@@ -1,4 +1,28 @@
-# stage 1: azure-base stage
+# syntax=docker/dockerfile:1
+
+# Stage 0: caching
+FROM python:3.11-slim AS wheel-builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    gcc \
+    g++ \
+    libffi-dev \
+    libssl-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip and install wheel
+RUN pip install --no-cache-dir --upgrade pip wheel setuptools
+
+# Set working directory
+WORKDIR /wheels
+
+# Copy requirements and build wheels
+COPY requirements.txt .
+RUN pip wheel --wheel-dir=/wheels --no-cache-dir -r requirements.txt
+
+# Stage 1: azure-base stage
 FROM python:3.11-slim AS azure-base
 
 # Install Azure CLI dependencies
@@ -21,16 +45,14 @@ RUN mkdir -p /etc/apt/keyrings \
     && apt-get install -y azure-cli \
     && az --version
 
-# stage 2: dependencies stage
+# Stage 2: dependencies stage
 FROM azure-base AS builder
 
 # Set working directory
 WORKDIR /app
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Copy pre-built wheels
+COPY --from=wheel-builder /wheels /wheels
 
 # Create and activate virtual environment
 RUN python -m venv /opt/venv
@@ -39,9 +61,9 @@ ENV PATH="/opt/venv/bin:$PATH"
 # Install dependencies
 COPY requirements.txt ./
 RUN pip install --no-cache-dir --upgrade pip \
-    && pip install --no-cache-dir -r requirements.txt
+    && pip install --no-cache-dir --no-index --find-links=/wheels -r requirements.txt
 
-# stage 3: final stage
+# Stage 3: final stage
 FROM azure-base
 
 # Set version
