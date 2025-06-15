@@ -12,23 +12,23 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository_owner }}/halberd
 
 jobs:
-  build-and-push:
+  prepare:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-      id-token: write
-      attestations: write
-
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tags: ${{ steps.meta.outputs.tags }}
+      labels: ${{ steps.meta.outputs.labels }}
+      json: ${{ steps.meta.outputs.json }}
+      requirements-hash: ${{ steps.requirements.outputs.hash }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
@@ -36,19 +36,15 @@ jobs:
         id: version
         run: |
           VERSION=$(python3 -c "from version import __version__; print(__version__)")
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Extracted version: $VERSION"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Extracted version: ${VERSION}"
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate requirements hash
+        id: requirements
+        run: |
+          HASH=$(sha256sum requirements.txt | cut -d' ' -f1)
+          echo "hash=${HASH}" >> "$GITHUB_OUTPUT"
+          echo "Requirements hash: ${HASH}"
 
       - name: Extract metadata
         id: meta
@@ -62,29 +58,134 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=v${{ steps.version.outputs.version }},enable={{is_default_branch}}
+            type=raw,value=v${{ steps.version.outputs.version }}
 
-      - name: Build and push Docker image
+  build-amd64:
+    runs-on: ubuntu-latest
+    needs: prepare
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push AMD64
         id: build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
           labels: |
-            ${{ steps.meta.outputs.labels }}
-            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+            ${{ needs.prepare.outputs.labels }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
           build-args: |
-            HALBERD_VERSION=${{ steps.version.outputs.version }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+            HALBERD_VERSION=${{ needs.prepare.outputs.version }}
+          cache-from: |
+            type=gha,scope=linux/amd64
+            type=gha,scope=wheels-${{ needs.prepare.outputs.requirements-hash }}
+          cache-to: |
+            type=gha,mode=max,scope=linux/amd64
+            type=gha,mode=max,scope=wheels-${{ needs.prepare.outputs.requirements-hash }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
 
-      - name: Generate artifact attestation
+  build-arm64:
+    runs-on: ubuntu-24.04-arm
+    needs: prepare
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
         if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ARM64
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          labels: |
+            ${{ needs.prepare.outputs.labels }}
+            org.opencontainers.image.version=${{ needs.prepare.outputs.version }}
+          build-args: |
+            HALBERD_VERSION=${{ needs.prepare.outputs.version }}
+          cache-from: |
+            type=gha,scope=linux/arm64
+            type=gha,scope=wheels-${{ needs.prepare.outputs.requirements-hash }}
+          cache-to: |
+            type=gha,mode=max,scope=linux/arm64
+            type=gha,mode=max,scope=wheels-${{ needs.prepare.outputs.requirements-hash }}
+          outputs: type=image,name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }},push-by-digest=true,name-canonical=true,push=${{ github.event_name != 'pull_request' }}
+
+  merge:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    needs: [prepare, build-amd64, build-arm64]
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      attestations: write
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create manifest list and push
+        id: manifest
+        run: |
+          docker buildx imagetools create $(jq -cr '.tags | map("-t " + .) | join(" ")' <<< "$DOCKER_METADATA_OUTPUT_JSON") \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-amd64.outputs.digest }} \
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build-arm64.outputs.digest }}
+          
+          MANIFEST_DIGEST=$(docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:v${{ needs.prepare.outputs.version }} --format '{{json .Manifest}}' | jq -r '.digest')
+          echo "digest=${MANIFEST_DIGEST}" >> $GITHUB_OUTPUT
+          echo "Manifest list digest: ${MANIFEST_DIGEST}"
+        env:
+          DOCKER_METADATA_OUTPUT_JSON: ${{ needs.prepare.outputs.json }}
+
+      - name: Generate build provenance attestation
         uses: actions/attest-build-provenance@v1
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.build.outputs.digest }}
+          subject-digest: ${{ steps.manifest.outputs.digest }}
           push-to-registry: true
