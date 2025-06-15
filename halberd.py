@@ -1,8 +1,12 @@
 #!/usr/bin/env python3
 import dash
+import os
 from dash import dcc, html, page_container
 from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
+from dash_iconify import DashIconify
+from dotenv import set_key
 
 from core.entra.entra_token_manager import EntraTokenManager
 
@@ -68,6 +72,17 @@ navbar = dbc.NavbarSimple(
                 style={"font-weight": "500"}
             )
         ),
+        dbc.NavItem(
+            dbc.NavLink(
+                dbc.Button([
+                    DashIconify(icon="mdi:cog",height=20, width=20, className="m-0")],
+                    id= "settings-button",
+                    className="border-0 bg-transparent"
+                ),
+                id="nav-settings",
+                className="nav-link p-0"
+            )
+        ),
     ],
     brand= html.Div([
         dbc.Row(
@@ -84,6 +99,54 @@ navbar = dbc.NavbarSimple(
     className="bg-halberd-navbar mb-5",
     style={'min-height': '48px', 'padding': '4px 16px'}
 )
+
+# Generate settings off canvas
+def generate_settings_offcanvas():
+    """Generate off-canvas components for app settings"""
+    return [
+        dbc.Form([
+            dbc.Col([
+                dbc.Accordion([dbc.AccordionItem([
+                dbc.Row([
+                    dbc.Col([
+                        html.Div([
+                            dbc.Label(["Anthropic API Key", DashIconify(icon= "mdi:information", className="ms-2", id = "anthropic-api-key-info-icon")]),
+                            dbc.Popover(
+                                "Required to enable Halberd Attack Agent",
+                                target="anthropic-api-key-info-icon",
+                                body=True,
+                                trigger="hover",
+                            ),
+                        ])
+                    ]),
+                    dbc.Col([
+                        dcc.Link(["Genereate API Key", DashIconify(icon="mdi:open-in-new", className="ms-2")], href= "https://console.anthropic.com/settings/keys", target="_blank", className="halberd-link float-end")
+                    ])
+                ]),
+                dbc.Input(
+                    type="password",
+                    id="anthropic-api-key-input-editor",
+                    placeholder="Enter API Key",
+                    className="bg-halberd-dark halberd-input halberd-text mb-4"
+                ),
+                dbc.Fade(
+                    id="anthropic-api-key-fade",
+                    is_in=False,
+                    appear=False,
+                ),
+                ], title="Halberd Attack Agent", className="mb-4")]),
+            ])
+        ]),
+        # Save settings button
+        dbc.Button(
+            [
+                DashIconify(icon="mdi:content-save-cog", className="me-2"), 
+                "Save"
+            ],
+            id="save-settings-button",
+            className="w-100 halberd-button"
+        )
+    ]
 
 # App layout
 app.layout = html.Div([
@@ -148,7 +211,20 @@ app.layout = html.Div([
     ],
     id="app-success-display-modal",
     is_open=False,
-    )
+    ),
+    dbc.Offcanvas(
+        children = generate_settings_offcanvas(),
+        id="settings-offcanvas",
+        title = html.H3("Halberd Settings"),
+        is_open=False,
+        placement="end",
+        style={
+            "width": "50%",
+            "max-width": "none",
+        },
+        className="bg-halberd-dark halberd-offcanvas halberd-text"
+    ),
+
 ])
 
 '''Callback to update the Navbar content based on the URL'''
@@ -205,3 +281,49 @@ def close_app_error_modal_callback(n_clicks, is_open):
     if n_clicks:
         return False
     return is_open
+
+'''Callback to open app settings off canvas'''
+@app.callback(
+        Output(component_id = "settings-offcanvas", component_property = "is_open", allow_duplicate= True),
+        Input('settings-button', 'n_clicks'),
+        prevent_initial_call=True
+)
+def toggle_pb_schedule_canvas_callback(n_clicks):
+    if not n_clicks:
+        raise PreventUpdate
+
+    return True
+
+@app.callback(
+    Output(component_id = "anthropic-api-key-fade", component_property = "is_in", allow_duplicate=True), 
+    Output(component_id = "anthropic-api-key-fade", component_property = "children", allow_duplicate=True),
+    Output('anthropic-api-key-input-editor', 'value'),
+    Input('save-settings-button', 'n_clicks'),
+    State('anthropic-api-key-input-editor', 'value'),
+    prevent_initial_call=True
+)
+def save_api_key_to_env_dotenv(n_clicks, api_key_value):
+    """
+    Callback to save the Anthropic API key to .env file
+    """
+    if not n_clicks:
+        raise PreventUpdate
+    
+    if not api_key_value or api_key_value.strip() == "":
+        return True, html.Div("Please enter a valid API key", className="text-danger"), ""
+    
+    env_file_path = ".env"
+    
+    try:
+        # Create .env file if it doesn't exist
+        if not os.path.exists(env_file_path):
+            with open(env_file_path, 'w') as file:
+                pass  # Create empty file
+        
+        # Set the API key in .env file
+        set_key(env_file_path, "ANTHROPIC_API_KEY", api_key_value.strip())
+        
+        return True, html.Div("API key saved successfully!", className="text-success"), ""
+    
+    except Exception as e:
+        return True, html.Div(f"Error saving API key: {str(e)}", className="text-danger"), ""

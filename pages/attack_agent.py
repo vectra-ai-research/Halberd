@@ -11,7 +11,6 @@ from datetime import datetime
 from typing import List, Dict, Any, Optional, Literal
 from agent.attack_agent import AttackAgent
 
-
 # Register page to app       
 register_page(__name__, path='/attack-agent', name='Attack Agent')
 
@@ -398,6 +397,7 @@ session_state.messages = [
         {"role": "assistant", "content": [{"type": "text", "text": welcome_message["message"]}]}
     ]
 
+# Initialize halberd agent
 chatbot_agent = AttackAgent(session_state)
 
 # Typing indicator component
@@ -489,10 +489,6 @@ layout = html.Div([
                                             ],
                                             title="Upload a file", id="upload-to-agent-chat-button", n_clicks=0, size="sm", className="me-2"),
                                         ),
-                                        # Button - Add Anthropic API key (for future)
-                                        # dbc.Button([
-                                        #     DashIconify(icon="mdi:key-variant", width=18, className="me-2")], 
-                                        #     title = "Add Key", id="api-key", n_clicks=0, size="sm", className="me-2"),
                                         # Button - Reset chat
                                         dbc.Button([
                                             DashIconify(icon="mdi:chat-plus-outline", width=18, className="me-1"),
@@ -683,30 +679,38 @@ def generate_bot_response(response_trigger):
     
     # Add artificial delay (about 1.5 seconds) to simulate thinking
     time.sleep(1.5)
-    
-    try:
-        # Get bot response using the ChatBot agent
-        bot_response = chatbot_agent.process_user_input(user_prompt_tracker.get_prompts())
-        
-        # Clear all prompts from prompts tracker
-        user_prompt_tracker.clear_prompts()
-        
-        # Add bot response to history
-        # chat_history.append({"sender": "bot", "message": bot_response, "type": "text"})
-        chat_history_tracker.add_bot_message(message = bot_response, msg_type = "text")
-        
-        # Create chat messages display
-        chat_display = create_chat_display(chat_history_tracker.to_dict_list())
-        
-        # Hide typing indicator
-        return chat_display, {"display": "none"}
-        
-    except Exception as e:
-        # Handle errors
-        error_message = f"An error occurred: {str(e)}"
-        # chat_history.append({"sender": "bot", "message": error_message, "type": "text"})
-        chat_history_tracker.add_bot_message(message = error_message, msg_type = "text")
-        
+
+    # Check if anthropic key is available to use API client
+    if chatbot_agent.is_anthropic_ready():
+        try:
+            # Get bot response using the ChatBot agent
+            bot_response = chatbot_agent.process_user_input(user_prompt_tracker.get_prompts())
+            
+            # Clear all prompts from prompts tracker
+            user_prompt_tracker.clear_prompts()
+            
+            # Add bot response to history
+            chat_history_tracker.add_bot_message(message = bot_response, msg_type = "text")
+            
+            # Create chat messages display
+            chat_display = create_chat_display(chat_history_tracker.to_dict_list())
+            
+            # Hide typing indicator
+            return chat_display, {"display": "none"}
+            
+        except Exception as e:
+            # Handle errors
+            error_message = f"An error occurred: {str(e)}"
+            chat_history_tracker.add_bot_message(message = error_message, msg_type = "text")
+            
+            # Create chat display with error message
+            chat_display = create_chat_display(chat_history_tracker.to_dict_list())
+            
+            # Hide typing indicator
+            return chat_display, {"display": "none"}
+    else:
+        chat_history_tracker.add_bot_message(message = "API Key Not Found : Add Anthropic API key to use Halberd Attack Agent", msg_type = "text")
+            
         # Create chat display with error message
         chat_display = create_chat_display(chat_history_tracker.to_dict_list())
         
@@ -728,9 +732,8 @@ def reset_conversation(n_clicks):
     if not any(chat_history_tracker.get_messages_by_sender("user")):
         return dash.no_update, dash.no_update
     
-    # save chat
+    # Save chat
     # Generate current date-time string (file-system friendly format)
-
     current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     file_name = f"{current_time}.txt"
 
