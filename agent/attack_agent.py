@@ -163,7 +163,6 @@ class RateLimiter:
 
 class AttackAgent:
     def __init__(self, session_state):
-        self.anthropic = Anthropic()
         self.session_state = session_state
         self.encoder = tiktoken.get_encoding("cl100k_base")
         self.last_api_call_time = 0  # Track last API call time for rate limiting
@@ -173,6 +172,36 @@ class AttackAgent:
         self.current_conversation_output_tokens = 0
         self.total_input_tokens = 0
         self.total_output_tokens = 0
+
+        # Client & api key variables
+        self._anthropic_client = None
+        self._last_api_key = None
+
+    @property
+    def anthropic(self):
+        """Lazy initialization of Anthropic client that updates when API key changes"""
+        load_dotenv()
+        current_api_key = os.environ.get('ANTHROPIC_API_KEY')
+        
+        # If no client yet or the API key has changed -> create a new one
+        if (self._anthropic_client is None or 
+            current_api_key != self._last_api_key):
+            
+            if current_api_key:
+                try:
+                    self._anthropic_client = Anthropic()
+                    self._last_api_key = current_api_key
+                except Exception as e:
+                    print(f"Failed to initialize Anthropic client: {e}")
+                    self._anthropic_client = None
+            else:
+                self._anthropic_client = None
+                
+        return self._anthropic_client
+    
+    def is_anthropic_ready(self):
+        """Check if Anthropic client is ready to use"""
+        return self.anthropic is not None
 
     def count_tokens(self, text):
         """Count the number of tokens in a text string."""
