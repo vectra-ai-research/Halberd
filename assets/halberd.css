@@ -807,3 +807,51 @@
       transform: scale(1.0);
   }
 }
+
+/* Enhanced DBC Tabs Styling */
+
+/* Tab container */
+.nav-tabs {
+    border: none;
+    border-radius: 15px;
+    padding: 0;
+    background-color: transparent !important;
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+    width: fit-content;
+}
+
+/* Individual tab styling */
+.nav-tabs .nav-link {
+    /* White text for all tabs */
+    color: white !important;
+    background-color: transparent;
+    border: none !important;
+    border-radius: 0;
+    margin: 0 8px;
+    /* Smooth transition animation */
+    transition: all 0.3s ease-in-out;
+    padding: 12px 12px;
+    position: relative;
+}
+
+/* Hover effect for tabs */
+.nav-tabs .nav-link:hover {
+    background-color: rgba(220, 53, 69, 0.1);
+    border-radius: 15px;
+    color: #f8f9fa !important;
+}
+
+/* Selected/active tab styling */
+.nav-tabs .nav-link.active {
+    /* Red text color for selected tab */
+    color: #dc3545 !important;
+    background-color: transparent !important;
+    border: none !important;
+}
+
+/* Remove default bootstrap border */
+.nav-tabs {
+    border-bottom: none;
+}
