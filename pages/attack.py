@@ -32,60 +32,32 @@ register_page(__name__, path='/attack', name='Attack')
 
 layout = html.Div([
     html.Div([
+        dbc.Tabs(
+            [
+                dbc.Tab(label="Entra ID", tab_id="tab-attack-EntraID",label_class_name="halberd-brand-heading text-danger",
+                ),
+                dbc.Tab(
+                    label="M365", tab_id="tab-attack-M365",label_class_name="halberd-brand-heading text-danger",
+                ),
+                dbc.Tab(
+                    label="AWS", tab_id="tab-attack-AWS",label_class_name="halberd-brand-heading text-danger",
+                ),
+                    dbc.Tab(label="Azure", tab_id="tab-attack-Azure",label_class_name="halberd-brand-heading text-danger",
+                ),
+                    dbc.Tab(label="GCP", tab_id="tab-attack-GCP",label_class_name="halberd-brand-heading text-danger",
+                ),
+            ],
+            id="attack-surface-tabs",
+            active_tab="tab-attack-EntraID",
+            class_name="mb-2 halberd-depth-card",
+        )
+    ]),
+    html.Div([
         dbc.Row([
             # Column 1: Display technique selection options
             dbc.Col([
                 # Attack surface tabs
                 html.Div([
-                    dbc.Tabs(
-                        [
-                            dbc.Tab(label="Entra ID", tab_id="tab-attack-EntraID", labelClassName="halberd-brand",
-                                tab_style={
-                                    'borderRadius': '0px',
-                                    'margin': '0px',
-                                    'marginLeft': '0px',
-                                    'marginRight': '0px'
-                                }
-                            ),
-                            dbc.Tab(
-                                label="M365", tab_id="tab-attack-M365", labelClassName="halberd-brand",
-                                tab_style={
-                                    'borderRadius': '0px',
-                                    'margin': '0px',
-                                    'marginLeft': '0px',
-                                    'marginRight': '0px'
-                                }
-                            ),
-                            dbc.Tab(
-                                label="AWS", tab_id="tab-attack-AWS", labelClassName="halberd-brand",
-                                tab_style={
-                                    'borderRadius': '0px',
-                                    'margin': '0px',
-                                    'marginLeft': '0px',
-                                    'marginRight': '0px'
-                                }
-                            ),
-                                dbc.Tab(label="Azure", tab_id="tab-attack-Azure", labelClassName="halberd-brand",
-                                tab_style={
-                                    'borderRadius': '0px',
-                                    'margin': '0px',
-                                    'marginLeft': '0px',
-                                    'marginRight': '0px'
-                                }
-                            ),
-                                dbc.Tab(label="GCP", tab_id="tab-attack-GCP", labelClassName="halberd-brand",
-                                tab_style={
-                                    'borderRadius': '0px',
-                                    'margin': '0px',
-                                    'marginLeft': '0px',
-                                    'marginRight': '0px'
-                                }
-                            ),
-                        ],
-                        id="attack-surface-tabs",
-                        active_tab="tab-attack-EntraID",
-                        className="mb-2"
-                    ),
                     # Tactics dropdown
                     dcc.Dropdown(
                         id = "tactic-dropdown", 
