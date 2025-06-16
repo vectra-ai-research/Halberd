@@ -77,8 +77,11 @@ layout = html.Div([
             
             # Column 3 : Display technique configuration
             dbc.Col([
-                html.H5("Technique Configuration", className="halberd-brand-heading text-2xl mb-4"),
-                html.Div(id="attack-config-div", className="p-4 halberd-depth-card")
+                dbc.Card([
+                    dbc.CardHeader(html.Div("Technique Configuration", className="mb-0 halberd-brand text-2xl")),
+                    dbc.CardBody(id="attack-config-div")
+                ], className="mb-3 halberd-depth-card"),
+                # html.Div(id="attack-config-div", className="p-4 halberd-depth-card")
             ], md=5, className="bg-halberd-dark"),    
         ]),
     ], style={"justify-content": "center", "align-items": "center"},
