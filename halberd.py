@@ -16,7 +16,7 @@ entra_token_manager._monitor_thread.start() #Start token refresh monitoring
 # Create Halberd application
 app = dash.Dash(
     __name__,  
-    external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP],
+    external_stylesheets=[dbc.themes.LUX, dbc.icons.BOOTSTRAP, dbc.icons.FONT_AWESOME],
     title='Halberd', 
     update_title='Loading...', 
     use_pages=True,
@@ -96,7 +96,7 @@ navbar = dbc.NavbarSimple(
     color="dark",
     dark=True,
     sticky= "top",
-    className="bg-halberd-navbar mb-5",
+    className="bg-halberd-dark mb-2",
     style={'min-height': '48px', 'padding': '4px 16px'}
 )
 
@@ -106,35 +106,37 @@ def generate_settings_offcanvas():
     return [
         dbc.Form([
             dbc.Col([
-                dbc.Accordion([dbc.AccordionItem([
-                dbc.Row([
-                    dbc.Col([
-                        html.Div([
-                            dbc.Label(["Anthropic API Key", DashIconify(icon= "mdi:information", className="ms-2", id = "anthropic-api-key-info-icon")]),
-                            dbc.Popover(
-                                "Required to enable Halberd Attack Agent",
-                                target="anthropic-api-key-info-icon",
-                                body=True,
-                                trigger="hover",
-                            ),
-                        ])
-                    ]),
-                    dbc.Col([
-                        dcc.Link(["Genereate API Key", DashIconify(icon="mdi:open-in-new", className="ms-2")], href= "https://console.anthropic.com/settings/keys", target="_blank", className="halberd-link float-end")
-                    ])
+                dbc.Accordion([
+                    dbc.AccordionItem([
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div([
+                                    dbc.Label(["Anthropic API Key", DashIconify(icon= "mdi:information", className="ms-2", id = "anthropic-api-key-info-icon")]),
+                                    dbc.Popover(
+                                        "Required to enable Halberd Attack Agent",
+                                        target="anthropic-api-key-info-icon",
+                                        body=True,
+                                        trigger="hover",
+                                    ),
+                                ])
+                            ]),
+                            dbc.Col([
+                                dcc.Link(["Genereate API Key", DashIconify(icon="mdi:open-in-new", className="ms-2")], href= "https://console.anthropic.com/settings/keys", target="_blank", className="halberd-link float-end")
+                            ])
+                        ]),
+                        dbc.Input(
+                            type="password",
+                            id="anthropic-api-key-input-editor",
+                            placeholder="Enter API Key",
+                            className="bg-halberd-dark halberd-input halberd-text mb-4"
+                        ),
+                        dbc.Fade(
+                            id="anthropic-api-key-fade",
+                            is_in=False,
+                            appear=False,
+                        ),
+                    ], title="Halberd Attack Agent", className="mb-4 bg-halberd-dark enhanced-accordion")
                 ]),
-                dbc.Input(
-                    type="password",
-                    id="anthropic-api-key-input-editor",
-                    placeholder="Enter API Key",
-                    className="bg-halberd-dark halberd-input halberd-text mb-4"
-                ),
-                dbc.Fade(
-                    id="anthropic-api-key-fade",
-                    is_in=False,
-                    appear=False,
-                ),
-                ], title="Halberd Attack Agent", className="mb-4")]),
             ])
         ]),
         # Save settings button
@@ -223,9 +225,8 @@ app.layout = html.Div([
             "max-width": "none",
         },
         className="bg-halberd-dark halberd-offcanvas halberd-text"
-    ),
-
-])
+    )
+], className="bg-halberd-dark")
 
 '''Callback to update the Navbar content based on the URL'''
 @app.callback(
