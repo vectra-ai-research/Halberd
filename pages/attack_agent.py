@@ -454,7 +454,6 @@ layout = html.Div([
                                 'padding': '16px',
                                 'scrollBehavior': 'smooth'
                             },
-                            className="chat-container"
                         ),
                         typing_indicator,
                         # trigger for automatic scroll in chat window
@@ -472,7 +471,7 @@ layout = html.Div([
                                     id="user-input",
                                     placeholder="Reply to Halberd Agent...",
                                     rows=1,
-                                    className="bg-halberd-dark halberd-text halberd-input",
+                                    className="bg-halberd-dark halberd-text",
                                     style={'border': 'none', 'boxShadow': 'none'}
                                 ),
                                 class_name="mb-2"
@@ -504,7 +503,7 @@ layout = html.Div([
                             ])
                         ])
                     ], className="bg-halberd-dark halberd-text halberd-depth-card", style={"width": "50%", "margin": "0 auto"})
-                ], className="mb-3", style={"border":0}),
+                ], className="mb-3 bg-halberd-dark", style={"border":0}),
             ], width=12),
         ]),
         
@@ -517,7 +516,7 @@ layout = html.Div([
 ],
 className="bg-halberd-dark halberd-text",
 style={
-    'minHeight': '92vh',
+    'minHeight': '94vh',
     "padding-right": "20px", 
     "padding-left": "20px"
 })
