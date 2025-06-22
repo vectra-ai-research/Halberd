@@ -9,7 +9,7 @@ from core.Constants import *
 import uuid
 import datetime
 import boto3
-from typing import Optional, Dict, List, Tuple
+from typing import Optional, Dict, List, Tuple, Any
 
 tools = [
     {
@@ -248,7 +248,16 @@ tools = [
           }
         }
       }
+    },
+    {
+    "name": "get_app_info",
+    "description": "Retrieves application metadata and version information from the version.py file. Returns details about Halberd including version, description, author, license, repository, and supported cloud platforms. This tool provides information about the application itself and requires no input parameters.",
+    "input_schema": {
+        "type": "object",
+        "properties": {},
+        "required": []
     }
+}
 ]
 
 technique_registry = TechniqueRegistry
@@ -621,3 +630,36 @@ def get_technique_execution_response(event_id):
     event_output = output_manager.get_output_by_event_id(event_id=event_id)
 
     return event_output['data']
+
+def get_app_info() -> Dict[str, Any]:
+    """
+    Retrieves application metadata and version information from version.py
+
+    Returns:
+        Dict[str, Any]: Dictionary containing app metadata including version, description, author, license, repository, and supported clouds
+    """
+    try:
+        import version
+        return {
+            "version": getattr(version, '__version__', 'Unknown'),
+            "name": getattr(version, '__name__', 'Unknown'),
+            "description": getattr(version, '__description__', 'Unknown'),
+            "repository": getattr(version, '__repository__', 'Unknown'),
+            "author": getattr(version, '__author__', 'Unknown'),
+            "license": getattr(version, '__license__', 'Unknown'),
+            "supported_clouds": getattr(version, '__cloud__', []),
+            "status": "success"
+        }
+        
+    except:
+        # Return static information
+        return {
+            "version": 3,
+            "name": "Halberd : Multi-Cloud Agentic Attack Tool",
+            "description": "Halberd is an advanced multi-cloud attack tool designed for security teams to validate cloud defenses through sophisticated attack emulation.",
+            "repository": "https://github.com/vectra-ai-research/Halberd",
+            "author": "Arpan Sarkar (@openrec0n)",
+            "license": "GPL-3.0",
+            "supported_clouds": ["Entra ID", "M365", "Azure", "AWS", "GCP"],
+            "status": "success"
+        }
