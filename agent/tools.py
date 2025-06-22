@@ -87,7 +87,8 @@ tools = [
                 },
                 "tactic": {
                     "type": "string",
-                    "description": "MITRE tactic to filter techniques"
+                    "description": "MITRE tactic to filter techniques",
+                    "enum": ['Collection', 'Credential Access', 'Defense Evasion', 'Discovery', 'Execution', 'Exfiltration', 'Impact', 'Initial Access', 'Lateral Movement', 'Persistence', 'Privilege Escalation']
                 },
                 "technique_id": {
                     "type": "string",
