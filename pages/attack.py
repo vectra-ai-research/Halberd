@@ -9,14 +9,12 @@ import datetime
 import time
 import json
 
-from dash import html, dcc, register_page, callback, ALL
+from dash import html, dcc, register_page, callback, ALL, clientside_callback
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
-from dash_iconify import DashIconify
 
 from attack_techniques.technique_registry import *
-
 from core.Functions import generate_technique_info, GetAllPlaybooks, ParseTechniqueResponse, generate_attack_technique_options, generate_attack_tactics_options, generate_attack_technique_config, generate_entra_access_info, generate_aws_access_info, generate_azure_access_info, generate_gcp_access_info
 from core.entra.entra_token_manager import EntraTokenManager
 from core.logging.logger import app_logger,StructuredAppLog
@@ -31,173 +29,403 @@ from core.playbook.playbook_step import PlaybookStep
 register_page(__name__, path='/attack', name='Attack')
 
 layout = html.Div([
-    html.Div([
-        dbc.Row([
-            # Column 1: Display technique selection options
-            dbc.Col([
-                # Attack surface tabs
-                html.Div([
-                    dbc.Tabs(
-                        [
-                            dbc.Tab(label="Entra ID", tab_id="tab-attack-EntraID", labelClassName="halberd-brand",
-                                tab_style={
-                                    'borderRadius': '0px',
-                                    'margin': '0px',
-                                    'marginLeft': '0px',
-                                    'marginRight': '0px'
-                                }
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardHeader([
+                    html.Div([
+                        html.I(
+                            className="fas fa-crosshairs me-2", 
+                            style={
+                                "color": "#dc3545", 
+                                "fontSize": "1.2rem",
+                                "animation": "pulse 2s ease-in-out infinite"
+                            }
+                        ),
+                        html.Span(
+                            "Attack Surface", 
+                            className="halberd-brand",
+                            style={
+                                "fontSize": "1.1rem",
+                                "fontWeight": "700",
+                                "color": "#ffffff",
+                                "letterSpacing": "0.5px"
+                            }
+                        )
+                    ], className="d-flex align-items-center"),
+                    html.Div([
+                        html.I(
+                            className="fas fa-satellite-dish", 
+                            style={
+                                "color": "#dc3545", 
+                                "fontSize": "0.9rem",
+                                "opacity": "0.7"
+                            }
+                        )
+                    ])
+                ], 
+                className="d-flex justify-content-between align-items-center px-3 py-2",
+                style={
+                    "background": "linear-gradient(135deg, rgba(220, 53, 69, 0.15) 0%, rgba(108, 117, 125, 0.15) 100%)",
+                    "borderBottom": "2px solid rgba(220, 53, 69, 0.3)",
+                    "borderRadius": "8px 8px 0 0"
+                }),
+                
+                dbc.CardBody([
+                    html.Div([
+                        html.Label([
+                            "Target Cloud Selection"
+                        ], className="text-muted mb-3 d-block", style={"fontSize": "0.85rem", "fontWeight": "600"}),
+                        
+                        dbc.Tabs([
+                            dbc.Tab(
+                                label = "Entra ID",
+                                tab_id="tab-attack-EntraID",
+                                label_class_name="enhanced-tab-label",
+                                active_label_class_name="enhanced-tab-active"
                             ),
                             dbc.Tab(
-                                label="M365", tab_id="tab-attack-M365", labelClassName="halberd-brand",
-                                tab_style={
-                                    'borderRadius': '0px',
-                                    'margin': '0px',
-                                    'marginLeft': '0px',
-                                    'marginRight': '0px'
-                                }
+                                label = "M365",
+                                tab_id="tab-attack-M365",
+                                label_class_name="enhanced-tab-label",
+                                active_label_class_name="enhanced-tab-active"
                             ),
                             dbc.Tab(
-                                label="AWS", tab_id="tab-attack-AWS", labelClassName="halberd-brand",
-                                tab_style={
-                                    'borderRadius': '0px',
-                                    'margin': '0px',
-                                    'marginLeft': '0px',
-                                    'marginRight': '0px'
-                                }
+                                label = "AWS",
+                                tab_id="tab-attack-AWS",
+                                label_class_name="enhanced-tab-label",
+                                active_label_class_name="enhanced-tab-active"
                             ),
-                                dbc.Tab(label="Azure", tab_id="tab-attack-Azure", labelClassName="halberd-brand",
-                                tab_style={
-                                    'borderRadius': '0px',
-                                    'margin': '0px',
-                                    'marginLeft': '0px',
-                                    'marginRight': '0px'
-                                }
+                            dbc.Tab(
+                                label = "Azure",
+                                tab_id="tab-attack-Azure",
+                                label_class_name="enhanced-tab-label",
+                                active_label_class_name="enhanced-tab-active"
                             ),
-                                dbc.Tab(label="GCP", tab_id="tab-attack-GCP", labelClassName="halberd-brand",
-                                tab_style={
-                                    'borderRadius': '0px',
-                                    'margin': '0px',
-                                    'marginLeft': '0px',
-                                    'marginRight': '0px'
-                                }
+                            dbc.Tab(
+                                label = "GCP",
+                                tab_id="tab-attack-GCP",
+                                label_class_name="enhanced-tab-label",
+                                active_label_class_name="enhanced-tab-active"
                             ),
                         ],
                         id="attack-surface-tabs",
                         active_tab="tab-attack-EntraID",
-                        className="mb-2"
-                    ),
-                    # Tactics dropdown
-                    dcc.Dropdown(
-                        id = "tactic-dropdown", 
-                        className= "halberd-dropdown mb-4"
-                    ),
-                    # Div to display techniques list
-                    html.Div(
-                        id="attack-techniques-options-div"
-                    )
-                ], className= "bg-halberd-dark mx-3"),
-            ],  md=3, className="bg-halberd-dark"),
-            
-            # Column 2 : Display technique information
-            dbc.Col([
-                html.Div(id="attack-technique-info-div")
-            ],  md=4, className="bg-halberd-dark"),
-            
-            # Column 3 : Display technique configuration
-            dbc.Col([
-                html.H5("Technique Configuration", className="halberd-brand-heading text-2xl mb-4"),
-                html.Div(id="attack-config-div", className="p-4 halberd-depth-card")
-            ], md=5, className="bg-halberd-dark"),    
-        ]),
-    ], style={"justify-content": "center", "align-items": "center"},
-    className="mb-3"
-    ),
-    
+                        className="enhanced-tabs mb-4"
+                        ),
+                    ], className="mb-4"),
+                    
+                    # Tactic Section
+                    html.Div([
+                        html.Label([
+                            html.I(className="fas fa-bullseye me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                            "Tactic Selection"
+                        ], className="text-muted mb-2 d-block", style={"fontSize": "0.85rem", "fontWeight": "600"}),
+                        
+                        html.Div([
+                            dcc.Dropdown(
+                                id="tactic-dropdown",
+                                className="enhanced-dropdown",
+                                placeholder="Select a tactic...",
+                                clearable=False
+                            )
+                        ], className="enhanced-dropdown-container mb-4"),
+                    ]),
+                    
+                    # Technique Section
+                    html.Div([
+                        html.Label([
+                            html.I(className="fas fa-cogs me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                            "Technique Selection"
+                        ], className="text-muted mb-2 d-block", style={"fontSize": "0.85rem", "fontWeight": "600"}),
+                        
+                        html.Div([
+                            dcc.Dropdown(
+                                id="attack-options-radio",
+                                className="enhanced-dropdown",
+                                placeholder="Select a technique...",
+                                clearable=False,
+                                style={"marginBottom": "0"},
+                            )
+                        ], className="enhanced-dropdown-container mb-4")
+                    ]),
+                    
+                    # Access Section
+                    html.Div([
+                        html.Label([
+                            html.I(className="fas fa-key me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                            "Access Control"
+                        ], className="text-muted mb-3 d-block", style={"fontSize": "0.85rem", "fontWeight": "600"}),
+                        
+                        dbc.Button([
+                            html.Div([
+                                html.I(className="fas fa-unlock-alt me-2", style={"fontSize": "1rem"}),
+                                html.Span("Establish Access", style={"fontWeight": "600", "fontSize": "0.95rem"})
+                            ], className="d-flex align-items-center justify-content-center"),
+                            html.Div([
+                                html.Small("Initialize attack vector", className="text-muted", style={"fontSize": "0.75rem"})
+                            ], className="mt-1")
+                        ],
+                        id="attack-access-info-dynamic-btn",
+                        color="success",
+                        className="enhanced-access-button mb-3",
+                        outline=True,
+                        style={
+                            'width': '100%',
+                            'minHeight': '60px',
+                            'background': 'linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(25, 135, 84, 0.1) 100%)',
+                            'border': '2px solid rgba(40, 167, 69, 0.3)',
+                            'borderRadius': '8px',
+                            'transition': 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                            'position': 'relative',
+                            'overflow': 'hidden'
+                        })
+                    ], className="access-section")
+                    
+                ], className="enhanced-card-body px-3 py-3")
+            ], 
+            className="enhanced-attack-surface-card halberd-depth-card mt-2 mb-2", 
+            style={
+                "height": "97%",
+                "background": "linear-gradient(135deg, rgba(33, 37, 41, 0.98) 0%, rgba(52, 58, 64, 0.98) 100%)",
+                "border": "1px solid rgba(220, 53, 69, 0.2)",
+                "borderRadius": "12px",
+                "boxShadow": "0 8px 32px rgba(0, 0, 0, 0.4)",
+                "backdropFilter": "blur(10px)",
+                "position": "relative",
+                "overflow": "hidden"
+            })
+        ], 
+        md=4, className="enhanced-sidebar-col", 
+        style={"height": "70vh", "overflowY": "auto", "position": "relative"}),
+        
+        dbc.Col([
+            html.Div(id="scroll-trigger-unique", style={"display": "none"}),
+            html.Div([
+                # Display technique information
+                html.Div(id="attack-technique-info-div"),
+                
+                # Display technique configuration
+                html.Div(id="attack-config-div"),
+            ], 
+            className="bg-halberd-dark  mt-2", 
+            style={"justify-content": "center", "align-items": "center", "width": "90%", "margin": "0 auto"}),
+        ], md=8, style={"height":"70vh", "overflowY": "auto"}, id="config-column")
+    ], class_name="mt-4 mb-4", style={"height":"70vh"}),
+
     # Display technique output
     dcc.Store(id="technique-output-memory-store"),
     dbc.Col([
-        dbc.Row(
-            [
-                dbc.Col(
-                    html.H4("Response", className="halberd-brand")
-                ),
-                dbc.Col(
+        dbc.Card([
+            dbc.CardHeader([
+                html.Div([
+                    html.Div([
+                        html.I(
+                            className="fas fa-terminal me-2", 
+                            style={
+                                "color": "#dc3545", 
+                                "fontSize": "1.2rem",
+                                "animation": "pulse 2s ease-in-out infinite"
+                            }
+                        ),
+                        html.Span(
+                            "Technique Response", 
+                            className="halberd-brand",
+                            style={
+                                "fontSize": "1.1rem",
+                                "fontWeight": "700",
+                                "color": "#ffffff",
+                                "letterSpacing": "0.5px"
+                            }
+                        )
+                    ], className="d-flex align-items-center")
+                ], className="d-flex justify-content-between align-items-center w-100"),
+                
+                # Action buttons
+                html.Div([
                     html.A(
                         dbc.Button(
                             [
-                                DashIconify(
-                                    icon="mdi:history",
-                                    width=20,
-                                    className="me-2"
-                                ),
-                                "Attack History"
+                                html.I(className="fas fa-history me-1", style={"fontSize": "0.8rem"}),
+                                "History"
                             ],
-                            n_clicks=0,
-                            className="ms-2 halberd-button-secondary",
                             id="history-button",
+                            size="sm",
+                            color="secondary",
+                            outline=True,
+                            className="me-2 enhanced-action-btn",
+                            style={
+                                "fontSize": "0.75rem",
+                                "padding": "4px 12px",
+                                "border": "1px solid rgba(108, 117, 125, 0.3)",
+                                "background": "rgba(108, 117, 125, 0.1)",
+                                "transition": "all 0.3s ease"
+                            }
                         ),
                         href="/attack-history", 
                         target="_blank", 
-                        style={'float': 'right', 'margin-left': '10px'},
                         className= "halberd-text"
                     )
-                )
-            ],
-            className= "mb-2"
-        ),
-        dbc.Row(
-            [
-                dbc.Col(
+                ], className="d-flex align-items-center")
+            ], 
+            className="d-flex justify-content-between align-items-center px-3 py-2 enhanced-output-header",
+            style={
+                "background": "linear-gradient(135deg, rgba(220, 53, 69, 0.15) 0%, rgba(108, 117, 125, 0.15) 100%)",
+                "borderBottom": "2px solid rgba(220, 53, 69, 0.3)",
+                "borderRadius": "8px 8px 0 0",
+                "minHeight": "60px"
+            }),
+            
+            dbc.CardBody([
+                # Output container
+                html.Div([
                     dcc.Loading(
                         id="attack-output-loading",
                         type="default",
+                        color="#dc3545",
                         children=html.Div(
                             [
-                                dbc.Col([
-                                    dbc.Row(
-                                        DashIconify(
-                                            icon="mdi:information-outline", #Information icon
-                                            width=48,
-                                            height=48,
-                                            className="text-muted mb-3 me-3"
-                                        ),
+                                # Default state
+                                html.Div([
+                                    html.Div([
+                                        html.I(
+                                            className="fas fa-terminal",
+                                            style={
+                                                "fontSize": "3rem",
+                                                "color": "rgba(220, 53, 69, 0.3)",
+                                                "marginBottom": "1rem",
+                                                "animation": "float 3s ease-in-out infinite"
+                                            }
+                                        )
+                                    ], className="text-center mb-3"),
+                                    
+                                    html.H5(
+                                        "Execute Technique to View Response",
+                                        className="text-center mb-2",
+                                        style={
+                                            "color": "#ffffff",
+                                            "fontWeight": "600",
+                                            "fontSize": "1.1rem"
+                                        }
                                     ),
-                                    dbc.Row(
-                                        html.P("Execute Technique to View Response") # Default message when no technique is executed
-                                    )
+                                    
+                                    html.P(
+                                        "Configure your attack parameters and establish access to begin",
+                                        className="text-center text-muted mb-3",
+                                        style={"fontSize": "0.9rem"}
+                                    ),
+                                    
+                                    # Quick action hints
+                                    html.Div([
+                                        html.Div([
+                                            html.I(className="fas fa-arrow-left me-2", style={"color": "#dc3545", "fontSize": "0.8rem"}),
+                                            html.Span("1. Select technique", style={"fontSize": "0.8rem"})
+                                        ], className="quick-hint mb-2"),
+                                        html.Div([
+                                            html.I(className="fas fa-key me-2", style={"color": "#28a745", "fontSize": "0.8rem"}),
+                                            html.Span("2. Manage access", style={"fontSize": "0.8rem"})
+                                        ], className="quick-hint mb-2"),
+                                        html.Div([
+                                            html.I(className="fas fa-play me-2", style={"color": "#ffc107", "fontSize": "0.8rem"}),
+                                            html.Span("3. Execute attack", style={"fontSize": "0.8rem"})
+                                        ], className="quick-hint")
+                                    ], className="text-center")
+                                    
                                 ], 
-                                className="halberd-text text-muted",
+                                id="default-output-state",
+                                className="d-flex flex-column justify-content-center align-items-center h-100",
                                 style={
-                                    'textAlign': 'center',
-                                    'height': '35vh',
-                                    'display': 'flex',
-                                    'alignItems': 'center',
-                                    'justifyContent': 'center',
+                                    "minHeight": "300px",
+                                    "opacity": "0.8"
                                 })
                             ],
-                            id= "execution-output-div", 
+                            id="execution-output-div", 
+                            className="enhanced-output-container",
                             style={
-                                "height":"40vh", 
-                                "overflowY": "auto", 
-                                "border":"1px solid #ccc", 
-                                "padding-right": "10px", 
-                                "padding-left": "10px", 
-                                "padding-top": "10px", 
-                                "padding-bottom": "10px"
-                            },
-                            className="halberd-text"
-                        )
+                                "height": "40vh", 
+                                "overflowY": "auto",
+                                "background": "linear-gradient(135deg, rgba(33, 37, 41, 0.95) 0%, rgba(52, 58, 64, 0.95) 100%)",
+                                "border": "1px solid rgba(220, 53, 69, 0.2)",
+                                "borderRadius": "8px",
+                                "padding": "1rem",
+                                "position": "relative",
+                                "backdropFilter": "blur(10px)"
+                            }
+                        ),
+                        style={"height": "100%"}
                     )
-                )
-            ]
-        )
+                ], className="output-wrapper position-relative")
+                
+            ], className="enhanced-output-body p-3")
+            
+        ], 
+        className="enhanced-output-card halberd-depth-card",
+        style={
+            "background": "linear-gradient(135deg, rgba(33, 37, 41, 0.98) 0%, rgba(52, 58, 64, 0.98) 100%)",
+            "border": "1px solid rgba(220, 53, 69, 0.2)",
+            "borderRadius": "12px",
+            "boxShadow": "0 8px 32px rgba(0, 0, 0, 0.4)",
+            "backdropFilter": "blur(10px)",
+            "height": "100%",
+            "position": "relative",
+            "overflow": "hidden"
+        })
     ]),
     
     # Access details modal
     dbc.Modal(
         [
-            dbc.ModalHeader(dbc.ModalTitle("Access Manager", className="halberd-brand")),
-            dbc.ModalBody(id = "attack-access-info-display-modal-body")
+            dbc.ModalHeader(
+                [
+                    html.Div([
+                        html.I(
+                            className="fas fa-key me-2", 
+                            style={
+                                "color": "#dc3545", 
+                                "fontSize": "1.2rem",
+                                "animation": "pulse 2s ease-in-out infinite"
+                            }
+                        ),
+                        html.Span(
+                            "Access Management", 
+                            className="halberd-brand",
+                            style={
+                                "fontSize": "1.1rem",
+                                "fontWeight": "700",
+                                "color": "#ffffff",
+                                "letterSpacing": "0.5px"
+                            }
+                        )
+                    ], className="d-flex align-items-center"),
+                    html.Div([
+                        html.I(
+                            className="fas fa-shield-alt", 
+                            style={
+                                "color": "#dc3545", 
+                                "fontSize": "0.9rem",
+                                "opacity": "0.7"
+                            }
+                        )
+                    ])
+                ], 
+                className="d-flex justify-content-between align-items-center px-3 py-2",
+                style={
+                    "background": "linear-gradient(135deg, rgba(220, 53, 69, 0.15) 0%, rgba(108, 117, 125, 0.15) 100%)",
+                    "borderBottom": "2px solid rgba(220, 53, 69, 0.3)",
+                    "borderRadius": "8px 8px 0 0"
+                }
+            ),
+            dbc.ModalBody(
+                id = "attack-access-info-display-modal-body",            className="enhanced-attack-surface-card halberd-depth-card",            style={
+                    "background": "linear-gradient(135deg, rgba(33, 37, 41, 0.98) 0%, rgba(52, 58, 64, 0.98) 100%)",
+                    "border": "1px solid rgba(220, 53, 69, 0.2)",
+                    "borderRadius": "12px",
+                    "boxShadow": "0 8px 32px rgba(0, 0, 0, 0.4)",
+                    "backdropFilter": "blur(10px)",
+                    "position": "relative",
+                    "overflow": "hidden"
+                }
+            )
         ],
         id="attack-access-info-display-modal",
         size="xl",
@@ -226,20 +454,20 @@ def generate_tactic_dropdown_callback(tab):
 
 '''Callback to generate techniques radio options in Attack page'''
 @callback(
-        Output(component_id = "attack-techniques-options-div", component_property = "children"), 
+        Output(component_id = "attack-options-radio", component_property = "options"), 
+        Output(component_id = "attack-options-radio", component_property = "value"), 
         Input(component_id = "attack-surface-tabs", component_property = "active_tab"),
         Input(component_id = "tactic-dropdown", component_property = "value")
 )
 def generate_attack_technique_options_callback(tab, tactic):
     technique_options = generate_attack_technique_options(tab, tactic)
-    return technique_options
+    return technique_options, technique_options[0]["value"]
 
 
 '''Callback to display technique config'''
 @callback(
         Output(component_id = "attack-config-div", component_property = "children"), 
-        Input(component_id = "attack-options-radio", component_property = "value"),
-        prevent_initial_call=True
+        Input(component_id = "attack-options-radio", component_property = "value")
 )
 def display_attack_technique_config_callback(technique):
     technique_config = generate_attack_technique_config(technique)
@@ -824,29 +1052,101 @@ def display_access_info_in_modal_callback(n_clicks, active_tab):
     
     def create_access_section(dropdown_id, remove_button_id, info_div_id):
         """Dynamically creates access info sections on Access page"""
-        return html.Div(
-            [
-                dbc.Row([
-                    dbc.Col(
-                        html.H4("Set Access"),   
-                        md=2
-                    ),
-                    dbc.Col(
-                        dcc.Dropdown(id=dropdown_id, className="halberd-dropdown halberd-text"),
-                        md=8
-                    ),
-                    dbc.Col(
-                        dbc.Button("Remove Access", id=remove_button_id, color="danger", size="sm", className="halberd-button"),
-                        md=2
+        return [
+            html.Div([
+                html.Label([
+                    html.I(className="fas fa-user-circle me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                    "Select Active Access"
+                ], className="text-muted mb-3 d-block", style={"fontSize": "0.85rem", "fontWeight": "600"}),
+                
+                # Dropdown container
+                html.Div([
+                    dcc.Dropdown(
+                        id=dropdown_id, 
+                        className="enhanced-dropdown",
+                        placeholder="Choose access credential...",
+                        style={"marginBottom": "0"}
                     )
-                ], className="mt-2 mb-3"),
+                ], className="enhanced-dropdown-container mb-3")
+            ]),
+            
+            # Action Buttons Section
+            html.Div([
+                html.Label([
+                    html.I(className="fas fa-cogs me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                    "Access Controls"
+                ], className="text-muted mb-3 d-block", style={"fontSize": "0.85rem", "fontWeight": "600"}),
+                
+                dbc.Row([
+                    dbc.Col([
+                        # Placeholder button
+                        dbc.Button([
+                            html.Div([
+                                html.I(className="fas fa-sync-alt me-2", style={"fontSize": "0.9rem"}),
+                                html.Span("Refresh", style={"fontWeight": "600"})
+                            ], className="d-flex align-items-center justify-content-center")
+                        ],
+                        color="info",
+                        outline=True,
+                        className="enhanced-access-button",
+                        disabled=True,
+                        style={
+                            'width': '100%',
+                            'minHeight': '45px',
+                            'background': 'linear-gradient(135deg, rgba(23, 162, 184, 0.1) 0%, rgba(13, 202, 240, 0.1) 100%)',
+                            'border': '2px solid rgba(23, 162, 184, 0.3)',
+                            'borderRadius': '8px',
+                            'transition': 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                        })
+                    ], md=6, className="mb-2"),
+                    
+                    dbc.Col([
+                        dbc.Button([
+                            html.Div([
+                                html.I(className="fas fa-trash-alt me-2", style={"fontSize": "0.9rem"}),
+                                html.Span("Remove", style={"fontWeight": "600"})
+                            ], className="d-flex align-items-center justify-content-center")
+                        ],
+                        id=remove_button_id,
+                        color="danger",
+                        outline=True,
+                        className="enhanced-access-button",
+                        style={
+                            'width': '100%',
+                            'minHeight': '45px',
+                            'background': 'linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(214, 51, 132, 0.1) 100%)',
+                            'border': '2px solid rgba(220, 53, 69, 0.3)',
+                            'borderRadius': '8px',
+                            'transition': 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                        })
+                    ], md=6, className="mb-2")
+                ])
+            ], className="mb-4"),
+            
+            # Access Information Display
+            html.Div([
+                html.Label([
+                    html.I(className="fas fa-info-circle me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                    "Access Details"
+                ], className="text-muted mb-3 d-block", style={"fontSize": "0.85rem", "fontWeight": "600"}),
+                
                 dcc.Loading(
                     id=f"{info_div_id}-loading",
                     type="default",
-                    children=html.Div(id=info_div_id, className="halberd-depth-card")
-                ),
-                
-            ],className="halberd-text")
+                    children=html.Div(
+                        id=info_div_id, 
+                        className="enhanced-attack-surface-card",
+                        style={
+                            "minHeight": "200px",
+                            "background": "linear-gradient(135deg, rgba(33, 37, 41, 0.6) 0%, rgba(52, 58, 64, 0.6) 100%)",
+                            "border": "1px solid rgba(220, 53, 69, 0.2)",
+                            "borderRadius": "8px",
+                            "padding": "1rem"
+                        }
+                    )
+                )
+            ])
+        ]
             
     if active_tab in ["tab-attack-EntraID", "tab-attack-M365"]:    
         return True, create_access_section(
@@ -872,3 +1172,75 @@ def display_access_info_in_modal_callback(n_clicks, active_tab):
             "del-gcp-credential-button",
             "gcp-access-info-div"
         )
+    
+@callback(
+    Output("refresh-token-copy", "content"),
+    Input("refresh-token-copy", "n_clicks"),
+)
+def custom_copy(n_clicks):
+    if not n_clicks:
+        PreventUpdate
+
+    manager = EntraTokenManager()
+    access_token, refresh_token = manager.get_active_token_pair()
+    return refresh_token
+
+@callback(
+    Output("access-token-copy", "content"),
+    Input("access-token-copy", "n_clicks"),
+)
+def custom_copy(n_clicks):
+    if not n_clicks:
+        PreventUpdate
+
+    manager = EntraTokenManager()
+    access_token, refresh_token = manager.get_active_token_pair()
+    return access_token
+
+# Callback to handle collapse/expand
+@callback(
+    [Output("config-collapse", "is_open"),
+     Output("config-arrow", "className")],
+    [Input("config-header", "n_clicks")],
+    [State("config-collapse", "is_open")]
+)
+def toggle_enhanced_config_section(n_clicks, is_open):
+    """Callback to handle the collapsible configuration section"""
+    if n_clicks:
+        is_open = not is_open
+    
+    arrow_class = "fas fa-chevron-down config-arrow ms-auto"
+    if is_open:
+        arrow_class += " expanded"
+    
+    return is_open, arrow_class
+
+"""Client callback to auto scroll when technique config is expanded"""
+clientside_callback(
+    """
+    function(is_open) {
+        if (is_open) {
+            setTimeout(function() {
+                var configColumn = document.getElementById('config-column');
+                if (configColumn) {
+                    try {
+                        const targetElement = document.getElementById('config-header');
+                        const containerRect = configColumn.getBoundingClientRect();
+                        const targetRect = targetElement.getBoundingClientRect();
+
+                        configColumn.scrollTo({
+                            top: configColumn.scrollTop + (targetRect.top - containerRect.top),
+                            behavior: 'smooth'
+                        });
+                    } catch (e) {
+                        configColumn.scrollTop = 0;
+                    }
+                }
+            }, 150);
+        }
+        return '';
+    }
+    """,
+    Output('scroll-trigger-unique', 'children'),
+    Input('config-collapse', 'is_open')
+)

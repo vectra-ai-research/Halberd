@@ -29,33 +29,186 @@ def generate_technique_info(technique_id)-> list:
     """
     def create_mitre_info_cards(mitre_techniques):
         """Create dbc.cards with technique MITRE info"""
+        if not mitre_techniques:
+            return html.Div([
+                html.P("No MITRE ATT&CK techniques found.", className="text-muted text-center py-3")
+            ])
+        
         mitre_cards = []
-        for mitre_info in mitre_techniques:
+        for idx, mitre_info in enumerate(mitre_techniques):
+            # Create tactics badges
+            tactic_badges = [
+                dbc.Badge(
+                    tactic, 
+                    color="danger", 
+                    className="me-1 mb-1",
+                    style={
+                        "fontSize": "0.75rem",
+                        "fontWeight": "500",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.5px"
+                    }
+                ) for tactic in mitre_info.tactics
+            ]
+            
             mitre_card = dbc.Card([
                 dbc.CardBody([
-                    html.P(f"Technique: {mitre_info.technique_name}", className="card-text"),
-                    html.P(f"Sub-Technique: {mitre_info.sub_technique_name}", className="card-text"),
-                    html.P(f"Tactic: {', '.join(mitre_info.tactics)}", className="card-text"),
-                    dcc.Link("Visit MITRE", href=mitre_info.mitre_url if mitre_info.mitre_url not in [None, "#"] else "#", target="_blank", className="halberd-link")
+                    # Header with technique ID and external link icon
+                    dbc.Row([
+                        dbc.Col([
+                            html.Div([
+                                html.I(className="fas fa-shield-alt me-2", style={"color": "#dc3545"}),
+                                html.Strong(
+                                    mitre_info.technique_id, 
+                                    className="halberd-brand",
+                                    style={"fontSize": "0.9rem", "color": "#dc3545"}
+                                )
+                            ], className="mb-2")
+                        ], width=8),
+                        dbc.Col([
+                            dbc.Button([
+                                html.I(className="fas fa-external-link-alt me-1"),
+                                "MITRE"
+                            ],
+                            href=mitre_info.mitre_url if mitre_info.mitre_url not in [None, "#"] else "#",
+                            target="_blank",
+                            color="outline-danger",
+                            size="sm",
+                            className="float-end",
+                            style={
+                                "fontSize": "0.75rem",
+                                "borderRadius": "4px",
+                                "transition": "all 0.2s ease"
+                            })
+                        ], width=4)
+                    ], className="mb-2"),
+                    
+                    # Technique name
+                    html.H6(
+                        mitre_info.technique_name, 
+                        className="mb-2",
+                        style={
+                            "color": "#ffffff",
+                            "fontWeight": "600",
+                            "lineHeight": "1.3"
+                        }
+                    ),
+                    
+                    # Sub-technique (if exists)
+                    html.Div([
+                        html.Small([
+                            html.I(className="fas fa-sitemap me-1", style={"color": "#6c757d"}),
+                            f"Sub-Technique: {mitre_info.sub_technique_name}"
+                        ], className="text-muted mb-2 d-block")
+                    ] if mitre_info.sub_technique_name and mitre_info.sub_technique_name != "None" else []),
+                    
+                    # Tactics section
+                    html.Div([
+                        html.Small("Tactics:", className="text-muted d-block mb-1"),
+                        html.Div(tactic_badges, className="d-flex flex-wrap")
+                    ])
                 ])
-            ], className="mb-2 halberd-depth-card")
+            ], 
+            className="mb-2 halberd-depth-card technique-card",
+            style={
+                "transition": "all 0.3s ease",
+                "border": "1px solid rgba(220, 53, 69, 0.2)",
+                "background": "linear-gradient(135deg, rgba(33, 37, 41, 0.95) 0%, rgba(52, 58, 64, 0.95) 100%)"
+            },
+            id=f"mitre-card-{idx}")
+            
             mitre_cards.append(mitre_card)
-        return html.Div(mitre_cards)
+        
+        return html.Div(mitre_cards, className="mitre-cards-container")
     
     def create_azure_trm_info_cards(azure_trm_techniques):
         """Create dbc.cards with technique Azure Threat Research Matrix info"""
-        mitre_cards = []
-        for azure_trm_info in azure_trm_techniques:
-            mitre_card = dbc.Card([
+        azure_cards = []
+        for idx, azure_trm_info in enumerate(azure_trm_techniques):
+            # Create tactics badges
+            tactic_badges = [
+                dbc.Badge(
+                    tactic, 
+                    color="info", 
+                    className="me-1 mb-1",
+                    style={
+                        "fontSize": "0.75rem",
+                        "fontWeight": "500",
+                        "textTransform": "uppercase",
+                        "letterSpacing": "0.5px"
+                    }
+                ) for tactic in azure_trm_info.tactics
+            ]
+            
+            azure_card = dbc.Card([
                 dbc.CardBody([
-                    html.P(f"Technique: {azure_trm_info.technique_name}", className="card-text"),
-                    html.P(f"Sub-Technique: {azure_trm_info.sub_technique_name}", className="card-text"),
-                    html.P(f"Tactic: {', '.join(azure_trm_info.tactics)}", className="card-text"),
-                    dcc.Link("Visit Azure Threat Research Matrix", href=azure_trm_info.azure_trm_url if azure_trm_info.azure_trm_url not in [None, "#"] else "#", target="_blank", className="halberd-link")
+                    # Header with technique ID and external link icon
+                    dbc.Row([
+                        dbc.Col([
+                            html.Div([
+                                html.I(className="fab fa-microsoft me-2", style={"color": "#0078d4"}),
+                                html.Strong(
+                                    azure_trm_info.technique_id, 
+                                    className="halberd-brand",
+                                    style={"fontSize": "0.9rem", "color": "#0078d4"}
+                                )
+                            ], className="mb-2")
+                        ], width=8),
+                        dbc.Col([
+                            dbc.Button([
+                                html.I(className="fas fa-external-link-alt me-1"),
+                                "Azure TRM"
+                            ],
+                            href=azure_trm_info.azure_trm_url if azure_trm_info.azure_trm_url not in [None, "#"] else "#",
+                            target="_blank",
+                            color="outline-info",
+                            size="sm",
+                            className="float-end",
+                            style={
+                                "fontSize": "0.75rem",
+                                "borderRadius": "4px",
+                                "transition": "all 0.2s ease"
+                            })
+                        ], width=4)
+                    ], className="mb-2"),
+                    
+                    # Technique name
+                    html.H6(
+                        azure_trm_info.technique_name, 
+                        className="mb-2",
+                        style={
+                            "color": "#ffffff",
+                            "fontWeight": "600",
+                            "lineHeight": "1.3"
+                        }
+                    ),
+                    
+                    # Sub-technique (if exists)
+                    html.Div([
+                        html.Small([
+                            html.I(className="fas fa-sitemap me-1", style={"color": "#6c757d"}),
+                            f"Sub-Technique: {azure_trm_info.sub_technique_name}"
+                        ], className="text-muted mb-2 d-block")
+                    ] if azure_trm_info.sub_technique_name and azure_trm_info.sub_technique_name != "None" else []),
+                    
+                    # Tactics section
+                    html.Div([
+                        html.Small("Tactics:", className="text-muted d-block mb-1"),
+                        html.Div(tactic_badges, className="d-flex flex-wrap")
+                    ])
                 ])
-            ], className="mb-2 halberd-depth-card")
-            mitre_cards.append(mitre_card)
-        return html.Div(mitre_cards)
+            ], 
+            className="mb-2 halberd-depth-card technique-card",
+            style={
+                "transition": "all 0.3s ease",
+                "border": "1px solid rgba(0, 120, 212, 0.2)",
+                "background": "linear-gradient(135deg, rgba(33, 37, 41, 0.95) 0%, rgba(52, 58, 64, 0.95) 100%)"
+            },
+            id=f"azure-card-{idx}")
+            
+            azure_cards.append(azure_card)
+        
+        return html.Div(azure_cards, className="azure-cards-container")
     
     # Get technique information from technique registry
     technique = TechniqueRegistry.get_technique(technique_id)()
@@ -63,20 +216,85 @@ def generate_technique_info(technique_id)-> list:
 
     # Main technique information card
     main_info_card = dbc.Card([
-        dbc.CardHeader(html.Div(technique.name, className="mb-0 halberd-brand text-2xl")),
+        dbc.CardHeader([
+            dbc.Row([
+                dbc.Col([
+                    html.Div([
+                        html.I(
+                            className="fas fa-crosshairs me-3", 
+                            style={
+                                "color": "#dc3545", 
+                                "fontSize": "1.5rem",
+                                "verticalAlign": "middle"
+                            }
+                        ),
+                        html.Span(
+                            technique.name, 
+                            className="halberd-brand",
+                            style={
+                                "fontSize": "1.4rem",
+                                "fontWeight": "700",
+                                "color": "#ffffff",
+                                "verticalAlign": "middle"
+                            }
+                        )
+                    ], className="d-flex align-items-center")
+                ], lg=8, md=12),
+                dbc.Col([
+                    dbc.Badge(
+                        CATEGORY_MAPPING.get(technique_category, technique_category).upper(),
+                        color="secondary",
+                        className="float-end technique-category-badge",
+                        style={
+                            "fontSize": "0.8rem",
+                            "fontWeight": "600",
+                            "letterSpacing": "1px",
+                            "padding": "8px 16px",
+                            "borderRadius": "20px",
+                            "background": "linear-gradient(45deg, #6c757d 0%, #495057 100%)",
+                            "border": "none",
+                            "boxShadow": "0 2px 4px rgba(0,0,0,0.2)"
+                        }
+                    )
+                ], lg=4, md=12, className="text-end mt-2 mt-lg-0")
+            ], align="center")
+        ], style={
+            "background": "linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(108, 117, 125, 0.1) 100%)",
+            "borderBottom": "2px solid rgba(220, 53, 69, 0.3)"
+        }),
         dbc.CardBody([
-            html.Span(CATEGORY_MAPPING.get(technique_category, technique_category), className=f"tag tag-{CATEGORY_MAPPING.get(technique_category, technique_category).lower()} mb-3"),
-            html.H5("Description:", className="mb-2 halberd-typography"),
-            html.P(technique.description, className="mb-3 halberd-text")
+            html.Div([
+                html.I(className="fas fa-info-circle me-2", style={"color": "#6c757d"}),
+                html.Strong("Description", style={"color": "#ffffff", "fontSize": "1rem"})
+            ], className="mb-3"),
+            html.P(
+                technique.description, 
+                className="halberd-text",
+                style={
+                    "fontSize": "0.95rem",
+                    "lineHeight": "1.6",
+                    "color": "#e9ecef",
+                    "marginBottom": "0"
+                }
+            )
         ])
-    ], className="mb-3 halberd-depth-card")
+    ], 
+    className="mb-4 halberd-depth-card main-technique-card",
+    style={
+        "border": "1px solid rgba(220, 53, 69, 0.3)",
+        "background": "linear-gradient(135deg, rgba(33, 37, 41, 0.98) 0%, rgba(52, 58, 64, 0.98) 100%)",
+        "boxShadow": "0 8px 32px rgba(0, 0, 0, 0.3)"
+    })
 
     modal_content = [main_info_card]
     
     modal_content.append(
         dbc.Accordion([
-            dbc.AccordionItem(create_mitre_info_cards(technique.mitre_techniques), title="MITRE ATT&CK Reference", className="halberd-accordion-item")
-        ], start_collapsed=False, className="mb-3 halberd-accordion")
+            dbc.AccordionItem(create_mitre_info_cards(technique.mitre_techniques),
+             title="MITRE ATT&CK Reference")
+            
+        ], start_collapsed=False, className="mb-3 enhanced-accordion"
+        )
     )
     
     # Display Azure threat research matrix info - only for Azure techniques
@@ -85,29 +303,89 @@ def generate_technique_info(technique_id)-> list:
             modal_content.append(
                 dbc.Accordion([
                     dbc.AccordionItem(create_azure_trm_info_cards(technique.azure_trm_techniques), title="Azure Threat Research Matrix Reference")
-                ], start_collapsed=True, className="mb-3 halberd-accordion")
+                ], start_collapsed=True, className="mb-3 enhanced-accordion"
+                )
             )
     
     # Technique notes
     if technique.notes:
+        notes_content = []
+        for idx, note in enumerate(technique.notes):
+            notes_content.append(
+                dbc.Card([
+                    dbc.CardBody([
+                        html.Div([
+                            html.I(className="fas fa-sticky-note me-2", style={"color": "#ffc107"}),
+                            html.Span(note.note, style={"color": "#e9ecef", "fontSize": "0.9rem"})
+                        ])
+                    ])
+                ], className="mb-2", 
+                style={
+                    "border": "1px solid rgba(255, 193, 7, 0.2)"
+                })
+            )
         modal_content.append(
             dbc.Accordion([
                 dbc.AccordionItem(
-                    [html.Li(note.note) for note in technique.notes],
+                    notes_content,
                     title="Technique Notes"
                 )
-            ], start_collapsed=True, className="mb-3 halberd-accordion")
+            ], start_collapsed=True, className="mb-3 enhanced-accordion",
+            style={
+                "overflow": "hidden"
+            })
         )
 
     # Technique references
     if technique.references:
+        references_content = []
+        for idx, ref in enumerate(technique.references):
+            references_content.append(
+                dbc.Card([
+                    dbc.CardBody([
+                        dbc.Row([
+                            dbc.Col([
+                                html.I(className="fas fa-link me-2", style={"color": "#17a2b8"}),
+                                dcc.Link(
+                                    ref.title, 
+                                    href=ref.link if ref.link not in [None, "#"] else "#", 
+                                    target="_blank", 
+                                    className="halberd-link",
+                                    style={
+                                        "color": "#17a2b8",
+                                        "textDecoration": "none",
+                                        "fontSize": "0.9rem",
+                                        "fontWeight": "500"
+                                    }
+                                )
+                            ], width=10),
+                            dbc.Col([
+                                html.I(
+                                    className="fas fa-external-link-alt", 
+                                    style={"color": "#6c757d", "fontSize": "0.8rem"}
+                                )
+                            ], width=2, className="text-end")
+                        ], align="center")
+                    ])
+                ], className="mb-2", 
+                style={
+                    "border": "1px solid rgba(23, 162, 184, 0.2)",
+                    "transition": "all 0.2s ease"
+                })
+            )
+
         modal_content.append(
             dbc.Accordion([
                 dbc.AccordionItem(
-                    [html.Li(dcc.Link(ref.title, href=ref.link if ref.link not in [None, "#"] else "#", target="_blank", className="halberd-link")) for ref in technique.references],
+                    references_content,
                     title="Technique References"
                 )
-            ], start_collapsed=True, className="mb-3 halberd-accordion")
+            ], 
+            start_collapsed=True, 
+            className="mb-3 enhanced-accordion",
+            style={
+                "overflow": "hidden"
+            })
         )  
 
     # Return final modal body content
@@ -598,28 +876,18 @@ def generate_attack_technique_options(tab, tactic):
                     technique_tracker.append(technique_module)
                     technique_options_list.append(
                         {
-                            "label": html.Div([technique().name], style={"padding-left": "10px","padding-top": "5px", "padding-bottom": "5px"}),
+                            "label": html.Div([technique().name], className="halberd-brand"),
                             "value": technique_module,
                         }
                     )
     
-
-    technique_options_element = [
-        dcc.RadioItems(
-            id = "attack-options-radio", 
-            options = technique_options_list, 
-            value = technique_options_list[0]["value"], 
-            labelStyle={"display": "flex", "align-items": "center"},
-            className="halberd-radio"
-        )
-    ]
-    
-    return technique_options_element
+    return technique_options_list
 
 def generate_attack_technique_config(technique):
     """
     Function generates the technique configuration view in attack page. 
-    Converts technique inputs into UI input fields. Also, adds 'Technique Execute' and 'Add to Playbook' buttons. 
+    Converts technique inputs into UI input fields with styling and interactions.
+    Also, adds 'Technique Execute' and 'Add to Playbook' buttons.
 
     :param technique: Exact name of technique in Halberd technique registry
     """
@@ -628,156 +896,405 @@ def generate_attack_technique_config(technique):
     config_div_display = Patch()
     config_div_display.clear()
 
+    # Configure & Execute header
+    config_header = html.Div([
+        html.Div([
+            html.Div([
+                html.I(
+                    className="fas fa-cog me-3", 
+                    style={
+                        "color": "#dc3545", 
+                        "fontSize": "1.1rem",
+                        "animation": "spin 3s linear infinite"
+                    }
+                ),
+                html.Span(
+                    "Configure & Execute", 
+                    className="halberd-brand",
+                    style={
+                        "fontSize": "1.1rem",
+                        "fontWeight": "700",
+                        "color": "#ffffff",
+                        "letterSpacing": "0.5px"
+                    }
+                ),
+                html.I(
+                    id="config-arrow",
+                    className="fas fa-chevron-down config-arrow ms-auto",
+                    style={
+                        "color": "#dc3545",
+                        "fontSize": "1rem",
+                        "transition": "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                        "cursor": "pointer"
+                    }
+                )
+            ], className="d-flex align-items-center w-100")
+        ], className="d-flex justify-content-between align-items-center w-100")
+    ], 
+    id="config-header",
+    className="enhanced-config-header px-3 py-3",
+    style={
+        "background": "linear-gradient(135deg, rgba(220, 53, 69, 0.15) 0%, rgba(108, 117, 125, 0.15) 100%)",
+        "borderBottom": "2px solid rgba(220, 53, 69, 0.3)",
+        "borderRadius": "8px 8px 0 0",
+        "cursor": "pointer",
+        "transition": "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        "position": "relative",
+        "overflow": "hidden",
+        "border": "1px solid rgba(220, 53, 69, 0.2)"
+    })
+
+    config_div_display.append(config_header)
+
+    # Collapsible Configuration Content
+    config_content = []
+
     # Check if technique requires input
     if len(technique_config.keys()) > 0:
-        config_div_elements = []
+        config_form_elements = []
 
-        for input_field, input_config in technique_config.items():
-            # Indicate required fields with * on GUI
-            if input_config['required']:
-                config_div_elements.append(dbc.Label(input_config['name']+" *", className="halberd-text"))
-            else:
-                config_div_elements.append(dbc.Label(input_config['name'], className="halberd-text"))
+        # Configuration Form Header
+        config_form_elements.append(
+            html.Div([
+                html.Div([
+                    html.I(className="fas fa-wrench me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                    html.Span("Technique Parameters", style={"fontSize": "0.9rem", "fontWeight": "600"})
+                ], className="text-muted mb-3")
+            ])
+        )
 
-            if input_config['input_field_type'] in ["text", "email", "password", "number"]:
-                config_div_elements.append(dbc.Input(
-                    type = input_config['input_field_type'],
-                    placeholder = f"default: {input_config['default']}" if input_config['default'] else "", #default param value in placeholder
-                    debounce = True,
-                    id = {"type": "technique-config-display", "index": input_field},
-                    className="bg-halberd-dark border halberd-text halberd-input"
-                ))
-            elif input_config['input_field_type'] == "select":
-                config_div_elements.append(
+        # Parameter Grid
+        param_grid = []
+        for i, (input_field, input_config) in enumerate(technique_config.items()):
+            param_row = html.Div([
+                # Parameter Label
+                html.Div([
+                    html.Label([
+                        html.Span(input_config['name'], style={"fontWeight": "600"}),
+                        html.Span(" *", style={"color": "#dc3545", "fontWeight": "bold"}) if input_config['required'] else "",
+                        html.Small(
+                            f" ({input_config.get('description', 'Parameter configuration')})",
+                            className="text-muted ms-2",
+                            style={"fontSize": "0.75rem", "fontStyle": "italic"}
+                        ) if input_config.get('description') else ""
+                    ], 
+                    className="halberd-text enhanced-param-label",
+                    style={"marginBottom": "8px", "display": "block"}
+                    )
+                ], className="mb-2"),
+
+                # Input Field Container
+                html.Div([
+                    # Text/Email/Password/Number Inputs
+                    dbc.Input(
+                        type = input_config['input_field_type'],
+                        placeholder = f"Default: {input_config['default']}" if input_config['default'] else f"Enter {input_config['name'].lower()}...", 
+                        debounce = True,
+                        id = {"type": "technique-config-display", "index": input_field},
+                        className="enhanced-param-input",
+                        style={
+                            "background": "rgba(33, 37, 41, 0.8)",
+                            "border": "2px solid rgba(108, 117, 125, 0.3)",
+                            "borderRadius": "8px",
+                            "color": "#ffffff",
+                            "padding": "12px 16px",
+                            "fontSize": "0.9rem",
+                            "transition": "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                            "backdropFilter": "blur(5px)"
+                        }
+                    ) if input_config['input_field_type'] in ["text", "email", "password", "number"] else
+                    
+                    # Select Dropdown
                     dbc.Select(
                         id = {"type": "technique-config-display", "index": input_field},
                         options=input_config["input_list"],
-                        placeholder = f"default: {input_config['default']}" if input_config['default'] else "", #default param value in placeholder
-                        className="bg-halberd-dark border halberd-text halberd-input",
-                    )
-                )
-            elif input_config['input_field_type'] == "bool":
-                config_div_elements.append(
-                    daq.BooleanSwitch(
-                        id = {"type": "technique-config-display-boolean-switch", "index": input_field}, 
-                        on=input_config['default']
-                    )
-                )
-            elif input_config['input_field_type'] == "upload":
-                config_div_elements.append(dcc.Upload(
-                    id = {"type": "technique-config-display-file-upload", "index": input_field}, 
-                    children=html.Div([html.A('Select a file or Drag one here', className="halberd-link")]), 
-                    className="bg-halberd-dark halberd-input",
-                    style={'width': '50%', 'height': '60px', 'lineHeight': '60px', 'borderWidth': '1px', 'borderStyle': 'dashed', 'borderRadius': '5px', 'textAlign': 'center', 'margin': '10px'})
-                )
+                        placeholder = f"Default: {input_config['default']}" if input_config['default'] else f"Select {input_config['name'].lower()}...",
+                        className="enhanced-param-select",
+                        style={
+                            "background": "rgba(33, 37, 41, 0.8)",
+                            "border": "2px solid rgba(108, 117, 125, 0.3)",
+                            "borderRadius": "8px",
+                            "color": "#ffffff",
+                            "padding": "8px 12px",
+                            "fontSize": "0.9rem",
+                            "transition": "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                            "backdropFilter": "blur(5px)"
+                        }
+                    ) if input_config['input_field_type'] == "select" else
+                    
+                    # Boolean Switch
+                    html.Div([
+                        daq.BooleanSwitch(
+                            id = {"type": "technique-config-display-boolean-switch", "index": input_field}, 
+                            on=input_config['default'],
+                            color="#dc3545",
+                            className="enhanced-boolean-switch",
+                            style={"transform": "scale(1.2)"}
+                        ),
+                        html.Span(
+                            "Enabled" if input_config['default'] else "Disabled",
+                            className="text-muted ms-3",
+                            style={"fontSize": "0.85rem"}
+                        )
+                    ], className="d-flex align-items-center") if input_config['input_field_type'] == "bool" else
+                    
+                    # File Upload
+                    html.Div([
+                        dcc.Upload(
+                            id = {"type": "technique-config-display-file-upload", "index": input_field}, 
+                            children=html.Div([
+                                html.Div([
+                                    html.I(className="fas fa-cloud-upload-alt", style={"fontSize": "2rem", "color": "#6c757d", "marginBottom": "8px"}),
+                                    html.Div("Drop files here or click to upload", style={"fontSize": "0.9rem", "fontWeight": "600"}),
+                                    html.Small("Drag and drop or click to select files", className="text-muted")
+                                ], className="text-center")
+                            ], className="enhanced-upload-area"),
+                            className="enhanced-file-upload",
+                            style={
+                                'width': '100%', 
+                                'minHeight': '120px', 
+                                'background': 'linear-gradient(135deg, rgba(33, 37, 41, 0.6) 0%, rgba(52, 58, 64, 0.6) 100%)',
+                                'border': '2px dashed rgba(108, 117, 125, 0.4)',
+                                'borderRadius': '12px',
+                                'display': 'flex',
+                                'alignItems': 'center',
+                                'justifyContent': 'center',
+                                'transition': 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                                'cursor': 'pointer',
+                                'position': 'relative',
+                                'overflow': 'hidden'
+                            }
+                        )
+                    ]) if input_config['input_field_type'] == "upload" else html.Div()
+                    
+                ], className="enhanced-input-container")
                 
-            config_div_elements.append(html.Br())
+            ], 
+            className="enhanced-param-row mb-4",
+            style={
+                "padding": "20px",
+                "background": "linear-gradient(135deg, rgba(33, 37, 41, 0.4) 0%, rgba(52, 58, 64, 0.4) 100%)",
+                "border": "1px solid rgba(108, 117, 125, 0.2)",
+                "borderRadius": "12px",
+                "backdropFilter": "blur(10px)",
+                "transition": "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                "position": "relative"
+            })
+            
+            param_grid.append(param_row)
 
-        config_div = html.Div(config_div_elements, className='d-grid col-6 mx-auto', style={'width' : '100%'})
-        config_div_display.append(config_div)
+        config_form_elements.extend(param_grid)
+        
+        config_content_div = html.Div(
+            config_form_elements, 
+            className='enhanced-config-form',
+            style={
+                'padding': '24px',
+                'borderRadius': '0 0 12px 12px',
+                'backdropFilter': 'blur(10px)'
+            }
+        )
+        config_content.append(config_content_div)
     else:
-        config_div_display.append(
-            html.Div(html.P("No config required! Hit 'Execute Technique'"), className='halberd-text d-grid col-6 mx-auto text-center', style={'width' : '100%'})
+        # No Configuration Required
+        config_content.append(
+            html.Div([
+                html.Div([
+                    html.I(className="fas fa-check-circle", style={"fontSize": "3rem", "color": "#28a745", "marginBottom": "16px"}),
+                    html.H5("Ready to Execute", className="halberd-brand mb-3"),
+                    html.P("This technique requires no additional configuration.", className="text-muted mb-0")
+                ], className="text-center py-5")
+            ], 
+            className='enhanced-no-config',
+            style={
+                'padding': '24px',
+                'background': 'linear-gradient(135deg, rgba(33, 37, 41, 0.95) 0%, rgba(52, 58, 64, 0.95) 100%)',
+                'borderRadius': '0 0 12px 12px',
+                'backdropFilter': 'blur(10px)'
+            })
         )
 
-    # Add access button
-    config_div_display.append(dbc.Label("Execute As", className="halberd-text"))
-    config_div_display.append(
-            dbc.Button(
-                "Establish Access", 
-                id="attack-access-info-dynamic-btn", 
-                color="success", 
-                className="mb-3",
-                outline=True,
-                style = {
-                    'width': '20vw',
-                    'display': 'flex',
-                    'justify-content': 'center',
-                    'align-items': 'center'
-                }
-            )
-        )
-
-    config_div_display.append(html.Br())
-    
-    # Add technique execute button
-    config_div_display.append(
-        (html.Div([
+    # Action Buttons Section
+    action_section = html.Div([
+        html.Hr(style={"border": "none", "height": "2px", "background": "linear-gradient(90deg, transparent, rgba(220, 53, 69, 0.5), transparent)", "margin": "24px 0"}),
+        
+        html.Div([
+            html.I(className="fas fa-play-circle me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+            html.Span("Execute Technique", style={"fontSize": "0.9rem", "fontWeight": "600"})
+        ], className="text-muted mb-3"),
+        
+        html.Div([
+            # Primary Execute Button
             dbc.Button([
-                DashIconify(
-                    icon="mdi:play",
-                    width=20,
-                    className="me-2"
-                ),
-                "Execute Technique"
+                html.Div([
+                    html.I(className="fas fa-rocket me-2", style={"fontSize": "1.1rem"}),
+                    html.Span("Execute Technique", style={"fontWeight": "600", "fontSize": "1rem"})
+                ], className="d-flex align-items-center justify-content-center"),
+                html.Div([
+                    html.Small("Launch attack vector", className="text-muted", style={"fontSize": "0.75rem"})
+                ], className="mt-1")
             ],
             id="technique-execute-button",
             n_clicks=0,
-            className="halberd-button mb-3"
-            )
-        ], className="d-grid col-3 mx-auto halberd-text"))
+            className="enhanced-execute-button me-3",
+            style={
+                'minWidth': '200px',
+                'minHeight': '70px',
+                'background': 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                'border': 'none',
+                'borderRadius': '12px',
+                'boxShadow': '0 4px 15px rgba(220, 53, 69, 0.4)',
+                'transition': 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                'position': 'relative',
+                'overflow': 'hidden'
+            }),
+            
+            # Secondary Add to Playbook Button
+            dbc.Button([
+                html.Div([
+                    html.I(className="fas fa-plus-circle me-2", style={"fontSize": "1rem"}),
+                    html.Span("Add to Playbook", style={"fontWeight": "600", "fontSize": "0.95rem"})
+                ], className="d-flex align-items-center justify-content-center"),
+                html.Div([
+                    html.Small("Queue for automation", className="text-muted", style={"fontSize": "0.75rem"})
+                ], className="mt-1")
+            ],
+            id="open-add-to-playbook-modal-button", 
+            n_clicks=0, 
+            className="enhanced-playbook-button",
+            outline=True,
+            style={
+                'minWidth': '200px',
+                'minHeight': '70px',
+                'background': 'linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(73, 80, 87, 0.1) 100%)',
+                'border': '2px solid rgba(108, 117, 125, 0.4)',
+                'borderRadius': '12px',
+                'transition': 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                'position': 'relative',
+                'overflow': 'hidden'
+            })
+        ], 
+        className="d-flex flex-wrap gap-3 justify-content-center",
+        style={"marginTop": "20px"}),
+        
+    ], 
+    className="enhanced-action-section",
+    style={
+        'borderRadius': '0 0 12px 12px',
+        'backdropFilter': 'blur(10px)'
+    })
+
+    config_content.append(action_section)
+
+    # Collapsible Container
+    collapsible_config = dbc.Collapse([
+        html.Div(config_content)
+    ],
+    id="config-collapse",
+    is_open=False,
+    className="enhanced-config-collapse"
     )
 
-    # Add add to playbook button
-    config_div_display.append(
-        html.Div([
-            dbc.Button(
-                [
-                    DashIconify(
-                        icon="mdi:plus",
-                        width=20,
-                        className="me-2"
-                    ),
-                    "Add to Playbook"
-                ],
-                id="open-add-to-playbook-modal-button", 
-                n_clicks=0, 
-                className="halberd-button-secondary"
-            )
-        ], style={'display': 'flex', 'justify-content': 'center', 'gap': '10px'}, className="halberd-text")
-    )
+    config_div_display.append(collapsible_config)
     
-    # Create plabook modal dropdown content
+    # Create playbook modal dropdown content
     playbook_dropdown_options = []    
     for pb in GetAllPlaybooks():
         playbook_dropdown_options.append(
             {
-                "label": html.Div([Playbook(pb).name], style={'font-size': 20}, className="halberd-text"),
+                "label": html.Div([Playbook(pb).name], style={'font-size': 16}, className="halberd-text"),
                 "value": Playbook(pb).name,
             }
         )
 
-    # Add add to playbook modal
+    # Add to Playbook Modal
     config_div_display.append(
-        dbc.Modal(
-            [
-                dbc.ModalHeader("Add Technique to Playbook"),
-                dbc.ModalBody([
-                    dbc.Label("Select Playbook to Add Step"),
+        dbc.Modal([
+            dbc.ModalHeader([
+                html.Div([
+                    html.I(className="fas fa-list-alt me-2", style={"color": "#dc3545"}),
+                    "Add Technique to Playbook"
+                ], className="d-flex align-items-center")
+            ], className="enhanced-modal-header"),
+            
+            dbc.ModalBody([
+                html.Div([
+                    html.Label([
+                        html.I(className="fas fa-book me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                        "Select Target Playbook"
+                    ], className="enhanced-modal-label mb-2"),
                     dcc.Dropdown(
                         options = playbook_dropdown_options, 
                         value = None, 
                         id='att-pb-selector-dropdown',
-                        placeholder="Select Playbook",
-                        className="halberd-dropdown halberd-text"
-                        ),
-                    html.Br(),
-                    dbc.Label("Add to Step # (Optional)", className="text-light"),
-                    dbc.Input(id='pb-add-step-number-input', placeholder="3", type= "number", className="bg-halberd-dark text-light halberd-input"),
-                    html.Br(),
-                    dbc.Label("Wait in Seconds After Step Execution (Optional)", className="text-light"),
-                    dbc.Input(id='pb-add-step-wait-input', placeholder="120", type= "number", className="bg-halberd-dark text-light halberd-input")
-                ]),
-                dbc.ModalFooter([
-                    dbc.Button("Cancel", id="close-add-to-playbook-modal-button", className="ml-auto halberd-button-secondary", n_clicks=0),
-                    dbc.Button("Add to Playbook", id="confirm-add-to-playbook-modal-button", className="ml-2 halberd-button", n_clicks=0)
-                ])
-            ],
-            id="add-to-playbook-modal",
-            is_open=False,
-            className="halberd-text"
+                        placeholder="Choose a playbook...",
+                        className="enhanced-modal-dropdown mb-4",
+                        style={
+                            "background": "rgba(33, 37, 41, 0.8)",
+                            "border": "1px solid rgba(108, 117, 125, 0.3)",
+                            "borderRadius": "8px"
+                        }
+                    ),
+                    
+                    html.Div([
+                        dbc.Col([
+                            html.Label([
+                                html.I(className="fas fa-sort-numeric-up me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                                "Step Position (Optional)"
+                            ], className="enhanced-modal-label mb-2"),
+                            dbc.Input(
+                                id='pb-add-step-number-input', 
+                                placeholder="e.g., 3", 
+                                type="number", 
+                                className="enhanced-modal-input"
+                            )
+                        ], md=6),
+                        
+                        dbc.Col([
+                            html.Label([
+                                html.I(className="fas fa-clock me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                                "Wait Time (seconds)"
+                            ], className="enhanced-modal-label mb-2"),
+                            dbc.Input(
+                                id='pb-add-step-wait-input', 
+                                placeholder="e.g., 120", 
+                                type="number", 
+                                className="enhanced-modal-input"
+                            )
+                        ], md=6)
+                    ], className="row mb-3")
+                    
+                ], className="enhanced-modal-content")
+            ], className="enhanced-modal-body"),
+            
+            dbc.ModalFooter([
+                dbc.Button([
+                    html.I(className="fas fa-times me-2"),
+                    "Cancel"
+                ], 
+                id="close-add-to-playbook-modal-button", 
+                className="enhanced-modal-cancel-btn", 
+                n_clicks=0,
+                outline=True),
+                
+                dbc.Button([
+                    html.I(className="fas fa-plus me-2"),
+                    "Add to Playbook"
+                ], 
+                id="confirm-add-to-playbook-modal-button", 
+                className="enhanced-modal-confirm-btn", 
+                n_clicks=0)
+            ], className="enhanced-modal-footer")
+        ],
+        id="add-to-playbook-modal",
+        size="lg",
+        is_open=False,
+        className="enhanced-playbook-modal",
+        backdrop="static",
+        scrollable=True
         )
     )
+
     return config_div_display
 
 def generate_entra_access_info(access_token):
@@ -798,7 +1315,7 @@ def generate_entra_access_info(access_token):
                 html.H4("Access Token Status", className="card-title"),
                 html.P("No Active Access Token", className="text-danger")
             ]),
-            className="mb-3 text-white"
+            className="mb-3"
         )
     
     # Halberd entra token manager
@@ -817,7 +1334,7 @@ def generate_entra_access_info(access_token):
                 html.H4("Access Token Status", className="card-title"),
                 html.P("Failed to decode access token", className="text-danger")
             ]),
-            className="mb-3 text-white"
+            className="mb-3"
         )
     
     # Handle corrupt tokens
@@ -827,7 +1344,7 @@ def generate_entra_access_info(access_token):
                 html.H4("Access Token Status", className="card-title"),
                 html.P("Failed to decode access token", className="text-danger")
             ]),
-            className="mb-3 text-white"
+            className="mb-3"
         )
     
     # Parse token and create ui elements
@@ -880,7 +1397,41 @@ def generate_entra_access_info(access_token):
                 ], className="mb-2"),
                 html.Div(create_scope_badges(access_info.get('Access scope', '')), className="d-flex flex-wrap")
             ], width=12)
-        ], className="mt-3")
+        ], className="mt-3 mb-3"),
+        
+        dbc.Row([
+            dbc.Col([
+                dbc.Label("Copy Access Token"),
+                html.Div([
+                    dcc.Clipboard(
+                        id="access-token-copy", 
+                        title="Copy access token",
+                        style={
+                            'width': '120px',
+                            'textAlign': 'center'
+                        },
+                        className="halberd-button"
+                    ),
+                ]),
+            ]),
+            dbc.Col([
+                dbc.Label("Copy Refresh Token"),
+                html.Div([
+                    dcc.Clipboard(
+                        id="refresh-token-copy", 
+                        title="Copy refresh token",
+                        style={
+                            'width': '120px',
+                            'textAlign': 'center'
+                        },
+                        className="halberd-button"
+                    ),
+                ])
+            ])
+        ]),
+        
+
+        
     ]
     
     return dbc.Card(
@@ -888,7 +1439,7 @@ def generate_entra_access_info(access_token):
             html.H4([DashIconify(icon="mdi:key-chain", className="me-2"), "Access Token Information"], className="card-title mb-3"),
             *card_content
         ]),
-        className="mb-3 text-white"
+        className="mb-3 bg-halberd-dark"
     )
 
 def generate_aws_access_info(session_name):
@@ -965,7 +1516,7 @@ def generate_aws_access_info(session_name):
                         html.Span("NO VALID SESSION", className="text-danger")
                     ], className="card-title")
                 ]),
-                className="mb-3 text-white"
+                className="mb-3 bg-halberd-dark"
             )
         )
 
@@ -975,9 +1526,6 @@ def generate_gcp_access_info(credential_name):
     info_output_div = []
 
     if credential_name:
-        info_output_div.append(html.Br())
-        info_output_div.append(html.H5("Access : "))
-        
         manager = GCPAccess()
         manager.set_activate_credentials(credential_name)
         current_access = manager.get_current_access()
@@ -1029,7 +1577,7 @@ def generate_gcp_access_info(credential_name):
                             ], className="card-title mb-3"),
                             *card_content
                         ]),
-                        className="mb-3 text-white"
+                        className="mb-3 bg-halberd-dark"
                     )
                 )
 
@@ -1043,7 +1591,7 @@ def generate_gcp_access_info(credential_name):
                             html.Span("CREDENTIAL ARE INVALID", className="text-danger")
                         ], className="card-title")
                     ]),
-                    className="mb-3 text-white"
+                    className="mb-3 bg-halberd-dark"
                 )
             )
     else:
@@ -1056,7 +1604,7 @@ def generate_gcp_access_info(credential_name):
                             html.Span("CREDENTIAL ARE NOT SET", className="text-danger")
                         ], className="card-title")
                     ]),
-                    className="mb-3 text-white"
+                    className="mb-3 bg-halberd-dark"
                 )
             )
     return info_output_div
@@ -1138,7 +1686,7 @@ def generate_azure_access_info(subscription):
                         ], className="card-title mb-3"),
                         *card_content
                     ]),
-                    className="mb-3 text-white"
+                    className="mb-3 bg-halberd-dark"
                 )
             )
         else:
@@ -1151,7 +1699,7 @@ def generate_azure_access_info(subscription):
                             html.Span("NO ACTIVE SESSION", className="text-danger")
                         ], className="card-title")
                     ]),
-                    className="mb-3 text-white"
+                    className="mb-3 bg-halberd-dark"
                 )
             )
     except:
@@ -1164,7 +1712,7 @@ def generate_azure_access_info(subscription):
                         html.Span("NO ACTIVE SESSION", className="text-danger")
                     ], className="card-title")
                 ]),
-                className="mb-3 text-white"
+                className="mb-3 bg-halberd-dark"
             )
         )
 

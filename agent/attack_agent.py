@@ -56,7 +56,8 @@ tool_functions = {
     "aws_set_active_session": aws_set_active_session,
     "aws_get_connected_user_details": aws_get_connected_user_details,
     "read_halberd_logs": read_halberd_logs,
-    "get_technique_execution_response": get_technique_execution_response
+    "get_technique_execution_response": get_technique_execution_response,
+    "get_app_info": get_app_info
 }
 
 # Token limits
