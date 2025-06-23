@@ -456,13 +456,13 @@ layout = html.Div([
                             },
                             className="chat-display"
                         ),
-                        # typing_indicator,
                         # trigger for automatic scroll in chat window
                         html.Div(id="scroll-trigger", style={'display': 'none'})
                     ], className="p-0"),
                     
                     # Input area
                     dbc.CardFooter([
+                        # Display agent thinking time
                         typing_indicator,
                         # Display for uploaded files waiting to be sent
                         html.Div(id="upload-display", className="mb-2"),
@@ -825,9 +825,10 @@ def upload_attachment_callback(n_clicks, ex_file_content, ex_file_name):
                         # Button to remove any attached file
                         dbc.Button(
                             DashIconify(icon="mdi:close", width=14, style={"cursor": "pointer"}),
-                            id={"type": "remove-chat-attachment-btn", "index": file.file_name}
+                            id={"type": "remove-chat-attachment-btn", "index": file.file_name},
+                            style={"background": 0}
                         ),
-                    ], className="file-preview-item")
+                    ], className="file-preview-item enhanced-file-upload")
                 )
 
             # Return the div to display
@@ -843,7 +844,7 @@ def upload_attachment_callback(n_clicks, ex_file_content, ex_file_name):
     Input({"type": "remove-chat-attachment-btn", "index": ALL}, "n_clicks"), 
     prevent_initial_call=True
 )
-def upload_attachment_callback(n_clicks):
+def remove_attachment_callback(n_clicks):
     if any(n_clicks):
 
         ctx = callback_context
@@ -869,11 +870,12 @@ def upload_attachment_callback(n_clicks):
                 html.Div([
                     DashIconify(icon=display_icon, width=16, className="me-2"),
                     html.Span(file.file_name, className="me-2"),
-                    html.Span(
-                        DashIconify(icon="mdi:close", width=14, id={"type": "remove-chat-attachment-btn", "index": file.file_name}, style={"cursor": "pointer"}),
-                        className="ms-2"
+                    dbc.Button(
+                        DashIconify(icon="mdi:close", width=14, style={"cursor": "pointer"}),
+                        id={"type": "remove-chat-attachment-btn", "index": file.file_name},
+                        style={"background": 0}
                     ),
-                ], className="file-preview-item")
+                ], className="file-preview-item enhanced-file-upload")
             )
         file_display = html.Div(file_display_items, className="halberd-text")
         
