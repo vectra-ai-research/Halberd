@@ -291,9 +291,9 @@ def generate_technique_info(technique_id)-> list:
     modal_content.append(
         dbc.Accordion([
             dbc.AccordionItem(create_mitre_info_cards(technique.mitre_techniques),
-             title="MITRE ATT&CK Reference", className="halberd-accordion-item")
+             title="MITRE ATT&CK Reference")
             
-        ], start_collapsed=False, className="mb-3 halberd-accordion enhanced-accordion"
+        ], start_collapsed=False, className="mb-3 enhanced-accordion"
         )
     )
     
@@ -303,7 +303,7 @@ def generate_technique_info(technique_id)-> list:
             modal_content.append(
                 dbc.Accordion([
                     dbc.AccordionItem(create_azure_trm_info_cards(technique.azure_trm_techniques), title="Azure Threat Research Matrix Reference")
-                ], start_collapsed=True, className="mb-3 halberd-accordion enhanced-accordion"
+                ], start_collapsed=True, className="mb-3 enhanced-accordion"
                 )
             )
     
@@ -330,10 +330,8 @@ def generate_technique_info(technique_id)-> list:
                     notes_content,
                     title="Technique Notes"
                 )
-            ], start_collapsed=True, className="mb-3 halberd-accordion enhanced-accordion",
+            ], start_collapsed=True, className="mb-3 enhanced-accordion",
             style={
-                "border": "1px solid rgba(255, 193, 7, 0.2)",
-                "borderRadius": "8px",
                 "overflow": "hidden"
             })
         )
@@ -369,8 +367,8 @@ def generate_technique_info(technique_id)-> list:
                             ], width=2, className="text-end")
                         ], align="center")
                     ])
-                ], className="mb-2", style={
-                    "background": "rgba(23, 162, 184, 0.1)",
+                ], className="mb-2", 
+                style={
                     "border": "1px solid rgba(23, 162, 184, 0.2)",
                     "transition": "all 0.2s ease"
                 })
@@ -384,10 +382,8 @@ def generate_technique_info(technique_id)-> list:
                 )
             ], 
             start_collapsed=True, 
-            className="mb-3 halberd-accordion enhanced-accordion",
+            className="mb-3 enhanced-accordion",
             style={
-                "border": "1px solid rgba(255, 193, 7, 0.2)",
-                "borderRadius": "8px",
                 "overflow": "hidden"
             })
         )  
@@ -885,18 +881,6 @@ def generate_attack_technique_options(tab, tactic):
                         }
                     )
     
-
-    # technique_options_element = [
-    #     dcc.RadioItems(
-    #         id = "attack-options-radio", 
-    #         options = technique_options_list, 
-    #         value = technique_options_list[0]["value"], 
-    #         labelStyle={"display": "flex", "align-items": "center"},
-    #         className="halberd-radio"
-    #     )
-    # ]
-    
-    
     return technique_options_list
 
 def generate_attack_technique_config(technique):
@@ -912,7 +896,7 @@ def generate_attack_technique_config(technique):
     config_div_display = Patch()
     config_div_display.clear()
 
-    # Configure & Execute Header with Animation
+    # Configure & Execute header
     config_header = html.Div([
         html.Div([
             html.Div([
@@ -1413,33 +1397,41 @@ def generate_entra_access_info(access_token):
                 ], className="mb-2"),
                 html.Div(create_scope_badges(access_info.get('Access scope', '')), className="d-flex flex-wrap")
             ], width=12)
-        ], className="mt-3"),
+        ], className="mt-3 mb-3"),
         
-        dbc.Label("Copy Access Token"),
-        html.Div([
-            dcc.Clipboard(
-                id="access-token-copy", 
-                title="Copy access token",
-                style={
-                    'width': '120px',
-                    'textAlign': 'center'
-                },
-                className="halberd-button"
-            ),
+        dbc.Row([
+            dbc.Col([
+                dbc.Label("Copy Access Token"),
+                html.Div([
+                    dcc.Clipboard(
+                        id="access-token-copy", 
+                        title="Copy access token",
+                        style={
+                            'width': '120px',
+                            'textAlign': 'center'
+                        },
+                        className="halberd-button"
+                    ),
+                ]),
+            ]),
+            dbc.Col([
+                dbc.Label("Copy Refresh Token"),
+                html.Div([
+                    dcc.Clipboard(
+                        id="refresh-token-copy", 
+                        title="Copy refresh token",
+                        style={
+                            'width': '120px',
+                            'textAlign': 'center'
+                        },
+                        className="halberd-button"
+                    ),
+                ])
+            ])
         ]),
+        
 
-        dbc.Label("Copy Refresh Token"),
-        html.Div([
-            dcc.Clipboard(
-                id="refresh-token-copy", 
-                title="Copy refresh token",
-                style={
-                    'width': '120px',
-                    'textAlign': 'center'
-                },
-                className="halberd-button"
-            ),
-        ])
+        
     ]
     
     return dbc.Card(
