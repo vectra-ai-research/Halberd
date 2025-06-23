@@ -454,14 +454,16 @@ layout = html.Div([
                                 'padding': '16px',
                                 'scrollBehavior': 'smooth'
                             },
+                            className="chat-display"
                         ),
-                        typing_indicator,
+                        # typing_indicator,
                         # trigger for automatic scroll in chat window
                         html.Div(id="scroll-trigger", style={'display': 'none'})
                     ], className="p-0"),
                     
                     # Input area
                     dbc.CardFooter([
+                        typing_indicator,
                         # Display for uploaded files waiting to be sent
                         html.Div(id="upload-display", className="mb-2"),
 
@@ -471,7 +473,7 @@ layout = html.Div([
                                     id="user-input",
                                     placeholder="Reply to Halberd Agent...",
                                     rows=1,
-                                    className="bg-halberd-dark halberd-text",
+                                    className="bg-halberd-dark halberd-text #user-input",
                                     style={'border': 'none', 'boxShadow': 'none'}
                                 ),
                                 class_name="mb-2"
@@ -486,12 +488,12 @@ layout = html.Div([
                                             children=dbc.Button([
                                                 DashIconify(icon="mdi:attachment", width=18, className="me-2")
                                             ],
-                                            title="Upload a file", id="upload-to-agent-chat-button", n_clicks=0, size="sm", className="me-2"),
+                                            title="Upload a file", id="upload-to-agent-chat-button", n_clicks=0, size="sm", className="me-2 action-button"),
                                         ),
                                         # Button - Reset chat
                                         dbc.Button([
                                             DashIconify(icon="mdi:chat-plus-outline", width=18, className="me-1"),
-                                        ], title = "New chat", id="new-conversation-btn", n_clicks=0, size="sm", className="halberd-button-secondary")
+                                        ], title = "New chat", id="new-conversation-btn", n_clicks=0, size="sm", className="action-button")
                                     ], className="d-flex")
                                 ], width=4),
                                 dbc.Col([
@@ -502,7 +504,7 @@ layout = html.Div([
                                 ])
                             ])
                         ])
-                    ], className="bg-halberd-dark halberd-text halberd-depth-card", style={"width": "50%", "margin": "0 auto"})
+                    ], className="chat-input-container bg-halberd-dark halberd-text halberd-depth-card", style={"width": "50%", "margin": "0 auto"})
                 ], className="mb-3 bg-halberd-dark", style={"border":0}),
             ], width=12),
         ]),
@@ -825,7 +827,7 @@ def upload_attachment_callback(n_clicks, ex_file_content, ex_file_name):
                             DashIconify(icon="mdi:close", width=14, style={"cursor": "pointer"}),
                             id={"type": "remove-chat-attachment-btn", "index": file.file_name}
                         ),
-                    ], className="d-flex align-items-center p-2 mb-2 border rounded file-preview-item")
+                    ], className="file-preview-item")
                 )
 
             # Return the div to display
@@ -871,7 +873,7 @@ def upload_attachment_callback(n_clicks):
                         DashIconify(icon="mdi:close", width=14, id={"type": "remove-chat-attachment-btn", "index": file.file_name}, style={"cursor": "pointer"}),
                         className="ms-2"
                     ),
-                ], className="d-flex align-items-center p-2 mb-2 border rounded")
+                ], className="file-preview-item")
             )
         file_display = html.Div(file_display_items, className="halberd-text")
         
