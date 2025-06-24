@@ -16,19 +16,15 @@
 
 ## Overview
 
-Halberd is an advanced multi-cloud attack tool designed for security teams to validate cloud defenses through sophisticated attack emulation. Supporting Microsoft Entra ID, Microsoft 365, Azure, AWS, and Google Cloud Platform, Halberd enables comprehensive security assessments across your entire cloud ecosystem.
-
-**Use Cases:**
-- **Red Team Operations**: Execute realistic attack scenarios to test detection capabilities
-- **Security Validation**: Verify security controls and monitoring systems effectiveness  
+Halberd is a multi-cloud attack tool designed for security teams to validate cloud defenses through realistic attack emulation. Supporting Microsoft Entra ID, Microsoft 365, Azure, AWS, and Google Cloud Platform, Halberd enables comprehensive security assessments across your entire cloud ecosystem via an intuitive web interface that runs directly in the browser.
 
 <p align="center">
-  <img src="assets/halberd_attack_view_v2_0.png" width="90%" align="center"/>
+  <img src="https://github.com/openrec0n/Halberd-Media-Assets/blob/main/Media/Halberd_3_0_preview.gif" width="100%" align="center"/>
 </p>
 
 ## Quick Start
 
-### Docker (Recommended)
+### Option 1 : Automated - Docker Install (Recommended)
 
 ```bash
 # Pull and run the latest version
@@ -38,22 +34,20 @@ docker run -d --name halberd -p 8050:8050 ghcr.io/vectra-ai-research/halberd:mai
 open http://localhost:8050
 ```
 
-### Docker Compose
+#### Docker Compose
 
 ```bash
 git clone https://github.com/vectra-ai-research/Halberd.git
 cd Halberd
 docker compose up -d
 ```
+[Detailed docker deployment documentation](https://github.com/vectra-ai-research/Halberd/wiki/Deployment-Guide#docker-deployment)
 
-## Installation
+### Option 2 : Manual Setup
 
-### Prerequisites
+#### Prerequisites
 
-- Python 3.8.x - 3.12.x (for manual installation)
-- Docker (for containerized deployment)
-
-### Manual Installation
+- Python 3.8.x - 3.12.x
 
 1. **Clone the repository**
    ```bash
@@ -61,14 +55,14 @@ docker compose up -d
    cd Halberd
    ```
 
-2. **Set up Python environment**
+2. **Set up Python virtual environment**
    ```bash
    python3 -m venv venv
    source venv/bin/activate  # Windows: venv\Scripts\activate
    pip install -r requirements.txt
    ```
 
-3. **Install Azure CLI** (Required for Azure testing)
+3. Optional : **Install Azure CLI** (Required for Azure testing)
    ```bash
    # Linux/macOS
    curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
@@ -82,35 +76,35 @@ docker compose up -d
 
 4. **Launch Halberd**
    ```bash
-   python3 run.py
+   python run.py
    ```
 
-5. **Access the interface**
+5. **Access Halberd**
+
    Navigate to `http://127.0.0.1:8050` in your browser
 
-### Advanced Configuration
+### Advanced Options
 
 ```bash
 # Custom host and port
-python3 run.py --host 0.0.0.0 --port 8080
+python run.py --host 0.0.0.0 --port 8080
 
 # Enable TLS
-python3 run.py --ssl-cert /path/to/cert.pem --ssl-key /path/to/key.pem
+python run.py --ssl-cert /path/to/cert.pem --ssl-key /path/to/key.pem
 
 # Development mode with debugging
-python3 run.py --dev-server --dev-server-debug
+python run.py --dev-server --dev-server-debug
 ```
 
 ## Features
 
 ### Core Capabilities
 
-- **Multi-Cloud Support**: Comprehensive testing across Azure, AWS, GCP, Entra ID, and M365
-- **MITRE ATT&CK Mapping**: Techniques organized by tactics for structured testing
+- **Multi-Cloud Coverage**: Comprehensive testing across Azure, AWS, GCP, Entra ID, and M365
 - **Attack Automation**: Create and execute complex attack playbooks
-- **Scheduling Engine**: Automate & schedule recurring security assessments
+- **Scheduling Engine**: Automate & schedule attacks
 - **Detailed Reporting**: Generate automated reports with actionable insights
-- **Interactive Dashboard**: Real-time visualization of attack paths and results
+- **Analysis Dashboard**: Real-time visualization of attack paths and results
 
 ### Attack Framework
 
@@ -121,74 +115,37 @@ python3 run.py --dev-server --dev-server-debug
 
 ### Halberd Attack Agent
 
-Leverage AI-powered attack automation to enhance security testing capabilities:
+Fully integrated AI attack agent to enhance security testing capabilities:
 - **LLM Integration**: [Claude](https://www.anthropic.com/claude) powered AI attack agent
 - **Technique Discovery**: Intelligent attack path discovery & context-aware attack execution
 - **Automated Reporting**: AI-generated testing reports tailored to your specific testing scenarios
-- **Research Integration**: Attach images and documents to rapidly create and execute attack paths based on new security research and threat intelligence
+- **Research Integration**: Attach images and documents to rapidly create and execute attack paths based on new research and threat intelligence
 
-> **Setup Guide**: [Enable Halberd Attack Agent](https://github.com/vectra-ai-research/Halberd/wiki/Deployment-Guide#setup-halberd-attack-agent)
+> **Enable Attack Agent**: Simply click on settings icon in Halberd app and add your Anthropic API key.
 
 ## Usage
 
 ### Basic Workflow
 
-1. **Target Selection**: Choose target environment (Azure, AWS, GCP, etc.)
-2. **Environment Setup**: Establish access using a Initial Access technique
-3. **Technique Selection**: Browse and select attack techniques by MITRE ATT&CK tactics
-4. **Execution**: Configure & run the attack technique
-5. **Review Result**: Review technique results in response window
-6. **Analysis**: Analyze overall testing through the Analyze dashboard
+1. **Select Target Cloud**: Navigate to `Attack` page and choose target cloud (Azure, AWS, GCP, etc.)
+2. **Establish Access**: Establish access using a `Initial Access` technique
+3. **Select Technique**: Browse and select attack techniques
+4. **Execute**: Configure & run the attack technique
+5. **Review Result**: Review technique result in `Response` window
+6. **Analysis**: Analyze overall testing through the `Analyze` dashboard
 7. **Reporting**: Generate comprehensive security assessment report
 
 For detailed usage instructions, checkout [Halberd Wiki - Usage](https://github.com/vectra-ai-research/Halberd/wiki/Usage)
-
-## Docker Deployment
-
-### Production Deployment
-
-```bash
-# With persistent storage
-docker run -d \
-  --name halberd \
-  -p 8050:8050 \
-  -v $(pwd)/data:/app/local \
-  -v $(pwd)/output:/app/output \
-  -v $(pwd)/reports:/app/report \
-  ghcr.io/vectra-ai-research/halberd:latest
-```
-
-### Environment Variables
-
-```bash
-# Custom configuration
-docker run -d \
-  --name halberd \
-  -p 8080:8080 \
-  -e HALBERD_HOST=0.0.0.0 \
-  -e HALBERD_PORT=8080 \
-  ghcr.io/vectra-ai-research/halberd:v2.2.0
-```
-
-### Available Images
-
-- `ghcr.io/vectra-ai-research/halberd:main` - Latest build
-- `ghcr.io/vectra-ai-research/halberd:latest` - Latest stable release
-- `ghcr.io/vectra-ai-research/halberd:v2.2.0` - Specific version
 
 ## Documentation
 
 - **[User Guide](https://github.com/vectra-ai-research/Halberd/wiki/Usage)** - Comprehensive usage instructions
 - **[Deployment Guide](https://github.com/vectra-ai-research/Halberd/wiki/Deployment-Guide)** - Detailed deployment instructions
-- **[CLI Documentation](https://github.com/vectra-ai-research/Halberd/wiki/Halberd-CLI)** - Integration and automation guides
+- **[Halberd CLI](https://github.com/vectra-ai-research/Halberd/wiki/Halberd-CLI)** - Integration and automation guides
 
 ## Contributing
 
 We welcome contributions from the security community! Please review our [contribution guidelines](https://github.com/vectra-ai-research/Halberd/wiki/Contributions) before submitting pull requests.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
