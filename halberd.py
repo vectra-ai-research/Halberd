@@ -38,15 +38,6 @@ navbar = dbc.NavbarSimple(
         ),
         dbc.NavItem(
             dbc.NavLink(
-                "Recon", 
-                href="/recon",
-                id="nav-recon",
-                className="nav-link",
-                style={"font-weight": "500"}
-            )
-        ),
-        dbc.NavItem(
-            dbc.NavLink(
                 "Automator", 
                 href="/automator",
                 id="nav-automator",
