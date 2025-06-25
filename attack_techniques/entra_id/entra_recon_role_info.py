@@ -40,11 +40,14 @@ class EntraReconRoleInfo(BaseTechnique):
             role_input: str = kwargs.get('role_input', '').strip()
             include_pim_data: bool = kwargs.get('include_pim_data', True)
             
-            if not role_input:
+            if role_input in [None, ""]:
                 return ExecutionStatus.FAILURE, {
                     "error": "Invalid Technique Input",
                     "message": "Role name or role ID is required"
                 }
+            
+            if include_pim_data in [None, ""]:
+                include_pim_data = True
             
             # Initialize results structure
             recon_results = {
