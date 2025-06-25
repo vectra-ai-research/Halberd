@@ -74,6 +74,8 @@ from .entra_id.entra_bruteforce_graph_apps import EntraBruteforceGraphApps
 from .entra_id.entra_password_spray import EntraPasswordSpray
 from .entra_id.entra_bruteforce_password import EntraBruteforcePassword
 from .entra_id.entra_check_user_validity import EntraCheckUserValidity
+from .entra_id.entra_recon_user_info import EntraReconUserInfo
+from .entra_id.entra_recon_role_info import EntraReconRoleInfo
 from .entra_id.entra_enumerate_users import EntraEnumerateUsers
 from .entra_id.entra_enumerate_apps import EntraEnumerateApps
 from .entra_id.entra_enumerate_directory_roles import EntraEnumerateDirectoryRoles
