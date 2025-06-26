@@ -9,7 +9,7 @@ class EntraAddUserToGroup(BaseTechnique):
         mitre_techniques = [
             MitreTechnique(
                 technique_id="T1098.003",
-                technique_name="Cloud Storage Object Discovery",
+                technique_name="Account Manipulation",
                 tactics=["Persistence", "Privilege Escalation"],
                 sub_technique_name="Additional Cloud Roles"
             )
