@@ -2,7 +2,6 @@ from anthropic import Anthropic
 from .tools import *
 from dotenv import load_dotenv
 import json
-import tiktoken
 import time
 import random
 
@@ -165,7 +164,6 @@ class RateLimiter:
 class AttackAgent:
     def __init__(self, session_state):
         self.session_state = session_state
-        self.encoder = tiktoken.get_encoding("cl100k_base")
         self.last_api_call_time = 0  # Track last API call time for rate limiting
         
         # Add token tracking variables
@@ -204,40 +202,132 @@ class AttackAgent:
         """Check if Anthropic client is ready to use"""
         return self.anthropic is not None
 
-    def count_tokens(self, text):
-        """Count the number of tokens in a text string."""
-        if isinstance(text, str):
-            return len(self.encoder.encode(text))
-        elif isinstance(text, dict):
-            # For message dictionaries
-            return self.count_tokens(json.dumps(text))
-        elif isinstance(text, list):
-            # For lists of messages
-            return sum(self.count_tokens(message) for message in text)
-        return 0
+    def count_tokens_for_messages(self, messages, include_system=True):
+        """
+        Count tokens for a complete message array using Anthropic's native counting.
+        This includes both conversation messages and system message if specified.
+        """
+        if not self.is_anthropic_ready():
+            # Fallback estimation if client not ready
+            return self._estimate_tokens_fallback(messages, include_system)
+        
+        try:
+            # Prepare messages for token counting
+            messages_for_counting = []
+            
+            # Add conversation messages
+            for msg in messages:
+                if isinstance(msg, dict) and "role" in msg and "content" in msg:
+                    messages_for_counting.append(msg)
+                else:
+                    # Convert non-standard message format
+                    messages_for_counting.append({
+                        "role": "user", 
+                        "content": json.dumps(msg) if not isinstance(msg, str) else str(msg)
+                    })
+            
+            # Count tokens using Anthropic's native method
+            if include_system:
+                # Include system message in counting
+                count_result = self.anthropic.messages.count_tokens(
+                    model="claude-3-7-sonnet-20250219",
+                    messages=messages_for_counting,
+                    system=IDENTITY
+                )
+            else:
+                # Count only conversation messages
+                count_result = self.anthropic.messages.count_tokens(
+                    model="claude-3-7-sonnet-20250219",
+                    messages=messages_for_counting
+                )
+            
+            return count_result.input_tokens
+            
+        except Exception as e:
+            print(f"Token counting error: {e}")
+            return self._estimate_tokens_fallback(messages, include_system)
+
+    def count_tokens_for_content(self, content):
+        """
+        Count tokens for arbitrary content by converting to message format.
+        Used for tool responses, strings, etc.
+        """
+        if not self.is_anthropic_ready():
+            # Fallback estimation
+            if isinstance(content, str):
+                return len(content) // 4
+            else:
+                return len(str(content)) // 4
+        
+        try:
+            # Convert content to message format
+            if isinstance(content, str):
+                messages = [{"role": "user", "content": content}]
+            else:
+                messages = [{"role": "user", "content": str(content)}]
+            
+            # Count tokens without system message (since this is just content)
+            count_result = self.anthropic.messages.count_tokens(
+                model="claude-3-7-sonnet-20250219",
+                messages=messages
+            )
+            
+            return count_result.input_tokens
+            
+        except Exception as e:
+            print(f"Content token counting error: {e}")
+            # Fallback estimation
+            if isinstance(content, str):
+                return len(content) // 4
+            else:
+                return len(str(content)) // 4
+
+    def _estimate_tokens_fallback(self, content, include_system=False):
+        """Fallback token estimation when native counting is unavailable."""
+        total_chars = 0
+        
+        if include_system:
+            total_chars += len(IDENTITY)
+        
+        if isinstance(content, list):
+            for item in content:
+                if isinstance(item, dict):
+                    total_chars += len(json.dumps(item))
+                else:
+                    total_chars += len(str(item))
+        elif isinstance(content, dict):
+            total_chars += len(json.dumps(content))
+        else:
+            total_chars += len(str(content))
+        
+        # Rough estimation: ~4 characters per token
+        return total_chars // 4
 
     def truncate_messages_history(self, messages, max_tokens):
         """Truncate message history to fit within token limits."""
-        # Always keep the system message and the latest user message
-        if len(messages) <= 2:
+        # Always keep at least the latest user message
+        if len(messages) <= 1:
             return messages
-            
-        # Start with the most recent messages (keeping the system message at index 0)
-        system_message = messages[0]
-        recent_messages = [messages[-1]]  # Latest user message
-        token_count = self.count_tokens(system_message) + self.count_tokens(recent_messages[0])
+        
+        # Start with the most recent message
+        recent_messages = [messages[-1]]
+        
+        # Calculate initial token count (including system message)
+        token_count = self.count_tokens_for_messages(recent_messages, include_system=True)
         
         # Add messages from newest to oldest until we approach the limit
-        for message in reversed(messages[1:-1]):
-            message_tokens = self.count_tokens(message)
-            if token_count + message_tokens < max_tokens:
+        for message in reversed(messages[:-1]):
+            # Calculate tokens for this message
+            temp_messages = [message] + recent_messages
+            temp_token_count = self.count_tokens_for_messages(temp_messages, include_system=True)
+            
+            if temp_token_count < max_tokens:
                 recent_messages.insert(0, message)
-                token_count += message_tokens
+                token_count = temp_token_count
             else:
                 break
-                
-        # Reconstruct the messages with system message first
-        return [system_message] + recent_messages
+        
+        return recent_messages
 
     def generate_message(self, messages, max_tokens):
         """Generate a message using Anthropic API. Implements rate limiting."""
@@ -245,8 +335,8 @@ class AttackAgent:
         if not hasattr(self, 'rate_limiter'):
             self.rate_limiter = RateLimiter()
         
-        # Check if the total context exceeds limits
-        total_tokens = self.count_tokens(messages)
+        # Count total tokens including system message
+        total_tokens = self.count_tokens_for_messages(messages, include_system=True)
         
         # Track input tokens for this call
         input_tokens = total_tokens
@@ -257,7 +347,7 @@ class AttackAgent:
             # Truncate history to fit within limits
             messages = self.truncate_messages_history(messages, MAX_TOTAL_TOKENS - max_tokens)
             # Recalculate tokens after truncation
-            new_total_tokens = self.count_tokens(messages)
+            new_total_tokens = self.count_tokens_for_messages(messages, include_system=True)
             
             # Adjust token counts
             token_reduction = total_tokens - new_total_tokens
@@ -267,7 +357,6 @@ class AttackAgent:
             total_tokens = new_total_tokens
         
         # Estimate output tokens (about 75% of their max_tokens allocation)
-        # More conservative estimate = safer rate limiting
         estimated_output_tokens = int(max_tokens * 0.75)
         
         # Get required delay from rate limiter
@@ -338,15 +427,13 @@ class AttackAgent:
                     
                     # After a rate limit, update our internal tracking to be more cautious
                     if hasattr(self, 'rate_limiter'):
-                        # Record a more moderate artificial usage to ensure we back off appropriately
-                        # Use portion of the actual request
                         now = time.time()
-                        cautious_input_tokens = int(total_tokens * 0.5)  # 50% of the actual input tokens
-                        cautious_output_tokens = int(estimated_output_tokens * 0.5)  # 50% of estimated output
+                        cautious_input_tokens = int(total_tokens * 0.5)
+                        cautious_output_tokens = int(estimated_output_tokens * 0.5)
                         self.rate_limiter.record_usage(
                             cautious_input_tokens,
                             cautious_output_tokens,
-                            now - 1  # Very recent timestamp
+                            now - 1
                         )
                 else:
                     # For non-rate-limit errors, don't retry
@@ -376,7 +463,6 @@ class AttackAgent:
                 # Get all tool calls in this message
                 tool_calls = [content for content in current_message.content if content.type == "tool_use"]
                 print(f"Tool call: {tool_calls}")
-                text_content = [content for content in current_message.content if content.type == "text"]
                 
                 # Convert message content to serializable format before adding to history
                 serializable_content = []
@@ -403,18 +489,18 @@ class AttackAgent:
                     func_params = tool_use.input
                     tool_use_id = tool_use.id
                     
-                    # Return result, even if the tool execution fails
+                    # Execute tool and get result
                     result = self.handle_tool_use(func_name, func_params)
                     
-                    # Check if tool response is too large
-                    result_tokens = self.count_tokens(str(result))
+                    # Check if tool response is too large using content token counting
+                    result_tokens = self.count_tokens_for_content(str(result))
                     if result_tokens > MAX_TOOL_RESPONSE_TOKENS:
-                        # Truncate or provide a summary message
+                        # Truncate response with clear explanation
                         result_content = f"Tool response exceeded token limit ({result_tokens} tokens). The complete results can be viewed externally but cannot be fully processed by the Attack Agent. Here's a summary or partial result: {str(result)[:500]}..."
                     else:
                         result_content = str(result)
                     
-                    # Add tool_result for each tool_use, even if execution failed
+                    # Add tool_result for each tool_use
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": tool_use_id,
@@ -438,7 +524,6 @@ class AttackAgent:
                         return f"An error occurred: {current_message['error']}"
                 except Exception as e:
                     # If there's an error getting the next message, add error message
-                    # to ensure the conversation state remains valid
                     error_message = f"Error generating response: {str(e)}"
                     self.session_state.messages.append({
                         "role": "assistant", 
@@ -446,8 +531,7 @@ class AttackAgent:
                     })
                     return error_message
             
-            # If message with no tool calls
-            # Extract response text
+            # Extract response text from final message
             response_text = ''.join([content.text for content in current_message.content if content.type == "text"])
             
             # Convert final message content to serializable format
@@ -463,7 +547,7 @@ class AttackAgent:
                         "input": content_block.input
                     })
             
-            # Add the serialized message to the conversation history
+            # Add the final message to conversation history
             self.session_state.messages.append(
                 {"role": "assistant", "content": serializable_content}
             )
@@ -473,7 +557,6 @@ class AttackAgent:
         except Exception as e:
             # Catch any unexpected errors during processing
             error_message = f"An unexpected error occurred: {str(e)}"
-            # Add the error as an assistant message to ensure conversation validity
             self.session_state.messages.append({
                 "role": "assistant", 
                 "content": [{"type": "text", "text": error_message}]
@@ -496,11 +579,30 @@ class AttackAgent:
     
     def count_tokens_in_response(self, response):
         """Count tokens in the API response content."""
-        total_tokens = 0
-        for content_block in response.content:
-            if content_block.type == "text":
-                total_tokens += self.count_tokens(content_block.text)
-            elif content_block.type == "tool_use":
-                # Count tokens in the tool use block
-                total_tokens += self.count_tokens(json.dumps(content_block.input))
-        return total_tokens
+        try:
+            # Extract all text content from response
+            content_parts = []
+            for content_block in response.content:
+                if content_block.type == "text":
+                    content_parts.append(content_block.text)
+                elif content_block.type == "tool_use":
+                    # Include tool use information in token count
+                    content_parts.append(json.dumps({
+                        "name": content_block.name,
+                        "input": content_block.input
+                    }))
+            
+            # Combine all content and count tokens
+            combined_content = "\n".join(content_parts)
+            return self.count_tokens_for_content(combined_content)
+            
+        except Exception as e:
+            print(f"Error counting response tokens: {e}")
+            # Fallback estimation
+            total_chars = 0
+            for content_block in response.content:
+                if content_block.type == "text":
+                    total_chars += len(content_block.text)
+                elif content_block.type == "tool_use":
+                    total_chars += len(json.dumps(content_block.input))
+            return total_chars // 4
