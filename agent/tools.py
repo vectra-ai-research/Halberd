@@ -250,14 +250,19 @@ tools = [
       }
     },
     {
-    "name": "get_app_info",
-    "description": "Retrieves application metadata and version information from the version.py file. Returns details about Halberd including version, description, author, license, repository, and supported cloud platforms. This tool provides information about the application itself and requires no input parameters.",
-    "input_schema": {
-        "type": "object",
-        "properties": {},
-        "required": []
+        "name": "get_app_info",
+        "description": "Retrieves application metadata and version information from the version.py file. Returns details about Halberd including version, description, author, license, repository, and supported cloud platforms. This tool provides information about the application itself and requires no input parameters.",
+        "input_schema": {
+            "type": "object",
+            "properties": {},
+            "required": []
+        }
+    },
+    {
+        "name": "web_search",
+        "type": "web_search_20250305",
+        "max_uses": 5
     }
-}
 ]
 
 technique_registry = TechniqueRegistry
