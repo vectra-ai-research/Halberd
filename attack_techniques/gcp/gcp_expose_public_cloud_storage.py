@@ -78,11 +78,13 @@ class GCPExposePublicCloudStorage(BaseTechnique):
                     "members": ["allUsers"]
                 })
                 bucket.set_iam_policy(policy)
+                
                 return ExecutionStatus.SUCCESS, {
                     "message": f"Successfully exposed GCP bucket {bucket_name} public",
                     "value": {
                         "bucket_name": bucket_name,
-                        "path": f"gs://{bucket_name}"
+                        "path": f"gs://{bucket_name}",
+                        "new_bucket_policy": policy.bindings
                     }
                 }
             else:
@@ -125,15 +127,14 @@ class GCPExposePublicCloudStorage(BaseTechnique):
                 url = f"https://storage.googleapis.com/storage/v1/b/{bucket_name}/managedFolders/{path}/iam"
                 response = requests.put(url, data=json_data, headers=headers)
                 response.raise_for_status()  # Raise an exception for HTTP errors (4xx or 5xx)
-
-                
                 
                 # managed_folder = storage_control_client.create_managed_folder(request=request)
                 return ExecutionStatus.SUCCESS, {
                     "message": f"Successfully exposed GCP bucket {bucket_name} public on path {path}",
                     "value": {
                         "bucket_name": bucket_name,
-                        "path": f"gs://{bucket_name}/{path}"
+                        "path": f"gs://{bucket_name}/{path}",
+                        "new_policy_attached_to_path": response.json().get("bindings", [])
                     }
                 }
 
