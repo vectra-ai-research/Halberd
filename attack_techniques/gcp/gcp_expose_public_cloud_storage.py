@@ -84,6 +84,8 @@ class GCPExposePublicCloudStorage(BaseTechnique):
                     }
                 }
             else:
+                # santize path
+                path = path.strip("/")
                 storage_control_client = storage_control_v2.StorageControlClient(credentials=credential)
                 project_path = storage_control_client.common_project_path("_")    
                 bucket_path = f"{project_path}/buckets/{bucket_name}"
@@ -147,14 +149,14 @@ class GCPExposePublicCloudStorage(BaseTechnique):
                 "type": "str",
                 "required": True,
                 "default": None,
-                "name": "Bucket Name",
+                "name": "Target Bucket Name",
                 "input_field_type": "text"
             },
             "path": {
                 "type": "str",
                 "required": False,
                 "default": None,
-                "name": "Path",
+                "name": "Object Path in Bucket",
                 "input_field_type": "text"
             }
         }
