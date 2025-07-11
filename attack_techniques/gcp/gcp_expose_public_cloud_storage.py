@@ -156,7 +156,7 @@ class GCPExposePublicCloudStorage(BaseTechnique):
                 "type": "str",
                 "required": False,
                 "default": None,
-                "name": "Object Path in Bucket",
+                "name": "Object Path in Bucket (Optional)",
                 "input_field_type": "text"
             }
         }
