@@ -24,10 +24,14 @@ class GCPExposePublicCloudStorage(BaseTechnique):
                 sub_technique_name=None
             )
         ]
+        technique_references = [
+            TechniqueReference(ref_title = "GCP - Make data public", ref_link = "https://cloud.google.com/storage/docs/access-control/making-data-public")
+        ]
         super().__init__(
             name="Expose Public Cloud Storage",
-            description="This module attempts to enable public read access to a Google Cloud Storage bucket by setting the bucket's IAM policy to allow allUsers to read objects.",
+            description="Enable public read access on a Google Cloud Storage bucket by modifying the bucket's IAM policy to allow allUsers to read bucket objects. Optionally, the technique can also expose a specific path within the bucket. This technique is useful for exfiltrating data from a compromised GCP environment. It can be used to make sensitive data publicly accessible, which can lead to data breaches or unauthorized access.",
             mitre_techniques=mitre_techniques,
+            references=technique_references
         )
     def execute(self, **kwargs: Any) -> tuple[ExecutionStatus, dict[str, Any]]:
         self.validate_parameters(kwargs)
