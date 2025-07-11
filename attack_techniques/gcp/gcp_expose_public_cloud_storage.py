@@ -1,16 +1,12 @@
 import base64
-from email import message
 import json
-import re
 import requests
-from os import access, name, path
 from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, TechniqueNote, TechniqueReference
 from ..technique_registry import TechniqueRegistry
 
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any
 
 from core.gcp.gcp_access import GCPAccess
-from core.Constants import OUTPUT_DIR
 from google.cloud import storage, storage_control_v2
 from google.cloud.storage.constants import PUBLIC_ACCESS_PREVENTION_INHERITED
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
