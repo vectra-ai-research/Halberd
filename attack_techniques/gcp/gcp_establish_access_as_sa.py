@@ -1,4 +1,4 @@
-from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique
+from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, TechniqueReference
 from ..technique_registry import TechniqueRegistry
 from typing import Dict, Any, Tuple
 import json
@@ -19,7 +19,12 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
                 sub_technique_name="Cloud Accounts"
             )
         ]
-        super().__init__("Establish Access As Service Account", "Establishes access to Google Cloud Platform as service account", mitre_techniques)
+
+        technique_references = [
+            TechniqueReference(ref_title = "Service accounts overview", ref_link = "https://cloud.google.com/iam/docs/understanding-service-accounts")
+        ]
+
+        super().__init__("Establish Access As Service Account", "Establish access to Google Cloud Platform using compromised or obtained service account credentials. This technique enables authentication as legitimate GCP service accounts, bypassing traditional user-based authentication mechanisms. The technique accepts service account JSON key files which contain the necessary cryptographic material for authentication including private keys, client information, and token endpoints. Once access is established, you inherit all IAM permissions and roles associated with the compromised service account, enabling privilege escalation and lateral movement within the GCP environment. The technique validates credential integrity, checks for expiration, and can optionally save credentials for persistent access across multiple attack operations.", mitre_techniques=mitre_techniques, references=technique_references)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
