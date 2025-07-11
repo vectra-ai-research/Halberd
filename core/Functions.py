@@ -1045,9 +1045,15 @@ def generate_attack_technique_config(technique):
                             children=html.Div([
                                 html.Div([
                                     html.I(className="fas fa-cloud-upload-alt", style={"fontSize": "2rem", "color": "#6c757d", "marginBottom": "8px"}),
-                                    html.Div("Drop files here or click to upload", style={"fontSize": "0.9rem", "fontWeight": "600"}),
-                                    html.Small("Drag and drop or click to select files", className="text-muted")
-                                ], className="text-center")
+                                    html.Small("Drag and drop or click to select files", className="text-muted"),
+                                    html.I(id="technique-config-display-file-name", style={"marginTop": "8px", "color": "#fff", "fontSize": "0.85rem"})
+                                ], 
+                                style={
+                                    "display": "flex",
+                                    "flexDirection": "column",
+                                    "alignItems": "center",
+                                    "justifyContent": "center"
+                                }, className="text-center"),
                             ], className="enhanced-upload-area"),
                             className="enhanced-file-upload",
                             style={
@@ -1063,7 +1069,9 @@ def generate_attack_technique_config(technique):
                                 'cursor': 'pointer',
                                 'position': 'relative',
                                 'overflow': 'hidden'
-                            }
+                            },
+                            multiple = input_config.get("multiple_files", False),
+                            accept = input_config.get("file_type", "*/*")
                         )
                     ]) if input_config['input_field_type'] == "upload" else html.Div()
                     
