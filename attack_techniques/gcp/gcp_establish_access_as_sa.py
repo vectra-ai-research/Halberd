@@ -107,7 +107,7 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            "credential": {"type": "str", "required": True, "default": None, "name": "JSON Credential", "input_field_type" : "upload"},
+            "credential": {"type": "str", "required": True, "default": None, "name": "JSON Credential", "input_field_type" : "upload", "multiple_files": False, "file_type": ".json"},
             "name": {"type": "str", "required": True, "default": None, "name": "Name", "input_field_type" : "text"},
             "save_and_activate": {"type": "bool", "required": False, "default": False, "name": "Save and Activate?", "input_field_type" : "bool"}
         }
