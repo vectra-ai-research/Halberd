@@ -473,7 +473,28 @@ def display_attack_technique_config_callback(technique):
     technique_config = generate_attack_technique_config(technique)
     return technique_config
 
-'''Callback to execute a technqiue'''
+'''Callback to display selected filename in technique config'''
+
+@callback(
+    Output(component_id = "technique-config-display-file-name", component_property = "children"),
+    Input({"type": "technique-config-display-file-upload", "index": ALL}, "filename")
+)
+def display_uploaded_file_names(filenames):
+    if filenames[0] == None:
+        return "No file(s) selected"
+    # If multiple files are selected for one upload, join them with commas
+    result = []
+    for fn in filenames:
+        if not fn:
+            result.append("")
+        elif isinstance(fn, list):
+            result.append(", ".join(fn))
+        else:
+            result.append(fn)
+    
+    return f"Selected files: {', '.join(result)}" 
+
+'''Callback to execute a technique'''
 @callback(
         Output(component_id = "execution-output-div", component_property = "children"), 
         Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
