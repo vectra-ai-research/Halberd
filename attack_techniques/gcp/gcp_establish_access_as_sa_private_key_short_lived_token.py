@@ -9,7 +9,7 @@ from google.auth.exceptions import RefreshError
 from core.gcp.gcp_access import GCPAccess
 
 @TechniqueRegistry.register
-class GCPEstablishAccessAsServiceAccount(BaseTechnique):
+class GCPEstablishAccessAsServiceAccountShortLivedToken(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
@@ -21,46 +21,61 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
         ]
 
         technique_references = [
-            TechniqueReference(ref_title = "Service accounts overview", ref_link = "https://cloud.google.com/iam/docs/understanding-service-accounts")
+            TechniqueReference(
+                ref_title="Service accounts overview", 
+                ref_link="https://cloud.google.com/iam/docs/understanding-service-accounts"
+            ),
+            TechniqueReference(
+                ref_title="Creating short-lived service account credentials", 
+                ref_link="https://cloud.google.com/iam/docs/creating-short-lived-service-account-credentials"
+            ),
+            TechniqueReference(
+                ref_title="Instance metadata service", 
+                ref_link="https://cloud.google.com/compute/docs/storing-retrieving-metadata"
+            )
         ]
 
-        super().__init__("Establish Access As Service Account", "Establish access to Google Cloud Platform using compromised or obtained service account credentials. This technique enables authentication as legitimate GCP service accounts, bypassing traditional user-based authentication mechanisms. The technique accepts service account JSON key files which contain the necessary cryptographic material for authentication including private keys, client information, and token endpoints. Once access is established, you inherit all IAM permissions and roles associated with the compromised service account, enabling privilege escalation and lateral movement within the GCP environment. The technique validates credential integrity, checks for expiration, and can optionally save credentials for persistent access across multiple attack operations.", mitre_techniques=mitre_techniques, references=technique_references)
+        super().__init__(
+            name="Establish Access with Service Account Short-Lived Token", 
+            description="Establish access to Google Cloud Platform using compromised or obtained short-lived access tokens. This technique enables authentication as legitimate GCP service accounts using temporary tokens that may have been extracted from metadata endpoints, stolen from running applications, or obtained through other means. Short-lived tokens provide a limited-time window for access, typically lasting 1 hour before expiration. Once access is established, you inherit all IAM permissions and roles associated with the service account that generated the token, enabling privilege escalation and lateral movement within the GCP environment.", 
+            mitre_techniques=mitre_techniques, 
+            references=technique_references
+        )
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
         try:
             # input validation
-            raw_credential: str = kwargs['credential']
+            token: str = kwargs['token']
             name: str = kwargs['name']
             save_and_activate: bool = kwargs['save_and_activate']
             
             # Input validation
-            if raw_credential in [None, ""]:
+            if token in [None, ""]:
                 return ExecutionStatus.FAILURE, {
                     "error": {"Error" : "Invalid Technique Input"},
                     "message": {"Error" : "Invalid Technique Input"}
                 }
-            
-            access_manager = GCPAccess(raw_credentials=raw_credential, name=name )
+
+            access_manager = GCPAccess(token=token, name=name)
             current_access = access_manager.credential
             
             caller_info_output = {
-                'email/client_id' : current_access.service_account_email,
-                'project' : current_access.project_id,
-                'validity': current_access.valid,
-                'expired' : current_access.expired
+                # 'email/client_id' : current_access.service_account_email,
+                # 'validity': current_access.valid,
+                'expired' : True
             }
 
-            if access_manager.get_validation() == False:
-                caller_info_output["validity"] = False
-                return ExecutionStatus.FAILURE, {
-                    "error" : str(caller_info_output),
-                    "message": "Failed to establish access to GCP. The credential is not valid"
-                }
-            else :
-                caller_info_output["validity"] = True
-            
-            if access_manager.get_expired_info() == True:
+            # if access_manager.get_validation() == False:
+            #     caller_info_output["validity"] = False
+            #     return ExecutionStatus.FAILURE, {
+            #         "error" : str(caller_info_output),
+            #         "message": "Failed to establish access to GCP. The credential is not valid"
+            #     }
+            # else :
+            #     caller_info_output["validity"] = True
+            expired, readable_str = access_manager.get_expired_info()
+            if expired == True:
                 caller_info_output["expired"] = True
                 return ExecutionStatus.FAILURE, {
                     "error" : str(caller_info_output),
@@ -68,6 +83,7 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
                 }
             else :
                 caller_info_output["expired"] = False
+                caller_info_output["expiry"] = readable_str
 
             if save_and_activate :
                 access_manager.save_credential()
@@ -78,8 +94,8 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
                     "access_status": {
                         "saved": save_and_activate,
                         "activated": save_and_activate,
-                        "scopes": current_access.scopes,
-                        "token_expiry": str(current_access.expiry) if current_access.expiry else None
+                        # "scopes": current_access.scopes,
+                        # "token_expiry": str(current_access.expiry) if current_access.expiry else None
                     }
                 },
                 "message": f"Successfully established access to target GCP tenant"
@@ -112,7 +128,8 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            "credential": {"type": "str", "required": True, "default": None, "name": "Credential Key JSON", "input_field_type" : "upload", "multiple_files": False, "file_type": ".json"},
+            # "credential": {"type": "str", "required": True, "default": None, "name": "Credential Key JSON", "input_field_type" : "upload", "multiple_files": False, "file_type": ".json"},
+            "token": {"type": "str", "required": True, "default": None, "name": "Token", "input_field_type" : "text"},
             "name": {"type": "str", "required": True, "default": None, "name": "Name", "input_field_type" : "text"},
             "save_and_activate": {"type": "bool", "required": False, "default": True, "name": "Save and Activate?", "input_field_type" : "bool"}
         }

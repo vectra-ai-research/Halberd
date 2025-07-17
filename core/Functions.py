@@ -1540,14 +1540,15 @@ def generate_gcp_access_info(credential_name):
         b64str_credential = current_access["credential"]
         raw_credential = manager.get_detailed_credential(data=b64str_credential).get("credential")
         try :
-            manager = GCPAccess(raw_credential,name=credential_name)
-            
-            if manager.get_expired_info() == False and manager.get_validation() == True:
-                credential = manager.credential
-                if isinstance(manager.credential, ServiceAccountCredentials):
-                    user = credential.service_account_email
-                if isinstance(manager.credential, UserAccountCredentials):
-                    user = credential.client_id
+            if current_access["type"] == "short_lived_token":
+                token = json.loads(raw_credential).get("token")
+                manager = GCPAccess(token=token, name=credential_name)
+                expiration_state, _ = manager.get_expired_info()
+                validity_card = None
+                if expiration_state == False:
+                    validity_card=html.Span("VALID SESSION", className="text-success")
+                else:
+                    validity_card=html.Span("CREDENTIAL EXPIRED OR INVALID", className="text-warning")
                 card_content = [
                     dbc.Row([
                         dbc.Col([
@@ -1557,46 +1558,109 @@ def generate_gcp_access_info(credential_name):
                                 html.Span(credential_name, className="ms-2 text-info")
                             ], className="mb-3"),
                             html.Div([
-                                DashIconify(icon="mdi:account-cash", className="me-2"),
-                                html.Strong("Email or Client-ID:"),
-                                html.Span(user, className="ms-2")
-                            ], className="mb-3"),
-                            html.Div([
-                                DashIconify(icon="ant-design:project-twotone", className="me-2"),
-                                html.Strong("Project:"),
-                                html.Span(credential.project_id, className="ms-2")
-                            ], className="mb-3"),
-                            html.Div([
-                                DashIconify(icon="mdi:telescope", className="me-2"),
-                                html.Strong("Scopes:"),
-                                html.Span(credential.scopes, className="ms-2")
+                                DashIconify(icon="mdi:account-key", className="me-2"),
+                                html.Strong("Credential Type"),
+                                html.Span("Short-lived token", className="ms-2 text-info")
                             ], className="mb-3")
                         ], width=12)
                     ])
                 ]
-            
+                
+
                 info_output_div.append(
                     dbc.Card(
                         dbc.CardBody([
                             html.H4([
                                 DashIconify(icon="mdi:google-cloud", className="me-2"),
                                 "Access: ",
-                                html.Span("VALID SESSION", className="text-success")
+                                validity_card
                             ], className="card-title mb-3"),
                             *card_content
                         ]),
                         className="mb-3 bg-halberd-dark"
                     )
                 )
+            else:
+                manager = GCPAccess(raw_credentials=raw_credential, name=credential_name)
+                expiration_state, _ = manager.get_expired_info()
+                if expiration_state == False and manager.get_validation() == True:
+                    credential = manager.credential
+                    if isinstance(manager.credential, ServiceAccountCredentials):
+                        user = credential.service_account_email
+                    # elif isinstance(manager.credential, UserAccountCredentials):
+                    #     user = credential.client_id
+                    # else:
+                    #     user = "unknown"
 
-        except: 
+                    card_content = [
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div([
+                                    DashIconify(icon="mdi:account-key", className="me-2"),
+                                    html.Strong("Name"),
+                                    html.Span(credential_name, className="ms-2 text-info")
+                                ], className="mb-3"),
+                                html.Div([
+                                    DashIconify(icon="mdi:account-key", className="me-2"),
+                                    html.Strong("Credential Type"),
+                                    html.Span("Service account private key", className="ms-2 text-info")
+                                ], className="mb-3"),
+                                html.Div([
+                                    DashIconify(icon="mdi:account-cash", className="me-2"),
+                                    html.Strong("Email or Client-ID:"),
+                                    html.Span(user, className="ms-2")
+                                ], className="mb-3"),
+                                html.Div([
+                                    DashIconify(icon="ant-design:project-twotone", className="me-2"),
+                                    html.Strong("Project:"),
+                                    html.Span(credential.project_id, className="ms-2")
+                                ], className="mb-3"),
+                                html.Div([
+                                    DashIconify(icon="mdi:telescope", className="me-2"),
+                                    html.Strong("Scopes:"),
+                                    html.Span(credential.scopes, className="ms-2")
+                                ], className="mb-3")
+                            ], width=12)
+                        ])
+                    ]
+                    
+                    # Create and append card for valid service account credentials
+                    info_output_div.append(
+                        dbc.Card(
+                            dbc.CardBody([
+                                html.H4([
+                                    DashIconify(icon="mdi:google-cloud", className="me-2"),
+                                    "Access: ",
+                                    html.Span("VALID SESSION", className="text-success")
+                                ], className="card-title mb-3"),
+                                *card_content
+                            ]),
+                            className="mb-3 bg-halberd-dark"
+                        )
+                    )
+                else:
+                    # Handle expired or invalid credentials
+                    info_output_div.append(
+                        dbc.Card(
+                            dbc.CardBody([
+                                html.H4([
+                                    DashIconify(icon="mdi:google-cloud", className="me-2"),
+                                    "Access: ",
+                                    html.Span("CREDENTIAL EXPIRED OR INVALID", className="text-warning")
+                                ], className="card-title")
+                            ]),
+                            className="mb-3 bg-halberd-dark"
+                        )
+                    )
+
+        except Exception as e:
             info_output_div.append(
                 dbc.Card(
                     dbc.CardBody([
                         html.H4([
                             DashIconify(icon="mdi:google-cloud", className="me-2"),
                             "Access: ",
-                            html.Span("CREDENTIAL ARE INVALID", className="text-danger")
+                            html.Span(f"SYSTEM ERROR: {e}", className="text-danger")
                         ], className="card-title")
                     ]),
                     className="mb-3 bg-halberd-dark"
