@@ -138,9 +138,7 @@ class GCPAccess():
                 if self.credential.expired == True:
                     return True, None
                 return False, None
-            # elif isinstance(self.credential, UserAccountCredentials):
-            #     return True
-            elif isinstance(self.credential, ShortLivedTokenCredentials):
+            elif self.credential_type == "short_lived_token":
                 response_state, token_info = self._get_token_info(self.credential.token)
     
                 if response_state == True:
@@ -150,8 +148,14 @@ class GCPAccess():
                     return False, readable_str
                 else:
                     return True, None
-                # Short-lived tokens do not have an expiry, so we assume they are always valid
-                
+            elif isinstance(self.credential, UserAccountCredentials):
+                self.refresh_token()
+                if self.credential.expired == True:
+                    return True, None
+                return False, None
+                # return True
+            else:
+                raise ValueError("Invalid credential type for expired info check")
             
         except RefreshError as e:
             raise e

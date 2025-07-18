@@ -1540,118 +1540,77 @@ def generate_gcp_access_info(credential_name):
         b64str_credential = current_access["credential"]
         raw_credential = manager.get_detailed_credential(data=b64str_credential).get("credential")
         try :
+            # Helper function to create info row
+            def create_info_row(icon, label, value, value_class=""):
+                return html.Div([
+                    DashIconify(icon=icon, className="me-2"),
+                    html.Strong(label),
+                    html.Span(value, className=f"ms-2 {value_class}")
+                ], className="mb-3")
+
+            # Helper function to create GCP card
+            def create_gcp_card(validity_status, validity_class, card_content):
+                return dbc.Card(
+                    dbc.CardBody([
+                        html.H4([
+                            DashIconify(icon="mdi:google-cloud", className="me-2"),
+                            "Access: ",
+                            html.Span(validity_status, className=validity_class)
+                        ], className="card-title mb-3"),
+                        dbc.Row([dbc.Col(card_content, width=12)])
+                    ]),
+                    className="mb-3 bg-halberd-dark"
+                )
+
             if current_access["type"] == "short_lived_token":
                 token = json.loads(raw_credential).get("token")
                 manager = GCPAccess(token=token, name=credential_name)
                 expiration_state, _ = manager.get_expired_info()
-                validity_card = None
-                if expiration_state == False:
-                    validity_card=html.Span("VALID SESSION", className="text-success")
-                else:
-                    validity_card=html.Span("CREDENTIAL EXPIRED OR INVALID", className="text-warning")
+                
+                validity_status = "VALID SESSION" if not expiration_state else "CREDENTIAL EXPIRED OR INVALID"
+                validity_class = "text-success" if not expiration_state else "text-warning"
+                
                 card_content = [
-                    dbc.Row([
-                        dbc.Col([
-                            html.Div([
-                                DashIconify(icon="mdi:account-key", className="me-2"),
-                                html.Strong("Name"),
-                                html.Span(credential_name, className="ms-2 text-info")
-                            ], className="mb-3"),
-                            html.Div([
-                                DashIconify(icon="mdi:account-key", className="me-2"),
-                                html.Strong("Credential Type"),
-                                html.Span("Short-lived token", className="ms-2 text-info")
-                            ], className="mb-3")
-                        ], width=12)
-                    ])
+                    create_info_row("mdi:account-key", "Name", credential_name, "text-info"),
+                    create_info_row("mdi:account-key", "Credential Type", "Short-lived token", "text-info")
                 ]
                 
-
-                info_output_div.append(
-                    dbc.Card(
-                        dbc.CardBody([
-                            html.H4([
-                                DashIconify(icon="mdi:google-cloud", className="me-2"),
-                                "Access: ",
-                                validity_card
-                            ], className="card-title mb-3"),
-                            *card_content
-                        ]),
-                        className="mb-3 bg-halberd-dark"
-                    )
-                )
+                info_output_div.append(create_gcp_card(validity_status, validity_class, card_content))
             else:
                 manager = GCPAccess(raw_credentials=raw_credential, name=credential_name)
                 expiration_state, _ = manager.get_expired_info()
+                
                 if expiration_state == False and manager.get_validation() == True:
                     credential = manager.credential
+                    
+                    # Determine credential type and email
                     if isinstance(manager.credential, ServiceAccountCredentials):
-                        user = credential.service_account_email
-                    # elif isinstance(manager.credential, UserAccountCredentials):
-                    #     user = credential.client_id
-                    # else:
-                    #     user = "unknown"
-
+                        service_account_email = credential.service_account_email
+                        credential_type = "Service Account Private Key"
+                    else:
+                        service_account_email = None
+                        credential_type = "Application Default Credential"
+                    
+                    # Build card content
                     card_content = [
-                        dbc.Row([
-                            dbc.Col([
-                                html.Div([
-                                    DashIconify(icon="mdi:account-key", className="me-2"),
-                                    html.Strong("Name"),
-                                    html.Span(credential_name, className="ms-2 text-info")
-                                ], className="mb-3"),
-                                html.Div([
-                                    DashIconify(icon="mdi:account-key", className="me-2"),
-                                    html.Strong("Credential Type"),
-                                    html.Span("Service account private key", className="ms-2 text-info")
-                                ], className="mb-3"),
-                                html.Div([
-                                    DashIconify(icon="mdi:account-cash", className="me-2"),
-                                    html.Strong("Email or Client-ID:"),
-                                    html.Span(user, className="ms-2")
-                                ], className="mb-3"),
-                                html.Div([
-                                    DashIconify(icon="ant-design:project-twotone", className="me-2"),
-                                    html.Strong("Project:"),
-                                    html.Span(credential.project_id, className="ms-2")
-                                ], className="mb-3"),
-                                html.Div([
-                                    DashIconify(icon="mdi:telescope", className="me-2"),
-                                    html.Strong("Scopes:"),
-                                    html.Span(credential.scopes, className="ms-2")
-                                ], className="mb-3")
-                            ], width=12)
-                        ])
+                        create_info_row("mdi:account-key", "Name", credential_name, "text-info"),
+                        create_info_row("mdi:account-key", "Credential Type", credential_type, "text-info")
                     ]
                     
-                    # Create and append card for valid service account credentials
-                    info_output_div.append(
-                        dbc.Card(
-                            dbc.CardBody([
-                                html.H4([
-                                    DashIconify(icon="mdi:google-cloud", className="me-2"),
-                                    "Access: ",
-                                    html.Span("VALID SESSION", className="text-success")
-                                ], className="card-title mb-3"),
-                                *card_content
-                            ]),
-                            className="mb-3 bg-halberd-dark"
-                        )
-                    )
+                    # Add email if available
+                    if service_account_email:
+                        card_content.append(create_info_row("mdi:account-cash", "Email", service_account_email))
+                    
+                    # Add project and scopes
+                    card_content.extend([
+                        create_info_row("ant-design:project-twotone", "Project:", credential.project_id) if getattr(credential, "project_id", None) else None,
+                        create_info_row("mdi:telescope", "Scopes:", str(credential.scopes))
+                    ])
+                    
+                    info_output_div.append(create_gcp_card("VALID SESSION", "text-success", card_content))
                 else:
                     # Handle expired or invalid credentials
-                    info_output_div.append(
-                        dbc.Card(
-                            dbc.CardBody([
-                                html.H4([
-                                    DashIconify(icon="mdi:google-cloud", className="me-2"),
-                                    "Access: ",
-                                    html.Span("CREDENTIAL EXPIRED OR INVALID", className="text-warning")
-                                ], className="card-title")
-                            ]),
-                            className="mb-3 bg-halberd-dark"
-                        )
-                    )
+                    info_output_div.append(create_gcp_card("CREDENTIAL EXPIRED OR INVALID", "text-warning", []))
 
         except Exception as e:
             info_output_div.append(
