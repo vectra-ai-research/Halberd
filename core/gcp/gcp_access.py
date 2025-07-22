@@ -14,14 +14,12 @@ class GCPAccess():
     """GCP access manager"""
     credential = None
     credential_type: str = None
+    credential_name: str = None
 
     def __init__(self, token=None, raw_credentials=None, scopes=None, name=None):
         """Initialize GCPAccess directly with raw credential string and optional scopes"""
         # Only initialize if it's not already initialized
         if raw_credentials != None or token != None:
-            # Default scope if none provided
-            if scopes is None:
-                scopes = ["https://www.googleapis.com/auth/cloud-platform"]
             
             try:
                 if raw_credentials is not None and token is None:
@@ -42,6 +40,9 @@ class GCPAccess():
                     if name is None:
                         raise ValueError("Credential name is required.")
 
+                    # Default scope if none provided
+                    if scopes is None:
+                        scopes = ["https://www.googleapis.com/auth/cloud-platform"]
 
                     # Detect credential type and initialize
                     if self._is_service_account(loaded_credentials):
@@ -61,10 +62,12 @@ class GCPAccess():
                         self.credential.name = name
                         self.credential_type = "user_account"
                 elif token is not None and raw_credentials is None:
+                    _, token_info = self._get_token_info(token)
+
                     # Initialize with short-lived token
                     self.credential = ShortLivedTokenCredentials(
                         token=token,
-                        scopes=scopes,
+                        scopes=token_info["scope"].split(" ") if "scope" in token_info else ["https://www.googleapis.com/auth/cloud-platform"]
                     )
                     self.credential.current = True
                     self.credential.name = name
@@ -261,7 +264,28 @@ class GCPAccess():
         credentials = self.list_credentials()
         for credential in credentials:
             if credential["current"] == True:
-                return credential
+                decoded_cred = base64.b64decode(credential["credential"]).decode("utf-8")
+                cred_dict = json.loads(decoded_cred)
+                if credential["type"] == "service_account_private_key":
+                    self.credential = ServiceAccountCredentials.from_service_account_info(
+                        cred_dict,
+                        scopes=["https://www.googleapis.com/auth/cloud-platform"]
+                    )
+                elif credential["type"] == "user_account":
+                    self.credential = UserAccountCredentials.from_authorized_user_info(
+                        cred_dict,
+                        scopes=["https://www.googleapis.com/auth/cloud-platform"]
+                    )
+                elif credential["type"] == "short_lived_token":
+                    cred_dict = json.loads(cred_dict)
+                    token = cred_dict.get("token") if isinstance(cred_dict, dict) else None
+                    scopes = cred_dict.get("scopes") if isinstance(cred_dict, dict) else ["https://www.googleapis.com/auth/cloud-platform"]
+                    self.credential = ShortLivedTokenCredentials(token=token, scopes=scopes)
+                else:
+                    self.credential = cred_dict
+                self.credential_type = credential["type"]
+                self.credential_name = credential["name"]
+                return
         raise ValueError("No current saved credential")
         
     

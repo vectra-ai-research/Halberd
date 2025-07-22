@@ -127,7 +127,7 @@ layout = html.Div([
                                 id="tactic-dropdown",
                                 className="enhanced-dropdown",
                                 placeholder="Select a tactic...",
-                                clearable=False
+                                clearable=False,
                             )
                         ], className="enhanced-dropdown-container mb-4"),
                     ]),
@@ -145,6 +145,7 @@ layout = html.Div([
                                 className="enhanced-dropdown",
                                 placeholder="Select a technique...",
                                 clearable=False,
+                                searchable=True,
                                 style={"marginBottom": "0"},
                             )
                         ], className="enhanced-dropdown-container mb-4")
@@ -898,7 +899,9 @@ def generate_gcp_credential_options_dropdown_callback(credential_name):
 def generate_gcp_access_info_callback(n_interval, value):
     if value == None :
         try : 
-            value = GCPAccess().get_current_access().get("name")
+            manager = GCPAccess()
+            manager.get_current_access()
+            value = manager.credential_name
         except:
             pass
     return generate_gcp_access_info(value)
@@ -1050,8 +1053,9 @@ def update_access_button_callback(active_tab, is_open):
             return "No Azure Access", "danger"
     elif active_tab == "tab-attack-GCP":
         gcp_manager = GCPAccess()
+        gcp_manager.get_current_access()
         try :
-            user = gcp_manager.get_current_access().get("name")
+            user = gcp_manager.credential_name
             if user != None:
                 return user, "success"
             else:
