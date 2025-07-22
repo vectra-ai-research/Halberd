@@ -45,8 +45,6 @@ class GCPEstablishAccessAsAuthorizedUserApplicationDefault(BaseTechnique):
             current_access = access_manager.credential
             
             caller_info_output = {
-                'email/client_id' : current_access.service_account_email,
-                'project' : current_access.project_id,
                 'validity': current_access.valid,
                 'expired' : current_access.expired
             }
