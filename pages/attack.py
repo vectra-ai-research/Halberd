@@ -1052,9 +1052,9 @@ def update_access_button_callback(active_tab, is_open):
         except:
             return "No Azure Access", "danger"
     elif active_tab == "tab-attack-GCP":
-        gcp_manager = GCPAccess()
-        gcp_manager.get_current_access()
         try :
+            gcp_manager = GCPAccess()
+            gcp_manager.get_current_access()
             user = gcp_manager.credential_name
             if user != None:
                 return user, "success"

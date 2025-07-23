@@ -1537,10 +1537,10 @@ def generate_gcp_access_info(credential_name):
     info_output_div = []
 
     if credential_name:
-        manager = GCPAccess()
-        manager.set_activate_credentials(credential_name)
-        manager.get_current_access()
         try :
+            manager = GCPAccess()
+            manager.set_activate_credentials(credential_name)
+            manager.get_current_access()
             # Helper function to create info row
             def create_info_row(icon, label, value, value_class=""):
                 return html.Div([
