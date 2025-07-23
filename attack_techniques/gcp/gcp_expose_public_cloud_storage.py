@@ -1,5 +1,6 @@
 import base64
 import json
+from os import access
 import requests
 from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, TechniqueNote, TechniqueReference
 from ..technique_registry import TechniqueRegistry
@@ -38,6 +39,7 @@ class GCPExposePublicCloudStorage(BaseTechnique):
         try:
             bucket_name: str = kwargs.get("bucket_name", None)
             path: str = kwargs.get("path", None)
+            project_id: str = kwargs.get("project_id", None)
             # Input validation
             if bucket_name in [None, ""]:
                 return ExecutionStatus.FAILURE, {
@@ -46,16 +48,10 @@ class GCPExposePublicCloudStorage(BaseTechnique):
                 }
             # Create storage client using current credentials
             manager = GCPAccess()
-            current_access = manager.get_current_access()
-            loaded_credential = json.loads(base64.b64decode(current_access["credential"]))
-            scopes = [
-                "https://www.googleapis.com/auth/devstorage.full_control"
-            ]
-            request = Request()
-            credential = ServiceAccountCredentials.from_service_account_info(loaded_credential, scopes=scopes)
-            credential.refresh(request=request)
-            access_token = credential.token
-            storage_client = storage.Client(credentials=credential)
+            manager.get_current_access()
+            credential= manager.credential
+
+            storage_client = storage.Client(project=project_id, credentials=credential)
 
             # Get the bucket
             bucket = storage_client.get_bucket(bucket_name)
@@ -110,7 +106,8 @@ class GCPExposePublicCloudStorage(BaseTechnique):
                         managed_folder_id=path,
                     )
                     managed_folder = storage_control_client.create_managed_folder(request=request)
-                
+                access_token = credential.token
+
                 # Set Headers for IAM policy update 
                 headers = {
                     "Authorization": f"Bearer {access_token}",
@@ -149,6 +146,13 @@ class GCPExposePublicCloudStorage(BaseTechnique):
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
+            "project_id": {
+                "type": "str",
+                "required": True,
+                "default": None,
+                "name": "GCP Project ID",
+                "input_field_type": "text"
+            },
             "bucket_name": {
                 "type": "str",
                 "required": True,

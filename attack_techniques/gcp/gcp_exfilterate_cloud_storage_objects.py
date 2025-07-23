@@ -149,7 +149,7 @@ class GCPExfilStorageBuckets(BaseTechnique):
             # Input sanitization - remove any path separators from bucket name
             bucket_name = os.path.basename(bucket_name)
             
-            if path.startswith("/"):
+            if path is not None and path.startswith("/"):
                 path = path.lstrip("/")
             version_enabled : bool = None
 
@@ -160,14 +160,8 @@ class GCPExfilStorageBuckets(BaseTechnique):
 
             # Create storage client using current credentials
             manager = GCPAccess()
-            current_access = manager.get_current_access()
-            loaded_credential = json.loads(base64.b64decode(current_access["credential"]))
-            scopes = [
-                "https://www.googleapis.com/auth/devstorage.read_only"
-            ]
-            request = Request()
-            credential = ServiceAccountCredentials.from_service_account_info(loaded_credential, scopes=scopes)
-            credential.refresh(request=request)
+            manager.get_current_access()
+            credential = manager.credential
             storage_client = storage.Client(credentials=credential)
 
             # Get bucket
