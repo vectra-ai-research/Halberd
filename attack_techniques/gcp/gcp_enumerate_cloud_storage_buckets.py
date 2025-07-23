@@ -96,26 +96,10 @@ class GCPEnumerateCloudStorageBuckets(BaseTechnique):
 
             # Initialize GCP credentials
             manager = GCPAccess()
-            current_access = manager.get_current_access()
-            if not current_access:
-                return ExecutionStatus.FAILURE, {
-                    "error": "No valid GCP credentials found",
-                    "message": "Failed to enumerate storage buckets - No valid credentials"
-                }
-            
-            loaded_credential = json.loads(base64.b64decode(current_access["credential"]))
-            scopes = [
-                "https://www.googleapis.com/auth/devstorage.read_only"
-            ]
-            request = Request()
-            credential = ServiceAccountCredentials.from_service_account_info(loaded_credential, scopes=scopes)
-            credential.refresh(request=request)
-
-            # Initialize storage client with project if specified
-            if project_id:
-                storage_client = storage.Client(project=project_id, credentials=credential)
-            else:
-                storage_client = storage.Client(credentials=credential)
+            manager.get_current_access()
+        
+            credential = manager.credential
+            storage_client = storage.Client(project=project_id, credentials=credential)
             
             # List all buckets with filters
             buckets = []
@@ -238,7 +222,7 @@ class GCPEnumerateCloudStorageBuckets(BaseTechnique):
         return {
             "project_id": {
                 "type": "str",
-                "required": False,
+                "required": True,
                 "default": None,
                 "name": "Project ID",
                 "input_field_type": "text"

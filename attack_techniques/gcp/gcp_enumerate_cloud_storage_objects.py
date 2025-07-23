@@ -129,6 +129,7 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
         try:
+            project_id: str = kwargs.get("project_id", None)
             bucket_name: str = kwargs.get("bucket_name", None)
             folder_path: str = kwargs.get("folder_path", None)
             recursive: bool = kwargs.get("recursive", False)
@@ -143,18 +144,12 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
 
             # Get GCP credentials from GCP access manager
             manager = GCPAccess()
-            current_access = manager.get_current_access()
-            loaded_credential = json.loads(base64.b64decode(current_access["credential"]))
-            scopes = [
-                "https://www.googleapis.com/auth/devstorage.read_only"
-            ]
-            request = Request()
-            credential = ServiceAccountCredentials.from_service_account_info(loaded_credential, scopes=scopes)
-            credential.refresh(request=request)
-            
+            manager.get_current_access()
+            credential = manager.credential
+
             # Initialize storage client
-            storage_client = storage.Client(credentials=credential)
-            
+            storage_client = storage.Client(project=project_id, credentials=credential)
+
             # Get bucket
             try:
                 bucket = storage_client.get_bucket(bucket_name)
@@ -202,6 +197,13 @@ class GCPEnumerateCloudStorageObjects(BaseTechnique):
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
+            "project_id": {
+                "type": "str",
+                "required": True,
+                "default": None,
+                "name": "Project ID",
+                "input_field_type": "text"
+            },
             "bucket_name": {
                 "type": "str",
                 "required": True,
