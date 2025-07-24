@@ -113,6 +113,7 @@ class SessionManager:
         cls._sessions[session_name]['active_session']= True
         
         
+    @classmethod
     def remove_session(cls, session_name) -> None:
         """
         Remove a session by its name.
