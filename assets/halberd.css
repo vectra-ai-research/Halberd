@@ -2414,3 +2414,137 @@
     --shadow-heavy: rgba(0, 0, 0, 0.6);
   }
 }
+
+
+/* Credential Dropdown Styles (Multi-Provider Support) */
+.credential-dropdown .dropdown-toggle {
+    background: rgba(40, 40, 40, 0.8) !important;
+    border: 1px solid rgba(240, 84, 84, 0.3) !important;
+    border-radius: 6px !important;
+    padding: 8px 16px !important;
+    color: var(--text-primary) !important;
+    transition: all 0.2s ease !important;
+}
+
+.credential-dropdown .dropdown-toggle:hover {
+    background: rgba(240, 84, 84, 0.1) !important;
+    border-color: rgba(240, 84, 84, 0.5) !important;
+}
+
+.credential-dropdown .dropdown-toggle:focus {
+    box-shadow: 0 0 0 2px rgba(240, 84, 84, 0.2) !important;
+}
+
+.credential-dropdown .dropdown-menu {
+    background: rgba(26, 26, 26, 0.95) !important;
+    border: 1px solid rgba(240, 84, 84, 0.3) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(10px) !important;
+    min-width: 350px !important;
+    max-height: 450px !important;
+    overflow-y: auto !important;
+}
+
+.credential-dropdown-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    transition: all 0.2s ease !important;
+}
+
+.credential-dropdown-item:hover {
+    background: rgba(240, 84, 84, 0.05) !important;
+    color: var(--text-primary) !important;
+}
+
+.credential-dropdown-item:last-child {
+    border-bottom: none !important;
+}
+
+.credential-dropdown-item-content {
+    min-width: 320px !important;
+}
+
+.credential-dropdown-item-content .btn {
+    font-size: 0.75rem !important;
+    padding: 4px 8px !important;
+    border-radius: 4px !important;
+}
+
+.credential-dropdown-item-content .btn:disabled {
+    opacity: 0.6 !important;
+    cursor: not-allowed !important;
+}
+
+.credential-dropdown .dropdown-header {
+    color: var(--brand-red) !important;
+    font-weight: 600 !important;
+    font-size: var(--text-sm) !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    padding: 8px 16px 4px 16px !important;
+}
+
+.credential-dropdown .dropdown-divider {
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    margin: 8px 0 !important;
+}
+
+/* Credential count display */
+#credential-count-display {
+    font-family: var(--font-monospace) !important;
+    font-weight: 500 !important;
+    font-size: var(--text-sm) !important;
+}
+
+/* Credential details modal */
+.credential-details-modal .modal-content {
+    background: rgba(26, 26, 26, 0.95) !important;
+    border: 1px solid rgba(240, 84, 84, 0.3) !important;
+    border-radius: 12px !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.credential-details-modal .modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.credential-details-modal .modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Delete credential button styling */
+.credential-dropdown-item .btn-link[id*="delete-expired-credential"],
+.credential-dropdown-item .btn-link[id*="delete-credential"] {
+    color: #dc3545 !important;
+    transition: all 0.2s ease;
+    border: none !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.credential-dropdown-item .btn-link[id*="delete-expired-credential"]:hover,
+.credential-dropdown-item .btn-link[id*="delete-credential"]:hover {
+    color: #bb2d3b !important;
+    transform: scale(1.15);
+    background: none !important;
+}
+
+.credential-dropdown-item .btn-link[id*="delete-expired-credential"]:focus,
+.credential-dropdown-item .btn-link[id*="delete-credential"]:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+.credential-dropdown-item .btn-link[id*="delete-expired-credential"]:active,
+.credential-dropdown-item .btn-link[id*="delete-credential"]:active {
+    transform: scale(1.05);
+    background: none !important;
+}
+
+/* Provider-specific icon styling */
+.credential-provider-icon {
+    width: 18px !important;
+    height: 18px !important;
+    margin-right: 6px !important;
+    flex-shrink: 0 !important;
+}

@@ -188,6 +188,22 @@ class GCPAccess():
                 filtered_credentials.append(credential)
         with open(GCP_CREDS_FILE, 'w') as file:
             json.dump(filtered_credentials, file)
+    
+    def delete_credential_by_name(self, credential_name: str):
+        """Delete a specific credential by name"""
+        credentials = self.list_credentials()
+        original_count = len(credentials)
+        filtered_credentials = []
+        
+        for credential in credentials:
+            if credential["name"] != credential_name:
+                filtered_credentials.append(credential)
+        
+        if len(filtered_credentials) == original_count:
+            raise ValueError(f"Credential '{credential_name}' not found")
+        
+        with open(GCP_CREDS_FILE, 'w') as file:
+            json.dump(filtered_credentials, file)
           
             
     
