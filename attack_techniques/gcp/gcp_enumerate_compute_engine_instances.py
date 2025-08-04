@@ -40,6 +40,12 @@ class GCPEnumerateComputeEngineInstances(BaseTechnique):
                 technique_name="System Information Discovery",
                 tactics=["Discovery"],
                 sub_technique_name=None
+            ),
+            MitreTechnique(
+                technique_id="T1614",
+                technique_name="System Location Discovery",
+                tactics=["Discovery"],
+                sub_technique_name=None
             )
         ]
         technique_notes = [

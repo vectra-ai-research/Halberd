@@ -19,10 +19,10 @@ class GCPExposePublicCloudStorage(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
-                technique_id="T1567",
-                technique_name="Exfiltration Over Web Service",
-                tactics=["Exfiltration"],
-                sub_technique_name=None
+                technique_id="T1098.003",
+                technique_name="Account Manipulation",
+                tactics=["Persistence", "Privilege Escalation"],
+                sub_technique_name="Additional Cloud Roles"
             )
         ]
         technique_references = [

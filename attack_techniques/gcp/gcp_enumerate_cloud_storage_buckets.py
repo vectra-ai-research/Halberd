@@ -43,6 +43,12 @@ class GCPEnumerateCloudStorageBuckets(BaseTechnique):
                 technique_name="Cloud Storage Object Discovery",
                 tactics=["Discovery"],
                 sub_technique_name=None
+            ),
+            MitreTechnique(
+                technique_id="T1530",
+                technique_name="Data from Cloud Storage",
+                tactics=["Collection"],
+                sub_technique_name=None
             )
         ]
         technique_notes = [

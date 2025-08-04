@@ -17,6 +17,12 @@ class GCPEstablishAccessAsAuthorizedUserApplicationDefault(BaseTechnique):
                 technique_name="Valid Accounts",
                 tactics=["Defense Evasion", "Persistence", "Privilege Escalation", "Initial Access"],
                 sub_technique_name="Cloud Accounts"
+            ),
+            MitreTechnique(
+                technique_id="T1550.001",
+                technique_name="Use Alternate Authentication Material",
+                tactics=["Defense Evasion", "Lateral Movement"],
+                sub_technique_name="Application Access Token"
             )
         ]
 
