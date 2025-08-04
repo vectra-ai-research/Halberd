@@ -146,28 +146,10 @@ class GCPPersistenceViaSSHKeyAddition(BaseTechnique):
             ssh_public_key: str = kwargs['ssh_public_key']
             username: str = kwargs['username']
 
-            try:
-                manager = GCPAccess()
-                current_access = manager.get_current_access()
-                if not current_access or "credential" not in current_access:
-                    raise CredentialError("Failed to obtain current access credentials")
-
-                loaded_credential = json.loads(
-                    base64.b64decode(current_access["credential"])
-                )
-                scopes = ["https://www.googleapis.com/auth/cloud-platform"]
-                request = Request()
-                credential = ServiceAccountCredentials.from_service_account_info(
-                    loaded_credential,
-                    scopes=scopes
-                )
-                credential.refresh(request=request)
-            except (json.JSONDecodeError, base64.binascii.Error) as e:
-                raise CredentialError(f"Failed to decode credentials: {str(e)}")
-            except RefreshError as e:
-                raise CredentialError(f"Failed to refresh credentials: {str(e)}")
-            except GoogleAuthError as e:
-                raise CredentialError(f"Authentication error: {str(e)}")
+            # try:
+            manager = GCPAccess()
+            manager.get_current_access()
+            credential = manager.credential
 
             try:
                 compute_service = build('compute', 'v1', credentials=credential)
