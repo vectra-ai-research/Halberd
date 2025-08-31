@@ -108,7 +108,7 @@ class CredentialManager:
         # Delete button
         button_type = "delete-expired-credential" if is_expired else "delete-credential"
         delete_btn = html.Button(
-            [DashIconify(icon="mdi:close-circle", style={"fontSize": "18px"})],
+            [DashIconify(icon="mdi:delete", style={"fontSize": "18px"})],
             id={"type": button_type, "credential_id": credential_data.id, "provider": provider_name},
             className="btn btn-link text-danger p-0 border-0 ms-auto",
             style={"cursor": "pointer", "background": "none", "fontSize": "18px"},
