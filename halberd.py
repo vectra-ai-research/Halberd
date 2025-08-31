@@ -73,11 +73,12 @@ navbar = dbc.NavbarSimple(
                     html.Span("Credentials", id="credential-count-display")
                 ], className="d-flex align-items-center"),
                 children=[
-                    dbc.DropdownMenuItem("Loading...", id="credential-dropdown-content")
+                    dbc.DropdownMenuItem("None Available", id="credential-dropdown-content")
                 ],
                 nav=True,
                 in_navbar=True,
-                className="credential-dropdown"
+                className="credential-dropdown",
+                caret=False
             )
         ),
         dbc.NavItem(
