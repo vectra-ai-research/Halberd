@@ -1,8 +1,6 @@
 from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, TechniqueReference
 from ..technique_registry import TechniqueRegistry
 from typing import Dict, Any, Tuple
-import json
-import base64
 from google.oauth2 import service_account
 from google.auth.transport.requests import Request
 from google.auth.exceptions import RefreshError
@@ -67,19 +65,9 @@ class GCPEstablishAccessAsServiceAccountShortLivedToken(BaseTechnique):
             current_access = access_manager.credential
             
             caller_info_output = {
-                # 'email/client_id' : current_access.service_account_email,
-                # 'validity': current_access.valid,
                 'expired' : True
             }
 
-            # if access_manager.get_validation() == False:
-            #     caller_info_output["validity"] = False
-            #     return ExecutionStatus.FAILURE, {
-            #         "error" : str(caller_info_output),
-            #         "message": "Failed to establish access to GCP. The credential is not valid"
-            #     }
-            # else :
-            #     caller_info_output["validity"] = True
             expired, readable_str = access_manager.get_expired_info()
             if expired == True:
                 caller_info_output["expired"] = True
@@ -99,9 +87,7 @@ class GCPEstablishAccessAsServiceAccountShortLivedToken(BaseTechnique):
                     "credential_info": caller_info_output,
                     "access_status": {
                         "saved": save_and_activate,
-                        "activated": save_and_activate,
-                        # "scopes": current_access.scopes,
-                        # "token_expiry": str(current_access.expiry) if current_access.expiry else None
+                        "activated": save_and_activate
                     }
                 },
                 "message": f"Successfully established access to target GCP tenant"
@@ -134,7 +120,6 @@ class GCPEstablishAccessAsServiceAccountShortLivedToken(BaseTechnique):
 
     def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
-            # "credential": {"type": "str", "required": True, "default": None, "name": "Credential Key JSON", "input_field_type" : "upload", "multiple_files": False, "file_type": ".json"},
             "token": {"type": "str", "required": True, "default": None, "name": "Token", "input_field_type" : "text"},
             "name": {"type": "str", "required": True, "default": None, "name": "Name", "input_field_type" : "text"},
             "save_and_activate": {"type": "bool", "required": False, "default": True, "name": "Save and Activate?", "input_field_type" : "bool"}
