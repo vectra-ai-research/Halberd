@@ -1,3 +1,4 @@
+import string
 from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, TechniqueNote, TechniqueReference
 from ..technique_registry import TechniqueRegistry
 
@@ -14,6 +15,8 @@ from core.gcp.gcp_access import GCPAccess
 from google.cloud import compute
 from google.api_core.exceptions import PermissionDenied, Forbidden
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
+from google.oauth2.credentials import Credentials as UserAccountCredentials
+from google.oauth2.credentials import Credentials as ShortLivedTokenCredentials
 from google.auth.transport.requests import Request
 
 @TechniqueRegistry.register
@@ -35,6 +38,12 @@ class GCPEnumerateComputeEngineInstances(BaseTechnique):
             MitreTechnique(
                 technique_id="T1082",
                 technique_name="System Information Discovery",
+                tactics=["Discovery"],
+                sub_technique_name=None
+            ),
+            MitreTechnique(
+                technique_id="T1614",
+                technique_name="System Location Discovery",
                 tactics=["Discovery"],
                 sub_technique_name=None
             )
@@ -315,14 +324,8 @@ class GCPEnumerateComputeEngineInstances(BaseTechnique):
             
             # Get GCP credentials from GCP access manager
             manager = GCPAccess()
-            current_access = manager.get_current_access()
-            loaded_credential = json.loads(base64.b64decode(current_access["credential"]))
-            scopes = [
-                "https://www.googleapis.com/auth/compute.readonly"
-            ]
-            request = Request()
-            credential = ServiceAccountCredentials.from_service_account_info(loaded_credential, scopes=scopes)
-            credential.refresh(request=request)
+            manager.get_current_access()
+            credential = manager.credential
 
             # Initialize compute client with project if specified
             if project_id is None:

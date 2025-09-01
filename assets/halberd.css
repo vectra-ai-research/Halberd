@@ -94,6 +94,7 @@
   .halberd-brand {
     font-family: var(--font-brand);
     font-weight: 700;
+    font-size: medium;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     color: var(--brand-red);
@@ -1078,6 +1079,7 @@
     position: relative;
     z-index: 1000;
     margin-bottom: 1rem;
+    overflow: visible;
 }
 
 .enhanced-dropdown-container::before {
@@ -1149,6 +1151,7 @@
     left: 0 !important;
     right: 0 !important;
     margin-top: 4px;
+    white-space: nowrap !important;
 }
 
 .enhanced-dropdown .Select-option,

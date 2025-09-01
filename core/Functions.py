@@ -1,3 +1,4 @@
+import base64
 import yaml
 import csv
 import os
@@ -22,6 +23,8 @@ from core.gcp.gcp_access import GCPAccess
 from attack_techniques.technique_registry import TechniqueRegistry
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from google.oauth2.credentials import Credentials as UserAccountCredentials
+from google.auth.exceptions import RefreshError
+
 
 def generate_technique_info(technique_id)-> list:
     """
@@ -1534,69 +1537,123 @@ def generate_gcp_access_info(credential_name):
     info_output_div = []
 
     if credential_name:
-        manager = GCPAccess()
-        manager.set_activate_credentials(credential_name)
-        current_access = manager.get_current_access()
-        b64str_credential = current_access["credential"]
-        raw_credential = manager.get_detailed_credential(data=b64str_credential).get("credential")
         try :
-            manager = GCPAccess(raw_credential,name=credential_name)
-            
-            if manager.get_expired_info() == False and manager.get_validation() == True:
-                credential = manager.credential
-                if isinstance(manager.credential, ServiceAccountCredentials):
-                    user = credential.service_account_email
-                if isinstance(manager.credential, UserAccountCredentials):
-                    user = credential.client_id
-                card_content = [
-                    dbc.Row([
-                        dbc.Col([
-                            html.Div([
-                                DashIconify(icon="mdi:account-key", className="me-2"),
-                                html.Strong("Name"),
-                                html.Span(credential_name, className="ms-2 text-info")
-                            ], className="mb-3"),
-                            html.Div([
-                                DashIconify(icon="mdi:account-cash", className="me-2"),
-                                html.Strong("Email or Client-ID:"),
-                                html.Span(user, className="ms-2")
-                            ], className="mb-3"),
-                            html.Div([
-                                DashIconify(icon="ant-design:project-twotone", className="me-2"),
-                                html.Strong("Project:"),
-                                html.Span(credential.project_id, className="ms-2")
-                            ], className="mb-3"),
-                            html.Div([
-                                DashIconify(icon="mdi:telescope", className="me-2"),
-                                html.Strong("Scopes:"),
-                                html.Span(credential.scopes, className="ms-2")
-                            ], className="mb-3")
-                        ], width=12)
-                    ])
-                ]
-            
-                info_output_div.append(
-                    dbc.Card(
-                        dbc.CardBody([
-                            html.H4([
-                                DashIconify(icon="mdi:google-cloud", className="me-2"),
-                                "Access: ",
-                                html.Span("VALID SESSION", className="text-success")
-                            ], className="card-title mb-3"),
-                            *card_content
-                        ]),
-                        className="mb-3 bg-halberd-dark"
-                    )
+            manager = GCPAccess()
+            manager.set_activate_credentials(credential_name)
+            manager.get_current_access()
+            # Helper function to create info row
+            def create_info_row(icon, label, value, value_class=""):
+                return html.Div([
+                    DashIconify(icon=icon, className="me-2"),
+                    html.Strong(label),
+                    html.Span(value, className=f"ms-2 {value_class}")
+                ], className="mb-3")
+
+            # Helper function to create scopes info row with bullet points
+            def create_scopes_info_row(icon, label, scopes, value_class=""):
+                if isinstance(scopes, (list, tuple)):
+                    scope_items = [html.Li(scope, className="mb-1") for scope in scopes]
+                    scopes_display = html.Ul(scope_items, className="mb-0 ps-3", style={"listStyleType": "disc"})
+                else:
+                    scopes_display = html.Span(str(scopes), className=f"ms-2 {value_class}")
+                
+                return html.Div([
+                    DashIconify(icon=icon, className="me-2"),
+                    html.Strong(label),
+                    html.Div(scopes_display, className="ms-2")
+                ], className="mb-3")
+
+            # Helper function to create GCP card
+            def create_gcp_card(validity_status, validity_class, card_content, reasons: str=None):
+                return dbc.Card(
+                    dbc.CardBody([
+                        html.H4([
+                            DashIconify(icon="mdi:google-cloud", className="me-2"),
+                            "Access: ",
+                            html.Span(validity_status, className=validity_class)
+                        ], className="card-title mb-3"),
+                        html.Div(
+                            html.Span(f"Reasons: {reasons}", className="text-muted"),
+                            className="mb-3"
+                        ) if reasons else "",
+                        dbc.Row([dbc.Col(card_content, width=12)])
+                    ]),
+                    className="mb-3 bg-halberd-dark"
                 )
 
-        except: 
+            if manager.credential_type == "short_lived_token":
+                expiration_state, _ = manager.get_expired_info()
+                credential = manager.credential
+
+                # Use the token as needed
+                validity_status = "VALID SESSION" if not expiration_state else "CREDENTIAL EXPIRED OR INVALID"
+                validity_class = "text-success" if not expiration_state else "text-warning"
+                reasons = "" if not expiration_state else "Token is expired or invalid"
+                
+                card_content = [
+                    create_info_row("mdi:account-key", "Name", credential_name, "text-info"),
+                    create_info_row("mdi:account-key", "Credential Type", "Short-lived token", "text-info"),
+                    create_scopes_info_row("mdi:telescope", "Scopes:", credential.scopes)
+                ]
+                
+                info_output_div.append(create_gcp_card(validity_status, validity_class, card_content, reasons=reasons))
+            else:
+                reasons : str = None
+                try:
+                    expiration_state, _ = manager.get_expired_info()
+                except Exception as e:
+                    
+                    if e.args[0] == "invalid_grant: Invalid JWT Signature.":
+                        expiration_state = True
+                        reasons = "Invalid JWT Signature"
+                    elif e.args[0] == "Reauthentication is needed. Please run `gcloud auth application-default login` to reauthenticate.":
+                        expiration_state = True
+                        reasons = "Reauthentication is needed with `gcloud auth application-default login`"
+                    else:
+                        raise
+
+                
+                if expiration_state is False and manager.get_validation():
+                    credential = manager.credential
+                    service_account_email = getattr(credential, "service_account_email", None)
+                    credential_type = (
+                        "Service Account Private Key" if isinstance(credential, ServiceAccountCredentials)
+                        else "Application Default Credential"
+                    )
+                    card_content = [
+                        create_info_row("mdi:account-key", "Name", credential_name, "text-info"),
+                        create_info_row("mdi:account-key", "Credential Type", credential_type, "text-info"),
+                    ]
+                    if service_account_email:
+                        card_content.append(create_info_row("mdi:account-cash", "Email", service_account_email))
+                    project_id = getattr(credential, "project_id", None)
+                    if project_id:
+                        card_content.append(create_info_row("ant-design:project-twotone", "Project:", project_id))
+                    card_content.append(create_scopes_info_row("mdi:telescope", "Scopes:", credential.scopes))
+                    info_output_div.append(create_gcp_card("VALID SESSION", "text-success", card_content))
+                else:
+                    credential = manager.credential
+                    credential_type = (
+                        "Service Account Private Key" if isinstance(credential, ServiceAccountCredentials)
+                        else "Application Default Credential"
+                    )
+                    project_id = getattr(credential, "project_id", None)
+                    card_content = [
+                        create_info_row("mdi:account-key", "Name", credential_name, "text-info"),
+                        create_info_row("mdi:account-key", "Credential Type", credential_type, "text-info"),
+                    ]
+                    if project_id:
+                        card_content.append(create_info_row("ant-design:project-twotone", "Project:", project_id))
+                    card_content.append(create_scopes_info_row("mdi:telescope", "Scopes:", credential.scopes))
+                    info_output_div.append(create_gcp_card("CREDENTIAL EXPIRED OR INVALID", "text-warning", card_content, reasons=reasons))
+        except Exception as e:
             info_output_div.append(
                 dbc.Card(
                     dbc.CardBody([
                         html.H4([
                             DashIconify(icon="mdi:google-cloud", className="me-2"),
                             "Access: ",
-                            html.Span("CREDENTIAL ARE INVALID", className="text-danger")
+                            html.Span(f"SYSTEM ERROR: {e}", className="text-danger")
                         ], className="card-title")
                     ]),
                     className="mb-3 bg-halberd-dark"

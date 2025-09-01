@@ -9,7 +9,7 @@ from google.auth.exceptions import RefreshError
 from core.gcp.gcp_access import GCPAccess
 
 @TechniqueRegistry.register
-class GCPEstablishAccessAsServiceAccount(BaseTechnique):
+class GCPEstablishAccessAsAuthorizedUserApplicationDefault(BaseTechnique):
     def __init__(self):
         mitre_techniques = [
             MitreTechnique(
@@ -17,6 +17,12 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
                 technique_name="Valid Accounts",
                 tactics=["Defense Evasion", "Persistence", "Privilege Escalation", "Initial Access"],
                 sub_technique_name="Cloud Accounts"
+            ),
+            MitreTechnique(
+                technique_id="T1550.001",
+                technique_name="Use Alternate Authentication Material",
+                tactics=["Defense Evasion", "Lateral Movement"],
+                sub_technique_name="Application Access Token"
             )
         ]
 
@@ -24,7 +30,7 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
             TechniqueReference(ref_title = "Service accounts overview", ref_link = "https://cloud.google.com/iam/docs/understanding-service-accounts")
         ]
 
-        super().__init__("Establish Access As Service Account", "Establish access to Google Cloud Platform using compromised or obtained service account credentials. This technique enables authentication as legitimate GCP service accounts, bypassing traditional user-based authentication mechanisms. The technique accepts service account JSON key files which contain the necessary cryptographic material for authentication including private keys, client information, and token endpoints. Once access is established, you inherit all IAM permissions and roles associated with the compromised service account, enabling privilege escalation and lateral movement within the GCP environment. The technique validates credential integrity, checks for expiration, and can optionally save credentials for persistent access across multiple attack operations.", mitre_techniques=mitre_techniques, references=technique_references)
+        super().__init__("Establish Access with Application Default Credential", "Establish access to Google Cloud Platform using compromised or obtained service account credentials. This technique enables authentication as legitimate GCP service accounts, bypassing traditional user-based authentication mechanisms. The technique accepts service account JSON key files which contain the necessary cryptographic material for authentication including private keys, client information, and token endpoints. Once access is established, you inherit all IAM permissions and roles associated with the compromised service account, enabling privilege escalation and lateral movement within the GCP environment. The technique validates credential integrity, checks for expiration, and can optionally save credentials for persistent access across multiple attack operations.", mitre_techniques=mitre_techniques, references=technique_references)
 
     def execute(self, **kwargs: Any) -> Tuple[ExecutionStatus, Dict[str, Any]]:
         self.validate_parameters(kwargs)
@@ -45,8 +51,6 @@ class GCPEstablishAccessAsServiceAccount(BaseTechnique):
             current_access = access_manager.credential
             
             caller_info_output = {
-                'email/client_id' : current_access.service_account_email,
-                'project' : current_access.project_id,
                 'validity': current_access.valid,
                 'expired' : current_access.expired
             }
