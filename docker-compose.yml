@@ -6,7 +6,7 @@ services:
       args:
         HALBERD_VERSION: ${HALBERD_VERSION:-2.2.0}
       cache_from:
-        - python:3.11-slim
+        - python:3.12-slim
     ports:
       - "8050:8050"
     volumes:

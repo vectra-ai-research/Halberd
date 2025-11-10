@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # Stage 0: caching
-FROM python:3.11-slim AS wheel-builder
+FROM python:3.12-slim AS wheel-builder
 
 # Install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -23,7 +23,7 @@ COPY requirements.txt .
 RUN pip wheel --wheel-dir=/wheels --no-cache-dir -r requirements.txt
 
 # Stage 1: azure-base stage
-FROM python:3.11-slim AS azure-base
+FROM python:3.12-slim AS azure-base
 
 # Install Azure CLI dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
