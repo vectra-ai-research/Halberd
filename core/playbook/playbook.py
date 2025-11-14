@@ -300,11 +300,61 @@ class Playbook:
     
         # Technique input
         step_input = step.params
+        
+        # Process file parameters: decode base64 file data
+        technique = TechniqueRegistry.get_technique(t_id)
+        technique_instance = technique()
+        technique_params = technique_instance.get_parameters()
+        
+        # Process parameters based on their input field type
+        for param_name, param_config in technique_params.items():
+            # If parameter not in step_input, use default value if available
+            if param_name not in step_input:
+                if param_config.get('default') is not None:
+                    step_input[param_name] = param_config.get('default')
+                else:
+                    continue
+                
+            param_value = step_input[param_name]
+            input_field_type = param_config.get('input_field_type', 'text')
+            
+            # Handle upload/file parameters: decode base64 file data
+            if input_field_type == 'upload':
+                # If the parameter contains base64 encoded data, decode it
+                if isinstance(param_value, str) and param_value.startswith("data:"):
+                    try:
+                        # Extract base64 content: "data:application/json;base64,<base64_data>"
+                        import re
+                        match = re.match(r'data:[^;]+;base64,(.+)', param_value)
+                        if match:
+                            base64_data = match.group(1)
+                            decoded_data = base64.b64decode(base64_data).decode('utf-8')
+                            step_input[param_name] = decoded_data
+                    except Exception as e:
+                        print(f"Error decoding base64 parameter '{param_name}': {str(e)}")
+                        raise ValueError(f"Failed to decode file parameter '{param_name}': {str(e)}")
+            
+            # Handle boolean parameters: convert string representations to bool
+            elif input_field_type == 'bool':
+                if isinstance(param_value, str):
+                    # Convert string representations to boolean
+                    if param_value.lower() in ('true', '1', 'yes', 'on'):
+                        step_input[param_name] = True
+                    elif param_value.lower() in ('false', '0', 'no', 'off'):
+                        step_input[param_name] = False
+                    else:
+                        try:
+                            # Try to convert as integer
+                            step_input[param_name] = bool(int(param_value))
+                        except (ValueError, TypeError):
+                            print(f"Warning: Could not convert boolean parameter '{param_name}' with value '{param_value}'")
+                            step_input[param_name] = bool(param_value)
+                elif not isinstance(param_value, bool):
+                    # Ensure the parameter is a boolean
+                    step_input[param_name] = bool(param_value)
 
         # Execute technique
-        technique = TechniqueRegistry.get_technique(t_id)
-
-        output = technique().execute(**step_input)
+        output = technique_instance.execute(**step_input)
 
         return output
     

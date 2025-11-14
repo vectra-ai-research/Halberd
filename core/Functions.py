@@ -648,7 +648,8 @@ def playbook_viz_generator(playbook_name: Optional[str]) -> html.Div:
             'entra_id': '#4B77BE',
             'm365': '#45B39D',
             'azure': '#5D6D7E',
-            'aws': '#D4AC0D'
+            'aws': '#D4AC0D',
+            'gcp': '#E74C3C'
         }
         
         # Initialize arrays
@@ -705,14 +706,36 @@ def playbook_viz_generator(playbook_name: Optional[str]) -> html.Div:
                 }
             })
 
-        # Stylesheet
+        # Calculate node size based on maximum label length among nodes so all nodes follow the same max size
+        max_label_len = 0
+        for el in attack_sequence_viz_elements:
+            if isinstance(el, dict) and 'data' in el:
+                lab = el.get('data', {}).get('label', '')
+                if isinstance(lab, str):
+                    # count characters (including newline characters)
+                    lab_len = len(lab.replace('\n', ' '))
+                    if lab_len > max_label_len:
+                        max_label_len = lab_len
+
+        # Estimate pixel width per character and clamp to reasonable bounds
+        px_per_char = 8  # approximate average character width in pixels
+        # Minimum width ensures small labels still produce a readable node
+        min_width_px = 160
+        # Maximum width to avoid overly large nodes
+        max_width_cap = 800
+        max_width_px = max(min_width_px, min(max_width_cap, int(max_label_len * px_per_char)))
+
+        # Keep node height fixed while adjusting width to fit the longest label
+        node_height_px = 80
+
+        # Stylesheet uses the calculated width so all nodes will follow the maximum module label size
         stylesheet = [
             {
                 'selector': 'node',
                 'style': {
                     'label': 'data(label)',
-                    'width': '300px',
-                    'height': '80px',
+                    'width': f'{max_width_px}px',
+                    'height': f'{node_height_px}px',
                     'text-halign': 'center',
                     'text-valign': 'center',
                     'shape': 'rectangle',
@@ -886,68 +909,83 @@ def generate_attack_technique_options(tab, tactic):
     
     return technique_options_list
 
-def generate_attack_technique_config(technique):
+def generate_attack_technique_config(technique, mode="attack", existing_values={}, step_index=None, id_type=None):
     """
-    Function generates the technique configuration view in attack page. 
+    Function generates the technique configuration view for both attack and automator pages. 
     Converts technique inputs into UI input fields with styling and interactions.
-    Also, adds 'Technique Execute' and 'Add to Playbook' buttons.
-
+    
     :param technique: Exact name of technique in Halberd technique registry
+    :param mode: "attack" for quick execution with Execute/Add to Playbook buttons, 
+                 "automator" for playbook creation (parameters only, no action buttons),
+    :param existing_values: Dictionary of existing parameter values to pre-fill input fields
+    :param id_type: Optional type for component IDs. 
     """
-    technique_config = TechniqueRegistry.get_technique(technique)().get_parameters()
+    technique_obj = TechniqueRegistry.get_technique(technique)()
+    
+    technique_config = technique_obj.get_parameters()
 
-    config_div_display = Patch()
-    config_div_display.clear()
+    # Use Patch only for attack mode, use regular list for automator mode
+    config_div_display = Patch() if mode == "attack" else []
+    if mode == "attack":
+        config_div_display.clear()
+    
+    # Determine ID type based on mode
+    # Determine ID type prefix based on id_type parameter
+    
+    # id_type = "technique-config-display" if mode == "attack" else "param-input"
+    # id_index_key = "index" if mode == "attack" else "param"
+    
 
-    # Configure & Execute header
-    config_header = html.Div([
-        html.Div([
+    # Configure header (only for attack mode)
+    if mode == "attack":
+        config_header = html.Div([
             html.Div([
-                html.I(
-                    className="fas fa-cog me-3", 
-                    style={
-                        "color": "#dc3545", 
-                        "fontSize": "1.1rem",
-                        "animation": "spin 3s linear infinite"
-                    }
-                ),
-                html.Span(
-                    "Configure & Execute", 
-                    className="halberd-brand",
-                    style={
-                        "fontSize": "1.1rem",
-                        "fontWeight": "700",
-                        "color": "#ffffff",
-                        "letterSpacing": "0.5px"
-                    }
-                ),
-                html.I(
-                    id="config-arrow",
-                    className="fas fa-chevron-down config-arrow ms-auto",
-                    style={
-                        "color": "#dc3545",
-                        "fontSize": "1rem",
-                        "transition": "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                        "cursor": "pointer"
-                    }
-                )
-            ], className="d-flex align-items-center w-100")
-        ], className="d-flex justify-content-between align-items-center w-100")
-    ], 
-    id="config-header",
-    className="enhanced-config-header px-3 py-3",
-    style={
-        "background": "linear-gradient(135deg, rgba(220, 53, 69, 0.15) 0%, rgba(108, 117, 125, 0.15) 100%)",
-        "borderBottom": "2px solid rgba(220, 53, 69, 0.3)",
-        "borderRadius": "8px 8px 0 0",
-        "cursor": "pointer",
-        "transition": "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        "position": "relative",
-        "overflow": "hidden",
-        "border": "1px solid rgba(220, 53, 69, 0.2)"
-    })
+                html.Div([
+                    html.I(
+                        className="fas fa-cog me-3", 
+                        style={
+                            "color": "#dc3545", 
+                            "fontSize": "1.1rem",
+                            "animation": "spin 3s linear infinite"
+                        }
+                    ),
+                    html.Span(
+                        "Configure & Execute", 
+                        className="halberd-brand",
+                        style={
+                            "fontSize": "1.1rem",
+                            "fontWeight": "700",
+                            "color": "#ffffff",
+                            "letterSpacing": "0.5px"
+                        }
+                    ),
+                    html.I(
+                        id="config-arrow",
+                        className="fas fa-chevron-down config-arrow ms-auto",
+                        style={
+                            "color": "#dc3545",
+                            "fontSize": "1rem",
+                            "transition": "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                            "cursor": "pointer"
+                        }
+                    )
+                ], className="d-flex align-items-center w-100")
+            ], className="d-flex justify-content-between align-items-center w-100")
+        ], 
+        id="config-header",
+        className="enhanced-config-header px-3 py-3",
+        style={
+            "background": "linear-gradient(135deg, rgba(220, 53, 69, 0.15) 0%, rgba(108, 117, 125, 0.15) 100%)",
+            "borderBottom": "2px solid rgba(220, 53, 69, 0.3)",
+            "borderRadius": "8px 8px 0 0",
+            "cursor": "pointer",
+            "transition": "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+            "position": "relative",
+            "overflow": "hidden",
+            "border": "1px solid rgba(220, 53, 69, 0.2)"
+        })
 
-    config_div_display.append(config_header)
+        config_div_display.append(config_header)
 
     # Collapsible Configuration Content
     config_content = []
@@ -968,7 +1006,7 @@ def generate_attack_technique_config(technique):
 
         # Parameter Grid
         param_grid = []
-        for i, (input_field, input_config) in enumerate(technique_config.items()):
+        for input_field, input_config in technique_config.items():
             param_row = html.Div([
                 # Parameter Label
                 html.Div([
@@ -989,27 +1027,30 @@ def generate_attack_technique_config(technique):
                 # Input Field Container
                 html.Div([
                     # Text/Email/Password/Number Inputs
-                    dbc.Input(
-                        type = input_config['input_field_type'],
-                        placeholder = f"Default: {input_config['default']}" if input_config['default'] else f"Enter {input_config['name'].lower()}...", 
-                        debounce = True,
-                        id = {"type": "technique-config-display", "index": input_field},
-                        className="enhanced-param-input",
-                        style={
-                            "background": "rgba(33, 37, 41, 0.8)",
-                            "border": "2px solid rgba(108, 117, 125, 0.3)",
-                            "borderRadius": "8px",
-                            "color": "#ffffff",
-                            "padding": "12px 16px",
-                            "fontSize": "0.9rem",
-                            "transition": "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                            "backdropFilter": "blur(5px)"
-                        }
-                    ) if input_config['input_field_type'] in ["text", "email", "password", "number"] else
+                    html.Div([
+                        dbc.Input(
+                            type = input_config['input_field_type'],
+                            placeholder = f"Default: {input_config['default']}" if input_config['default'] else f"Enter {input_config['name'].lower()}...", 
+                            debounce = True,
+                            id = ( {"type": "attack-technique-config", "technique": technique ,"param": input_field, "step": step_index, "canvas-type": id_type} if step_index is not None else {"type": "attack-technique-config", "technique": technique ,"param": input_field} ),
+                            className="enhanced-param-input",
+                            style={
+                                "background": "rgba(33, 37, 41, 0.8)",
+                                "border": "2px solid rgba(108, 117, 125, 0.3)",
+                                "borderRadius": "8px",
+                                "color": "#ffffff",
+                                "padding": "12px 16px",
+                                "fontSize": "0.9rem",
+                                "transition": "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                                "backdropFilter": "blur(5px)"
+                            },
+                            value = existing_values.get(input_field, "")
+                        ),
+                    ]) if input_config['input_field_type'] in ["text", "email", "password", "number"] else
                     
                     # Select Dropdown
                     dbc.Select(
-                        id = {"type": "technique-config-display", "index": input_field},
+                        id = ( {"type": "attack-technique-config", "technique": technique ,"param": input_field, "step": step_index, "canvas-type": id_type} if step_index is not None else {"type": "attack-technique-config", "technique": technique ,"param": input_field} ),
                         options=input_config["input_list"],
                         placeholder = f"Default: {input_config['default']}" if input_config['default'] else f"Select {input_config['name'].lower()}...",
                         className="enhanced-param-select",
@@ -1028,14 +1069,14 @@ def generate_attack_technique_config(technique):
                     # Boolean Switch
                     html.Div([
                         daq.BooleanSwitch(
-                            id = {"type": "technique-config-display-boolean-switch", "index": input_field}, 
-                            on=input_config['default'],
+                            id = ( {"type": "attack-technique-config", "technique": technique ,"param": input_field, "step": step_index, "canvas-type": id_type} if step_index is not None else {"type": "attack-technique-config", "technique": technique ,"param": input_field} ),
+                            on=existing_values.get(input_field, input_config['default']),
                             color="#dc3545",
                             className="enhanced-boolean-switch",
                             style={"transform": "scale(1.2)"}
                         ),
                         html.Span(
-                            "Enabled" if input_config['default'] else "Disabled",
+                            "True" if existing_values.get(input_field, input_config['default']) else "False",
                             className="text-muted ms-3",
                             style={"fontSize": "0.85rem"}
                         )
@@ -1044,12 +1085,19 @@ def generate_attack_technique_config(technique):
                     # File Upload
                     html.Div([
                         dcc.Upload(
-                            id = {"type": "technique-config-display-file-upload", "index": input_field}, 
+                            id = ( {"type": "attack-technique-config", "technique": technique ,"param": input_field, "step": step_index, "canvas-type": id_type} if step_index is not None else {"type": "attack-technique-config", "technique": technique ,"param": input_field} ),
                             children=html.Div([
                                 html.Div([
                                     html.I(className="fas fa-cloud-upload-alt", style={"fontSize": "2rem", "color": "#6c757d", "marginBottom": "8px"}),
                                     html.Small("Drag and drop or click to select files", className="text-muted"),
-                                    html.I(id="technique-config-display-file-name", style={"marginTop": "8px", "color": "#fff", "fontSize": "0.85rem"})
+                                    html.Div(
+                                        id=(
+                                            {"type": "attack-technique-config-filename-display", "param": input_field, "step": step_index, "canvas-type": id_type} 
+                                            if step_index is not None 
+                                            else {"type": "attack-technique-config-filename-display", "param": input_field}
+                                        ), 
+                                        style={"marginTop": "8px", "color": "#fff", "fontSize": "0.85rem"}
+                                    )
                                 ], 
                                 style={
                                     "display": "flex",
@@ -1074,8 +1122,17 @@ def generate_attack_technique_config(technique):
                                 'overflow': 'hidden'
                             },
                             multiple = input_config.get("multiple_files", False),
-                            accept = input_config.get("file_type", "*/*")
-                        )
+                            accept = input_config.get("file_type", "*/*"),
+                            contents= existing_values.get(input_field, None),
+                        ),
+                        html.Small(
+                            [
+                                html.I(className="fas fa-file me-1", style={"color": "#17a2b8", "fontSize": "0.8rem"}),
+                                f"File type: {existing_values[input_field].split(';')[0].replace('data:', '')}"
+                            ],
+                            className="text-info mt-2 d-block",
+                            style={"fontSize": "0.8rem", "fontStyle": "italic"}
+                        ) if existing_values.get(input_field) else None
                     ]) if input_config['input_field_type'] == "upload" else html.Div()
                     
                 ], className="enhanced-input-container")
@@ -1107,204 +1164,226 @@ def generate_attack_technique_config(technique):
         )
         config_content.append(config_content_div)
     else:
+        if mode == "attack":
         # No Configuration Required
-        config_content.append(
-            html.Div([
+            config_content.append(
                 html.Div([
-                    html.I(className="fas fa-check-circle", style={"fontSize": "3rem", "color": "#28a745", "marginBottom": "16px"}),
-                    html.H5("Ready to Execute", className="halberd-brand mb-3"),
-                    html.P("This technique requires no additional configuration.", className="text-muted mb-0")
-                ], className="text-center py-5")
-            ], 
-            className='enhanced-no-config',
-            style={
-                'padding': '24px',
-                'background': 'linear-gradient(135deg, rgba(33, 37, 41, 0.95) 0%, rgba(52, 58, 64, 0.95) 100%)',
-                'borderRadius': '0 0 12px 12px',
-                'backdropFilter': 'blur(10px)'
-            })
-        )
-
-    # Action Buttons Section
-    action_section = html.Div([
-        html.Hr(style={"border": "none", "height": "2px", "background": "linear-gradient(90deg, transparent, rgba(220, 53, 69, 0.5), transparent)", "margin": "24px 0"}),
-        
-        html.Div([
-            html.I(className="fas fa-play-circle me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
-            html.Span("Execute Technique", style={"fontSize": "0.9rem", "fontWeight": "600"})
-        ], className="text-muted mb-3"),
-        
-        html.Div([
-            # Primary Execute Button
-            dbc.Button([
-                html.Div([
-                    html.I(className="fas fa-rocket me-2", style={"fontSize": "1.1rem"}),
-                    html.Span("Execute Technique", style={"fontWeight": "600", "fontSize": "1rem"})
-                ], className="d-flex align-items-center justify-content-center"),
-                html.Div([
-                    html.Small("Launch attack vector", className="text-muted", style={"fontSize": "0.75rem"})
-                ], className="mt-1")
-            ],
-            id="technique-execute-button",
-            n_clicks=0,
-            className="enhanced-execute-button me-3",
-            style={
-                'minWidth': '200px',
-                'minHeight': '70px',
-                'background': 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                'border': 'none',
-                'borderRadius': '12px',
-                'boxShadow': '0 4px 15px rgba(220, 53, 69, 0.4)',
-                'transition': 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                'position': 'relative',
-                'overflow': 'hidden'
-            }),
-            
-            # Secondary Add to Playbook Button
-            dbc.Button([
-                html.Div([
-                    html.I(className="fas fa-plus-circle me-2", style={"fontSize": "1rem"}),
-                    html.Span("Add to Playbook", style={"fontWeight": "600", "fontSize": "0.95rem"})
-                ], className="d-flex align-items-center justify-content-center"),
-                html.Div([
-                    html.Small("Queue for automation", className="text-muted", style={"fontSize": "0.75rem"})
-                ], className="mt-1")
-            ],
-            id="open-add-to-playbook-modal-button", 
-            n_clicks=0, 
-            className="enhanced-playbook-button",
-            outline=True,
-            style={
-                'minWidth': '200px',
-                'minHeight': '70px',
-                'background': 'linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(73, 80, 87, 0.1) 100%)',
-                'border': '2px solid rgba(108, 117, 125, 0.4)',
-                'borderRadius': '12px',
-                'transition': 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                'position': 'relative',
-                'overflow': 'hidden'
-            })
-        ], 
-        className="d-flex flex-wrap gap-3 justify-content-center",
-        style={"marginTop": "20px"}),
-        
-    ], 
-    className="enhanced-action-section",
-    style={
-        'borderRadius': '0 0 12px 12px',
-        'backdropFilter': 'blur(10px)'
-    })
-
-    config_content.append(action_section)
-
-    # Collapsible Container
-    collapsible_config = dbc.Collapse([
-        html.Div(config_content)
-    ],
-    id="config-collapse",
-    is_open=False,
-    className="enhanced-config-collapse"
-    )
-
-    config_div_display.append(collapsible_config)
-    
-    # Create playbook modal dropdown content
-    playbook_dropdown_options = []    
-    for pb in GetAllPlaybooks():
-        playbook_dropdown_options.append(
-            {
-                "label": html.Div([Playbook(pb).name], style={'font-size': 16}, className="halberd-text"),
-                "value": Playbook(pb).name,
-            }
-        )
-
-    # Add to Playbook Modal
-    config_div_display.append(
-        dbc.Modal([
-            dbc.ModalHeader([
-                html.Div([
-                    html.I(className="fas fa-list-alt me-2", style={"color": "#dc3545"}),
-                    "Add Technique to Playbook"
-                ], className="d-flex align-items-center")
-            ], className="enhanced-modal-header"),
-            
-            dbc.ModalBody([
-                html.Div([
-                    html.Label([
-                        html.I(className="fas fa-book me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
-                        "Select Target Playbook"
-                    ], className="enhanced-modal-label mb-2"),
-                    dcc.Dropdown(
-                        options = playbook_dropdown_options, 
-                        value = None, 
-                        id='att-pb-selector-dropdown',
-                        placeholder="Choose a playbook...",
-                        className="enhanced-modal-dropdown mb-4",
-                        style={
-                            "background": "rgba(33, 37, 41, 0.8)",
-                            "border": "1px solid rgba(108, 117, 125, 0.3)",
-                            "borderRadius": "8px"
-                        }
-                    ),
-                    
                     html.Div([
-                        dbc.Col([
-                            html.Label([
-                                html.I(className="fas fa-sort-numeric-up me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
-                                "Step Position (Optional)"
-                            ], className="enhanced-modal-label mb-2"),
-                            dbc.Input(
-                                id='pb-add-step-number-input', 
-                                placeholder="e.g., 3", 
-                                type="number", 
-                                className="enhanced-modal-input"
-                            )
-                        ], md=6),
-                        
-                        dbc.Col([
-                            html.Label([
-                                html.I(className="fas fa-clock me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
-                                "Wait Time (seconds)"
-                            ], className="enhanced-modal-label mb-2"),
-                            dbc.Input(
-                                id='pb-add-step-wait-input', 
-                                placeholder="e.g., 120", 
-                                type="number", 
-                                className="enhanced-modal-input"
-                            )
-                        ], md=6)
-                    ], className="row mb-3")
-                    
-                ], className="enhanced-modal-content")
-            ], className="enhanced-modal-body"),
+                        html.I(className="fas fa-check-circle", style={"fontSize": "3rem", "color": "#28a745", "marginBottom": "16px"}),
+                        html.H5("Ready to Execute", className="halberd-brand mb-3"),
+                        html.P("This technique requires no additional configuration.", className="text-muted mb-0")
+                    ], className="text-center py-5")
+                ], 
+                className='enhanced-no-config',
+                style={
+                    'padding': '24px',
+                    'background': 'linear-gradient(135deg, rgba(33, 37, 41, 0.95) 0%, rgba(52, 58, 64, 0.95) 100%)',
+                    'borderRadius': '0 0 12px 12px',
+                    'backdropFilter': 'blur(10px)'
+                })
+            )
+        else:
+            config_content.append(
+                html.Div([
+                    html.Div([                        
+                        html.P("This technique requires no additional configuration.", className="text-muted mb-0")
+                    ], className="text-center py-5")
+                ], 
+                className='enhanced-no-config',
+                style={
+                    'padding': '24px',
+                    'background': 'linear-gradient(135deg, rgba(33, 37, 41, 0.95) 0%, rgba(52, 58, 64, 0.95) 100%)',
+                    'borderRadius': '0 0 12px 12px',
+                    'backdropFilter': 'blur(10px)'
+                })
+            )
+
+    # Action Buttons Section (only for attack mode)
+    if mode == "attack":
+        action_section = html.Div([
+            html.Hr(style={"border": "none", "height": "2px", "background": "linear-gradient(90deg, transparent, rgba(220, 53, 69, 0.5), transparent)", "margin": "24px 0"}),
             
-            dbc.ModalFooter([
+            html.Div([
+                html.I(className="fas fa-play-circle me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                html.Span("Execute Technique", style={"fontSize": "0.9rem", "fontWeight": "600"})
+            ], className="text-muted mb-3"),
+            
+            html.Div([
+                # Primary Execute Button
                 dbc.Button([
-                    html.I(className="fas fa-times me-2"),
-                    "Cancel"
-                ], 
-                id="close-add-to-playbook-modal-button", 
-                className="enhanced-modal-cancel-btn", 
+                    html.Div([
+                        html.I(className="fas fa-rocket me-2", style={"fontSize": "1.1rem"}),
+                        html.Span("Execute Technique", style={"fontWeight": "600", "fontSize": "1rem"})
+                    ], className="d-flex align-items-center justify-content-center"),
+                    html.Div([
+                        html.Small("Launch attack vector", className="text-muted", style={"fontSize": "0.75rem"})
+                    ], className="mt-1")
+                ],
+                id="technique-execute-button",
                 n_clicks=0,
-                outline=True),
+                className="enhanced-execute-button me-3",
+                style={
+                    'minWidth': '200px',
+                    'minHeight': '70px',
+                    'background': 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                    'border': 'none',
+                    'borderRadius': '12px',
+                    'boxShadow': '0 4px 15px rgba(220, 53, 69, 0.4)',
+                    'transition': 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    'position': 'relative',
+                    'overflow': 'hidden'
+                }),
                 
+                # Secondary Add to Playbook Button
                 dbc.Button([
-                    html.I(className="fas fa-plus me-2"),
-                    "Add to Playbook"
-                ], 
-                id="confirm-add-to-playbook-modal-button", 
-                className="enhanced-modal-confirm-btn", 
-                n_clicks=0)
-            ], className="enhanced-modal-footer")
+                    html.Div([
+                        html.I(className="fas fa-plus-circle me-2", style={"fontSize": "1rem"}),
+                        html.Span("Add to Playbook", style={"fontWeight": "600", "fontSize": "0.95rem"})
+                    ], className="d-flex align-items-center justify-content-center"),
+                    html.Div([
+                        html.Small("Queue for automation", className="text-muted", style={"fontSize": "0.75rem"})
+                    ], className="mt-1")
+                ],
+                id="open-add-to-playbook-modal-button", 
+                n_clicks=0, 
+                className="enhanced-playbook-button",
+                outline=True,
+                style={
+                    'minWidth': '200px',
+                    'minHeight': '70px',
+                    'background': 'linear-gradient(135deg, rgba(108, 117, 125, 0.1) 0%, rgba(73, 80, 87, 0.1) 100%)',
+                    'border': '2px solid rgba(108, 117, 125, 0.4)',
+                    'borderRadius': '12px',
+                    'transition': 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    'position': 'relative',
+                    'overflow': 'hidden'
+                })
+            ], 
+            className="d-flex flex-wrap gap-3 justify-content-center",
+            style={"marginTop": "20px"}),
+            
+        ], 
+        className="enhanced-action-section",
+        style={
+            'borderRadius': '0 0 12px 12px',
+            'backdropFilter': 'blur(10px)'
+        })
+
+        config_content.append(action_section)
+
+    # Collapsible Container (only for attack mode)
+    if mode == "attack":
+        collapsible_config = dbc.Collapse([
+            html.Div(config_content)
         ],
-        id="add-to-playbook-modal",
-        size="lg",
+        id="config-collapse",
         is_open=False,
-        className="enhanced-playbook-modal",
-        backdrop="static",
-        scrollable=True
+        className="enhanced-config-collapse"
         )
-    )
+
+        config_div_display.append(collapsible_config)
+    else:
+        # For automator mode, display content directly without collapse
+        config_div_display.append(html.Div(config_content))
+    
+    # Create playbook modal dropdown content (only for attack mode)
+    if mode == "attack":
+        playbook_dropdown_options = []    
+        for pb in GetAllPlaybooks():
+            playbook_dropdown_options.append(
+                {
+                    "label": html.Div([Playbook(pb).name], style={'font-size': 16}, className="halberd-text"),
+                    "value": Playbook(pb).name,
+                }
+            )
+
+        # Add to Playbook Modal
+        config_div_display.append(
+            dbc.Modal([
+                dbc.ModalHeader([
+                    html.Div([
+                        html.I(className="fas fa-list-alt me-2", style={"color": "#dc3545"}),
+                        "Add Technique to Playbook"
+                    ], className="d-flex align-items-center")
+                ], className="enhanced-modal-header"),
+                
+                dbc.ModalBody([
+                    html.Div([
+                        html.Label([
+                            html.I(className="fas fa-book me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                            "Select Target Playbook"
+                        ], className="enhanced-modal-label mb-2"),
+                        dcc.Dropdown(
+                            options = playbook_dropdown_options, 
+                            value = None, 
+                            id='att-pb-selector-dropdown',
+                            placeholder="Choose a playbook...",
+                            className="enhanced-modal-dropdown mb-4",
+                            style={
+                                "background": "rgba(33, 37, 41, 0.8)",
+                                "border": "1px solid rgba(108, 117, 125, 0.3)",
+                                "borderRadius": "8px"
+                            }
+                        ),
+                        
+                        html.Div([
+                            dbc.Col([
+                                html.Label([
+                                    html.I(className="fas fa-sort-numeric-up me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                                    "Step Position (Optional)"
+                                ], className="enhanced-modal-label mb-2"),
+                                dbc.Input(
+                                    id='pb-add-step-number-input', 
+                                    placeholder="e.g., 3", 
+                                    type="number", 
+                                    className="enhanced-modal-input"
+                                )
+                            ], md=6),
+                            
+                            dbc.Col([
+                                html.Label([
+                                    html.I(className="fas fa-clock me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                                    "Wait Time (seconds)"
+                                ], className="enhanced-modal-label mb-2"),
+                                dbc.Input(
+                                    id='pb-add-step-wait-input', 
+                                    placeholder="e.g., 120", 
+                                    type="number", 
+                                    className="enhanced-modal-input"
+                                )
+                            ], md=6)
+                        ], className="row mb-3")
+                        
+                    ], className="enhanced-modal-content")
+                ], className="enhanced-modal-body"),
+                
+                dbc.ModalFooter([
+                    dbc.Button([
+                        html.I(className="fas fa-times me-2"),
+                        "Cancel"
+                    ], 
+                    id="close-add-to-playbook-modal-button", 
+                    className="enhanced-modal-cancel-btn", 
+                    n_clicks=0,
+                    outline=True),
+                    
+                    dbc.Button([
+                        html.I(className="fas fa-plus me-2"),
+                        "Add to Playbook"
+                    ], 
+                    id="confirm-add-to-playbook-modal-button", 
+                    className="enhanced-modal-confirm-btn", 
+                    n_clicks=0)
+                ], className="enhanced-modal-footer")
+            ],
+            id="add-to-playbook-modal",
+            size="lg",
+            is_open=False,
+            className="enhanced-playbook-modal",
+            backdrop="static",
+            scrollable=True
+            )
+        )
 
     return config_div_display
 
@@ -1963,3 +2042,15 @@ def parse_execution_report(execution_folder):
         return []
         
     return results
+
+def generate_remove_btn(id_attribute: dict):
+    btn = dbc.Col([
+        dbc.Button(
+            html.I(className="fas fa-trash-alt"),
+            id={"type": "remove-step-button", **id_attribute},
+            color="link",
+            className="text-danger p-0",
+            title="Remove step"
+        )
+    ], width=2, className="text-end")
+    return btn

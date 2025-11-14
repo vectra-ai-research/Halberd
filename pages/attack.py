@@ -9,7 +9,7 @@ import datetime
 import time
 import json
 
-from dash import html, dcc, register_page, callback, ALL, clientside_callback
+from dash import html, dcc, register_page, callback, ALL, MATCH, clientside_callback
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
@@ -474,26 +474,34 @@ def display_attack_technique_config_callback(technique):
     technique_config = generate_attack_technique_config(technique)
     return technique_config
 
-'''Callback to display selected filename in technique config'''
-
+'''Callback to display selected filename in attack technique parameters'''
 @callback(
-    Output(component_id = "technique-config-display-file-name", component_property = "children"),
-    Input({"type": "technique-config-display-file-upload", "index": ALL}, "filename")
+    Output({"type": "attack-technique-config-filename-display", "param": MATCH}, "children"),
+    Input({"type": "attack-technique-config", "technique": ALL, "param": MATCH}, "filename"),
+    prevent_initial_call=False
 )
-def display_uploaded_file_names(filenames):
-    if filenames[0] == None:
+def display_uploaded_file_names(filename):
+    # Handle empty/None filename
+    if not filename:
         return "No file(s) selected"
-    # If multiple files are selected for one upload, join them with commas
-    result = []
-    for fn in filenames:
-        if not fn:
-            result.append("")
-        elif isinstance(fn, list):
-            result.append(", ".join(fn))
-        else:
-            result.append(fn)
     
-    return f"Selected files: {', '.join(result)}" 
+    # When using ALL matcher, we get a list of all filenames
+    # Each filename from dcc.Upload is itself a list like ['file.txt']
+    if isinstance(filename, list):
+        # Flatten the list of lists and filter out None/empty values
+        flat_files = []
+        for item in filename:
+            if isinstance(item, list):
+                flat_files.extend([str(f) for f in item if f])
+            elif item:
+                flat_files.append(str(item))
+        
+        if flat_files:
+            return f"Selected: {', '.join(flat_files)}"
+        return "No file(s) selected"
+    
+    # Fallback
+    return f"Selected: {str(filename)}" 
 
 '''Callback to execute a technique'''
 @callback(
@@ -503,12 +511,13 @@ def display_uploaded_file_names(filenames):
         Input(component_id= "technique-execute-button", component_property= "n_clicks"), 
         State(component_id = "tactic-dropdown", component_property = "value"),
         State(component_id = "attack-options-radio", component_property = "value"), 
-        State({"type": "technique-config-display", "index": ALL}, "value"), 
-        State({"type": "technique-config-display-boolean-switch", "index": ALL}, "on"), 
-        State({"type": "technique-config-display-file-upload", "index": ALL}, "contents"), 
+        State({"type": "attack-technique-config", "technique": ALL, "param": ALL}, "value"),
+        State({"type": "attack-technique-config", "technique": ALL, "param": ALL}, "id"),
+        State({"type": "attack-technique-config", "technique": ALL, "param": ALL}, "on"), 
+        State({"type": "attack-technique-config", "technique": ALL, "param": ALL}, "contents"), 
         prevent_initial_call = True
 )
-def execute_technique_callback(n_clicks, tactic, t_id, values, bool_on, file_content):
+def execute_technique_callback(n_clicks, tactic, t_id, values, component_ids, bool_on, file_content):
     '''The input callback can handle text inputs, boolean flags and file upload content'''
     if n_clicks == 0:
         raise PreventUpdate
@@ -570,31 +579,59 @@ def execute_technique_callback(n_clicks, tactic, t_id, values, bool_on, file_con
             active_entity = "Unknown"
         
 
-    # Create technique input
+    # Create technique input by mapping component IDs to parameter values
     technique_input = {}
-    file_input = {}
-    bool_input = {}
-    i=0
-    for param in technique_params:
-        if technique_params[param]['input_field_type'] not in ["bool", "upload"]: 
-            technique_input[param] = [*values][i]
-            i+=1
-        elif technique_params[param]['input_field_type'] == "upload":
-            file_input[param] = technique_params[param]
-        elif technique_params[param]['input_field_type'] == "bool":
-            bool_input[param] = technique_params[param]
     
-    if file_content:
-        i = 0
-        for param in file_input:
-            technique_input[param] = [*file_content][i]
-            i+=1
-
-    if bool_on:
-        i = 0
-        for param in bool_input:
-            technique_input[param] = [*bool_on][i]
-            i+=1
+    # Build maps using component IDs to correctly associate values with their parameters
+    param_value_map = {}
+    param_bool_map = {}
+    param_file_map = {}
+    
+    # Map values using component IDs - each component_id tells us which param it belongs to
+    if component_ids and values:
+        for idx, comp_id in enumerate(component_ids):
+            if isinstance(comp_id, dict):
+                param_name = comp_id.get('param')
+                if param_name and idx < len(values):
+                    param_value_map[param_name] = values[idx]
+    
+    # Map boolean values using component IDs
+    if component_ids and bool_on:
+        for idx, comp_id in enumerate(component_ids):
+            if isinstance(comp_id, dict):
+                param_name = comp_id.get('param')
+                if param_name and idx < len(bool_on) and bool_on[idx] is not None:
+                    param_bool_map[param_name] = bool_on[idx]
+    
+    # Map file content using component IDs
+    if component_ids and file_content:
+        for idx, comp_id in enumerate(component_ids):
+            if isinstance(comp_id, dict):
+                param_name = comp_id.get('param')
+                if param_name and idx < len(file_content) and file_content[idx]:
+                    # Extract single string from file_content[idx]
+                    # Dash returns it as a list or string, we need just the string
+                    file_val = file_content[idx]
+                    if isinstance(file_val, list) and len(file_val) > 0:
+                        file_val = file_val[0]
+                    param_file_map[param_name] = file_val
+    
+    # Build final technique_input using the mapped values
+    for param_name, param_config in technique_params.items():
+        param_type = param_config.get('input_field_type')
+        
+        if param_type == "bool":
+            # Use mapped value if available, otherwise use default
+            if param_name in param_bool_map:
+                technique_input[param_name] = param_bool_map[param_name]
+            else:
+                technique_input[param_name] = param_config.get('default', False)
+        elif param_type == "upload":
+            if param_name in param_file_map:
+                technique_input[param_name] = param_file_map[param_name]
+        else:  # text, email, password, number, select
+            if param_name in param_value_map:
+                technique_input[param_name] = param_value_map[param_name]
 
     # Log technique execution start
     event_id = str(uuid.uuid4()) #Generate unique event_id for the execution
@@ -782,59 +819,78 @@ def generate_azure_sub_dropdown_callback(title):
         State(component_id = "pb-add-step-number-input", component_property = "value"),
         State(component_id = "pb-add-step-wait-input", component_property = "value"),
         State(component_id = "attack-options-radio", component_property = "value"),
-        State(component_id = {"type": "technique-config-display", "index": ALL}, component_property = "value"), 
-        State(component_id = {"type": "technique-config-display-boolean-switch", "index": ALL}, component_property = "on"), 
-        State(component_id = {"type": "technique-config-display-file-upload", "index": ALL}, component_property = "contents"),
+        State(component_id = {"type": "attack-technique-config", "technique": ALL, "param": ALL}, component_property = "value"),
+        State(component_id = {"type": "attack-technique-config", "technique": ALL, "param": ALL}, component_property = "id"),
+        State(component_id = {"type": "attack-technique-config", "technique": ALL, "param": ALL}, component_property = "on"), 
+        State(component_id = {"type": "attack-technique-config", "technique": ALL, "param": ALL}, component_property = "contents"),
         prevent_initial_call=True
     )
-def add_technique_to_pb_callback(n_clicks, selected_pb, step_no, wait, t_id, values, bool_on, file_content):
+def add_technique_to_pb_callback(n_clicks, selected_pb, step_no, wait, t_id, values, component_ids, bool_on, file_content):
     if n_clicks == 0:
         raise PreventUpdate
     
     # If config has file as input
     if selected_pb:
-        if file_content:
-            for pb in GetAllPlaybooks():
-                pb_config = Playbook(pb)
-                if  pb_config.name == selected_pb:
-                    break
-
-            technique_input.append(file_content)
-        
-        else:
-            for pb in GetAllPlaybooks():
-                pb_config = Playbook(pb)
-                if  pb_config.name == selected_pb:
-                    break
+        for pb in GetAllPlaybooks():
+            pb_config = Playbook(pb)
+            if  pb_config.name == selected_pb:
+                break
         
         # Create technique input
         technique = TechniqueRegistry.get_technique(t_id)
         technique_params = (technique().get_parameters())
 
+        # Build maps using component IDs to correctly associate values with their parameters
         technique_input = {}
-        file_input = {}
-        bool_input = {}
-        i=0
-        for param in technique_params:
-            if technique_params[param]['input_field_type'] not in ["bool", "upload"]: 
-                technique_input[param] = [*values][i]
-                i+=1
-            elif technique_params[param]['input_field_type'] == "upload":
-                file_input[param] = technique_params[param]
-            elif technique_params[param]['input_field_type'] == "bool":
-                bool_input[param] = technique_params[param]
+        param_value_map = {}
+        param_bool_map = {}
+        param_file_map = {}
         
-        if file_content:
-            i = 0
-            for param in file_input:
-                technique_input[param] = [*file_content][i]
-                i+=1
-
-        if bool_on:
-            i = 0
-            for param in bool_input:
-                technique_input[param] = [*bool_on][i]
-                i+=1
+        # Map values using component IDs
+        if component_ids and values:
+            for idx, comp_id in enumerate(component_ids):
+                if isinstance(comp_id, dict):
+                    param_name = comp_id.get('param')
+                    if param_name and idx < len(values):
+                        param_value_map[param_name] = values[idx]
+        
+        # Map boolean values using component IDs
+        if component_ids and bool_on:
+            for idx, comp_id in enumerate(component_ids):
+                if isinstance(comp_id, dict):
+                    param_name = comp_id.get('param')
+                    if param_name and idx < len(bool_on) and bool_on[idx] is not None:
+                        param_bool_map[param_name] = bool_on[idx]
+        
+        # Map file content using component IDs
+        if component_ids and file_content:
+            for idx, comp_id in enumerate(component_ids):
+                if isinstance(comp_id, dict):
+                    param_name = comp_id.get('param')
+                    if param_name and idx < len(file_content) and file_content[idx]:
+                        # Extract single string from file_content[idx]
+                        # Dash returns it as a list or string, we need just the string
+                        file_val = file_content[idx]
+                        if isinstance(file_val, list) and len(file_val) > 0:
+                            file_val = file_val[0]
+                        param_file_map[param_name] = file_val
+        
+        # Build final technique_input using the mapped values
+        for param_name, param_config in technique_params.items():
+            param_type = param_config.get('input_field_type')
+            
+            if param_type == "bool":
+                # Use mapped value if available, otherwise use default
+                if param_name in param_bool_map:
+                    technique_input[param_name] = param_bool_map[param_name]
+                else:
+                    technique_input[param_name] = param_config.get('default', False)
+            elif param_type == "upload":
+                if param_name in param_file_map:
+                    technique_input[param_name] = param_file_map[param_name]
+            else:  # text, email, password, number, select
+                if param_name in param_value_map:
+                    technique_input[param_name] = param_value_map[param_name]
 
         # Create playbook step
         try:
