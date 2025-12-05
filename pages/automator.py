@@ -2109,7 +2109,7 @@ def update_step_parameters_editor(module_id):
 
     triggered_id = json.loads(ctx.triggered[0]["prop_id"].rsplit('.', 1)[0])
     step_index = triggered_id.get("index")
-    return generate_attack_technique_config(module_id, mode="automator", step_index=step_index)
+    return generate_attack_technique_config(module_id, mode="automator", step_index=step_index, id_type="editor")
 
 @callback(
     Output("app-notification", "is_open", allow_duplicate=True),
