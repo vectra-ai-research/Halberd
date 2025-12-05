@@ -1437,14 +1437,14 @@ def update_step_parameters(module_id):
     return technique_config
     
 
-'''Callback to display selected filename in automator playbook parameters'''
+'''Callback to display selected filename in automator playbook parameters (creator mode)'''
 @callback(
-    Output({"type": "param-input-editor-filename-display", "param": MATCH}, "children"),
-    Input({"type": "param-input-editor", "param": MATCH}, "contents"),
-    State({"type": "param-input-editor", "param": MATCH}, "filename"),
+    Output({"type": "attack-technique-config-filename-display-creator", "param": MATCH, "step": MATCH}, "children"),
+    Input({"type": "attack-technique-config-creator", "technique": ALL, "param": MATCH, "step": MATCH}, "contents"),
+    State({"type": "attack-technique-config-creator", "technique": ALL, "param": MATCH, "step": MATCH}, "filename"),
     prevent_initial_call=False
 )
-def display_uploaded_file_names_automator(contents, filename):
+def display_uploaded_file_names_automator_creator(contents, filename):
     if not contents:
         return "No file(s) selected"
     
@@ -1462,6 +1462,30 @@ def display_uploaded_file_names_automator(contents, filename):
     else:
         return "No file(s) selected"
 
+'''Callback to display selected filename in automator playbook parameters (editor mode)'''
+@callback(
+    Output({"type": "attack-technique-config-filename-display-editor", "param": MATCH, "step": MATCH}, "children"),
+    Input({"type": "attack-technique-config-editor", "technique": ALL, "param": MATCH, "step": MATCH}, "contents"),
+    State({"type": "attack-technique-config-editor", "technique": ALL, "param": MATCH, "step": MATCH}, "filename"),
+    prevent_initial_call=False
+)
+def display_uploaded_file_names_automator_editor(contents, filename):
+    if not contents:
+        return "No file(s) selected"
+    
+    if filename:
+        # filename from dcc.Upload is always a list like ['file.txt']
+        if isinstance(filename, list):
+            # Filter out None/empty values and extract just the filenames
+            valid_files = [str(f) for f in filename if f]
+            if valid_files:
+                return f"Selected: {', '.join(valid_files)}"
+            return "No file(s) selected"
+        else:
+            # Single string (unlikely with dcc.Upload)
+            return f"Selected: {str(filename)}"
+    else:
+        return "No file(s) selected"
 
 '''[Playbook Creator] Callback to add a new step in playbook'''
 @callback(
@@ -1470,8 +1494,8 @@ def display_uploaded_file_names_automator(contents, filename):
     State("playbook-steps-container", "children"),
     State({"type": "step-module-dropdown", "index": ALL}, "value"),
     State({"type": "step-wait-input", "index": ALL}, "value"),
-    State({"type": "attack-technique-config", "step": ALL, "technique": ALL, "param": ALL, "canvas-type": "creator"}, "value"),
-    State({"type": "attack-technique-config", "step": ALL, "technique": ALL, "param": ALL, "canvas-type": "creator"}, "id"),
+    State({"type": "attack-technique-config-creator", "step": ALL, "technique": ALL, "param": ALL}, "value"),
+    State({"type": "attack-technique-config-creator", "step": ALL, "technique": ALL, "param": ALL}, "id"),
     prevent_initial_call=True
 )
 def add_playbook_step(n_clicks, current_steps, module_values, wait_values, param_values, param_ids):
@@ -1548,8 +1572,8 @@ def add_playbook_step(n_clicks, current_steps, module_values, wait_values, param
     State("playbook-steps-container", "children"),
     State({"type": "step-module-dropdown", "index": ALL}, "value"),
     State({"type": "step-wait-input", "index": ALL}, "value"),
-    State({"type": "attack-technique-config", "step": ALL, "technique": ALL, "param": ALL, "canvas-type": "creator"}, "value"),
-    State({"type": "attack-technique-config", "step": ALL, "technique": ALL, "param": ALL, "canvas-type": "creator"}, "id"),
+    State({"type": "attack-technique-config-creator", "step": ALL, "technique": ALL, "param": ALL}, "value"),
+    State({"type": "attack-technique-config-creator", "step": ALL, "technique": ALL, "param": ALL}, "id"),
     prevent_initial_call=True
 )
 def remove_playbook_step(n_clicks, current_steps, module_values, wait_values, param_values, param_ids):
