@@ -21,7 +21,7 @@ from attack_techniques.technique_registry import TechniqueRegistry
 from core.playbook.playbook import Playbook
 from core.playbook.playbook_step import PlaybookStep
 from core.playbook.playbook_error import PlaybookError
-from core.Functions import generate_technique_info, AddNewSchedule, GetAllPlaybooks, playbook_viz_generator, get_playbook_stats, parse_execution_report
+from core.Functions import generate_technique_info, AddNewSchedule, GetAllPlaybooks, playbook_viz_generator, get_playbook_stats, parse_execution_report, generate_attack_technique_config, generate_remove_btn
 from core.Constants import AUTOMATOR_PLAYBOOKS_DIR, AUTOMATOR_OUTPUT_DIR
 
 # Register page to app
@@ -594,7 +594,7 @@ def generate_playbook_creator_offcanvas():
                     html.H4("Playbook Steps", className="mb-3 halberd-brand-heading"),
                     html.Div(id="playbook-steps-container", children=[
                         # Initial step
-                        generate_step_form(1)
+                        generate_step_form(1, remove_btn=False)
                     ]),
                     
                     # Add step button
@@ -613,131 +613,209 @@ def generate_playbook_creator_offcanvas():
                 ])
             ]
 
-def generate_step_form(step_number):
-    """Generate form elements for a single playbook step"""
-    return dbc.Card([
-        dbc.CardBody([
+def generate_step_form(step_number, remove_btn: bool = True, existing_module=None, existing_wait=None, existing_params_children=None):
+    """Generate form elements for a single playbook step
+    
+    Args:
+        step_number: The step number (1-based)
+        remove_btn: Whether to show the remove button
+        existing_module: Pre-selected module ID (optional)
+        existing_wait: Pre-filled wait time value (optional)
+        existing_params_children: Pre-filled parameters container children (optional)
+    """
+    step_form = dbc.Card([
+        dbc.CardHeader([
             dbc.Row([
                 dbc.Col([
-                    html.H5(f"Step {step_number}", className="mb-3")
+                    html.Div([
+                        html.I(
+                            className="fas fa-layer-group me-2", 
+                            style={
+                                "color": "#dc3545", 
+                                "fontSize": "1rem"
+                            }
+                        ),
+                        html.Span(
+                            f"Step {step_number}", 
+                            className="halberd-brand",
+                            style={
+                                "fontSize": "1rem",
+                                "fontWeight": "700",
+                                "color": "#ffffff"
+                            }
+                        )
+                    ], className="d-flex align-items-center")
                 ], width=10),
-                dbc.Col([
-                    html.Button(
-                        html.I(className="bi bi-trash"),
-                        id={"type": "remove-step-button", "index": step_number},
-                        className="btn btn-link text-danger",
-                        style={"float": "right"}
-                    ) if step_number > 1 else None
-                ], width=2)
-            ]),
-            
+                 generate_remove_btn({"index": step_number}) if remove_btn else None
+            ], className="align-items-center")
+        ], style={
+            "background": "linear-gradient(135deg, rgba(220, 53, 69, 0.15) 0%, rgba(108, 117, 125, 0.15) 100%)",
+            "borderBottom": "2px solid rgba(220, 53, 69, 0.3)",
+            "borderRadius": "8px 8px 0 0"
+        }),
+        dbc.CardBody([
+            # Module Selection Row
             dbc.Row([
                 dbc.Col([
-                    dbc.Label("Module *"),
+                    dbc.Label(
+                        [
+                            html.I(className="fas fa-cube me-2", style={"color": "#6c757d"}),
+                            "Module *"
+                        ],
+                        className="halberd-text mb-2 d-block",
+                        style={"fontWeight": "600"}
+                    ),
                     dcc.Dropdown(
                         id={"type": "step-module-dropdown", "index": step_number},
                         options=[
                             {"label": technique().name, "value": tid}
                             for tid, technique in TechniqueRegistry.list_techniques().items()
                         ],
-                        placeholder="Select module",
-                        className="bg-halberd-dark halberd-text halberd-dropdown"
+                        value=existing_module,  # Pre-populate if provided
+                        placeholder="Select technique module...",
+                        className="halberd-dropdown",
+                        style={
+                            "background": "rgba(33, 37, 41, 0.8)",
+                            "border": "2px solid rgba(108, 117, 125, 0.3)",
+                            "borderRadius": "8px"
+                        }
                     )
                 ])
-            ], className="mb-3"),
+            ], className="mb-4"),
             
-            # Dynamic parameters section
-            html.Div(id={"type": "step-params-container", "index": step_number}),
+            # Dynamic parameters section with header
+            html.Div([
+                html.Div([
+                    html.I(className="fas fa-sliders-h me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                    html.Span("Parameters", style={"fontSize": "0.9rem", "fontWeight": "600"})
+                ], className="text-muted mb-3"),
+                html.Div(
+                    existing_params_children if existing_params_children is not None else [],  # Pre-populate if provided
+                    id={"type": "step-params-container", "index": step_number},
+                    style={
+                        "minHeight": "50px",
+                        "padding": "10px",
+                        "backgroundColor": "rgba(33, 37, 41, 0.4)",
+                        "borderRadius": "8px",
+                        "border": "1px solid rgba(108, 117, 125, 0.2)"
+                    }
+                )
+            ], className="mb-4"),
 
+            # Wait Time Row
             dbc.Row([
                 dbc.Col([
-                    dbc.Label("Wait (seconds)"),
+                    dbc.Label(
+                        [
+                            html.I(className="fas fa-hourglass-end me-2", style={"color": "#6c757d"}),
+                            "Wait After Step (seconds)"
+                        ],
+                        className="halberd-text mb-2 d-block",
+                        style={"fontWeight": "600"}
+                    ),
                     dbc.Input(
                         type="number",
                         id={"type": "step-wait-input", "index": step_number},
+                        value=existing_wait,  # Pre-populate if provided
                         placeholder="0",
                         min=0,
-                        className="bg-halberd-dark halberd-input halberd-text"
+                        className="halberd-input",
+                        style={
+                            "background": "rgba(33, 37, 41, 0.8)",
+                            "border": "2px solid rgba(108, 117, 125, 0.3)",
+                            "borderRadius": "8px",
+                            "color": "#ffffff",
+                            "padding": "12px 16px"
+                        }
                     )
-                ])
-            ], className="mb-3"),
-        ])
-    ], className="mb-3 halberd-depth-card")
+                ], width=12)
+            ], className="mb-0"),
+        ], style={
+            "padding": "24px",
+            "backgroundColor": "rgba(33, 37, 41, 0.5)"
+        })
+    ], className="mb-3 halberd-depth-card", style={
+        "border": "1px solid rgba(220, 53, 69, 0.2)",
+        "borderRadius": "12px"
+    })
+    return step_form
 
-def generate_playbook_editor_offcanvas():
-    return dbc.Offcanvas(
-        [            
-            # Playbook metadata form
-            dbc.Form([
-                dbc.Row([
-                    dbc.Col([
-                        dbc.Label("Playbook Name *", html_for="pb-name-input-editor"),
-                        dbc.Input(
-                            type="text",
-                            id="pb-name-input-editor",
-                            placeholder="Enter playbook name",
-                            className="bg-halberd-dark halberd-input halberd-text"
-                        )
-                    ])
-                ], className="mb-3"),
-                
-                dbc.Row([
-                    dbc.Col([
-                        dbc.Label("Description *", html_for="pb-desc-input-editor"),
-                        dbc.Textarea(
-                            id="pb-desc-input-editor",
-                            placeholder="Enter playbook description",
-                            className="bg-halberd-dark halberd-input halberd-text"
-                        )
-                    ])
-                ], className="mb-3"),
-                
-                dbc.Row([
-                    dbc.Col([
-                        dbc.Label("Author *", html_for="pb-author-input-editor"),
-                        dbc.Input(
-                            type="text",
-                            id="pb-author-input-editor",
-                            placeholder="Enter author name",
-                            className="bg-halberd-dark halberd-input halberd-text"
-                        )
-                    ])
-                ], className="mb-3"),
-                
-                dbc.Row([
-                    dbc.Col([
-                        dbc.Label("References", html_for="pb-refs-input-editor"),
-                        dbc.Input(
-                            type="text",
-                            id="pb-refs-input-editor",
-                            placeholder="Enter references (optional)",
-                            className="bg-halberd-dark halberd-input halberd-text"
-                        )
-                    ])
-                ], className="mb-4"),
-
-                # Steps section
-                html.Div([
-                    html.H4("Playbook Steps", className="mb-3 halberd-brand-heading"),
-                    html.Div(id="playbook-steps-editor-container"),
-                    
-                    # Add step button
-                    dbc.Button(
-                        [html.I(className="bi bi-plus-lg me-2"), "Add Step"],
-                        id="add-playbook-step-editor-button",
-                        color="secondary",
-                        className="mt-3 mb-4"
-                    ),
-                ]),
-
-                # Update playbook button
-                dbc.Button(
-                    [html.I(className="bi bi-save me-2"), "Update Playbook"],
-                    id="update-playbook-editor-button",
-                    className="w-100 halberd-button"
+def generate_playbook_editor_form():
+    """Generate the editor form structure (metadata inputs, steps container, buttons)"""
+    return dbc.Form([
+        dbc.Row([
+            dbc.Col([
+                dbc.Label("Playbook Name *", html_for="pb-name-input-editor"),
+                dbc.Input(
+                    type="text",
+                    id="pb-name-input-editor",
+                    placeholder="Enter playbook name",
+                    className="bg-halberd-dark halberd-input halberd-text"
                 )
             ])
-        ],
+        ], className="mb-3"),
+        
+        dbc.Row([
+            dbc.Col([
+                dbc.Label("Description *", html_for="pb-desc-input-editor"),
+                dbc.Textarea(
+                    id="pb-desc-input-editor",
+                    placeholder="Enter playbook description",
+                    className="bg-halberd-dark halberd-input halberd-text"
+                )
+            ])
+        ], className="mb-3"),
+        
+        dbc.Row([
+            dbc.Col([
+                dbc.Label("Author *", html_for="pb-author-input-editor"),
+                dbc.Input(
+                    type="text",
+                    id="pb-author-input-editor",
+                    placeholder="Enter author name",
+                    className="bg-halberd-dark halberd-input halberd-text"
+                )
+            ])
+        ], className="mb-3"),
+        
+        dbc.Row([
+            dbc.Col([
+                dbc.Label("References", html_for="pb-refs-input-editor"),
+                dbc.Input(
+                    type="text",
+                    id="pb-refs-input-editor",
+                    placeholder="Enter references (optional)",
+                    className="bg-halberd-dark halberd-input halberd-text"
+                )
+            ])
+        ], className="mb-4"),
+
+        # Steps section
+        html.Div([
+            html.H4("Playbook Steps", className="mb-3 halberd-brand-heading"),
+            html.Div(id="playbook-steps-editor-container"),
+            
+            # Add step button
+            dbc.Button(
+                [html.I(className="bi bi-plus-lg me-2"), "Add Step"],
+                id="add-playbook-step-editor-button",
+                color="secondary",
+                className="mt-3 mb-4"
+            ),
+        ]),
+
+        # Update playbook button
+        dbc.Button(
+            [html.I(className="bi bi-save me-2"), "Update Playbook"],
+            id="update-playbook-editor-button",
+            className="w-100 halberd-button"
+        )
+    ])
+
+def generate_playbook_editor_offcanvas():
+    """Generate empty editor offcanvas container - children will be populated by callback when opened"""
+    return dbc.Offcanvas(
+        [],  # Empty children - will be populated when opened
         id="playbook-editor-offcanvas",
         title= html.H3("Playbook Editor"),
         is_open=False,
@@ -750,52 +828,19 @@ def generate_playbook_editor_offcanvas():
         backdropClassName="halberd-offcanvas-backdrop"
         )
 
-def playbook_editor_create_parameter_inputs(module_id, existing_params=None):
-    """Helper function to create parameter input elements"""
-    if not module_id:
-        return []
-    
-    # Initialize existing_params to empty dict if None
-    existing_params = existing_params or {}
-    
-    technique = TechniqueRegistry.get_technique(module_id)()
-    params = technique.get_parameters()
-    
-    if not params:
-        return html.P("No config required", className="halberd-text")
-    
-    param_inputs = []
-    for param_name, param_config in params.items():
-        required = param_config.get("required", False)
-        label_text = f"{param_config['name']} {'*' if required else ''}"
-        
-        input_type = param_config.get("input_field_type", "text")
-        
-        # Create input with existing value if available
-        if input_type == "bool":
-            input_elem = daq.BooleanSwitch(
-                id={"type": "param-input-editor", "param": param_name},
-                on=existing_params.get(param_name, param_config.get("default", False))
-            )
-        else:
-            input_elem = dbc.Input(
-                type=input_type,
-                id={"type": "param-input-editor", "param": param_name},
-                value=existing_params.get(param_name, param_config.get("default", "")),
-                placeholder=param_config.get("default", ""),
-                className="bg-halberd-dark halberd-text halberd-input"
-            )
-        
-        param_inputs.append(
-            dbc.Row([
-                dbc.Col([
-                    dbc.Label(label_text, className="halberd-text"),
-                    input_elem
-                ])
-            ], className="mb-3")
-        )
-    
-    return param_inputs
+# The old local parameter-input generator was removed in favor of the
+# centralized `generate_attack_technique_config` helper located in
+# `core.Functions.generate_attack_technique_config`.
+#
+# Rationale:
+# - The central helper produces inputs with the canonical IDs
+#   ("attack-technique-config") that the rest of the callbacks rely on
+#   (pattern-matching States/Inputs).
+# - It supports existing values, upload handling, and mode-specific
+#   rendering for both "attack" and "automator" contexts.
+#
+# If page-local customization is required later, provide a thin wrapper
+# that delegates to `generate_attack_technique_config` to avoid duplication.
 
 def create_execution_progress_offcanvas():
     """Creates the execution progress off-canvas"""
@@ -1028,6 +1073,7 @@ def toggle_pb_schedule_canvas_callback(n_clicks):
         Output(component_id = "app-notification", component_property = "is_open", allow_duplicate=True), 
         Output(component_id = "app-notification", component_property = "children", allow_duplicate=True), 
         Output(component_id = "automator-offcanvas", component_property = "is_open", allow_duplicate=True),
+        Output(component_id = "automator-offcanvas", component_property = "children", allow_duplicate=True),
         State(component_id="selected-playbook-data", component_property="data"),
         State(component_id = "set-time-input", component_property = "value"), 
         State(component_id = "automator-date-range-picker", component_property = "start_date"), 
@@ -1049,7 +1095,7 @@ def create_new_schedule_callback(selected_pb_data, execution_time, start_date, e
     AddNewSchedule(schedule_name, playbook_id, start_date, end_date, execution_time, repeat_flag, repeat_frequency)
 
     # Send notification after new schedule is created and close scheduler off canvas
-    return True, "Playbook Scheduled", False
+    return True, "Playbook Scheduled", False, []
 
 '''Callback to export playbook'''
 @callback(
@@ -1378,88 +1424,159 @@ def update_step_parameters(module_id):
     """Update parameter fields based on selected module"""
     if not module_id:
         return []
+    # Determine which step triggered this MATCH callback so we can include
+    # the step index in generated parameter IDs (avoids mixing params across steps)
+    ctx = callback_context
+    if not ctx.triggered:
+        return []
+
+    triggered_id = json.loads(ctx.triggered[0]["prop_id"].rsplit('.', 1)[0])
+    step_index = triggered_id.get("index")
+
+    technique_config = generate_attack_technique_config(module_id, mode="automator", step_index=step_index, id_type="creator")
+    return technique_config
     
-    technique = TechniqueRegistry.get_technique(module_id)()
-    params = technique.get_parameters()
+
+'''Callback to display selected filename in automator playbook parameters (creator mode)'''
+@callback(
+    Output({"type": "attack-technique-config-filename-display-creator", "param": MATCH, "step": MATCH}, "children"),
+    Input({"type": "attack-technique-config-creator", "technique": ALL, "param": MATCH, "step": MATCH}, "contents"),
+    State({"type": "attack-technique-config-creator", "technique": ALL, "param": MATCH, "step": MATCH}, "filename"),
+    prevent_initial_call=False
+)
+def display_uploaded_file_names_automator_creator(contents, filename):
+    if not contents:
+        return "No file(s) selected"
     
-    if not params:
-        return html.P("No parameters required", className="text-muted")
-    
-    param_inputs = []
-    for param_name, param_config in params.items():
-        required = param_config.get("required", False)
-        label_text = f"{param_config['name']} {'*' if required else ''}"
-        
-        input_type = param_config.get("input_field_type", "text")
-        
-        # Create the appropriate input element
-        if input_type == "bool":
-            input_elem = daq.BooleanSwitch(
-                id={"type": "param-input", "param": param_name},
-                on=param_config.get("default", False)
-            )
+    if filename:
+        # filename from dcc.Upload is always a list like ['file.txt']
+        if isinstance(filename, list):
+            # Filter out None/empty values and extract just the filenames
+            valid_files = [str(f) for f in filename if f]
+            if valid_files:
+                return f"Selected: {', '.join(valid_files)}"
+            return "No file(s) selected"
         else:
-            # Add any input validation based on technique requirements
-            input_props = {
-                "type": input_type,
-                "id": {"type": "param-input", "param": param_name},
-                "placeholder": param_config.get("default", ""),
-                "className": "bg-halberd-dark text-light",
-                "required": required
-            }
-            
-            # Add any additional validation attributes
-            if input_type == "number":
-                input_props.update({
-                    "min": param_config.get("min", None),
-                    "max": param_config.get("max", None),
-                    "step": param_config.get("step", None)
-                })
-            
-            input_elem = dbc.Input(**input_props)
-        
-        # Add description or help text if available
-        help_text = None
-        if param_config.get("description"):
-            help_text = html.Small(
-                param_config["description"],
-                className="text-muted d-block mt-1"
-            )
-        
-        param_inputs.append(
-            dbc.Row([
-                dbc.Col([
-                    dbc.Label(label_text),
-                    input_elem,
-                    help_text
-                ])
-            ], className="mb-3")
-        )
+            # Single string (unlikely with dcc.Upload)
+            return f"Selected: {str(filename)}"
+    else:
+        return "No file(s) selected"
+
+'''Callback to display selected filename in automator playbook parameters (editor mode)'''
+@callback(
+    Output({"type": "attack-technique-config-filename-display-editor", "param": MATCH, "step": MATCH}, "children"),
+    Input({"type": "attack-technique-config-editor", "technique": ALL, "param": MATCH, "step": MATCH}, "contents"),
+    State({"type": "attack-technique-config-editor", "technique": ALL, "param": MATCH, "step": MATCH}, "filename"),
+    prevent_initial_call=False
+)
+def display_uploaded_file_names_automator_editor(contents, filename):
+    if not contents:
+        return "No file(s) selected"
     
-    return param_inputs
+    if filename:
+        # filename from dcc.Upload is always a list like ['file.txt']
+        if isinstance(filename, list):
+            # Filter out None/empty values and extract just the filenames
+            valid_files = [str(f) for f in filename if f]
+            if valid_files:
+                return f"Selected: {', '.join(valid_files)}"
+            return "No file(s) selected"
+        else:
+            # Single string (unlikely with dcc.Upload)
+            return f"Selected: {str(filename)}"
+    else:
+        return "No file(s) selected"
 
 '''[Playbook Creator] Callback to add a new step in playbook'''
 @callback(
     Output("playbook-steps-container", "children"),
     Input("add-playbook-step-button", "n_clicks"),
     State("playbook-steps-container", "children"),
+    State({"type": "step-module-dropdown", "index": ALL}, "value"),
+    State({"type": "step-wait-input", "index": ALL}, "value"),
+    State({"type": "attack-technique-config-creator", "step": ALL, "technique": ALL, "param": ALL}, "value"),
+    State({"type": "attack-technique-config-creator", "step": ALL, "technique": ALL, "param": ALL}, "id"),
     prevent_initial_call=True
 )
-def add_playbook_step(n_clicks, current_steps):
+def add_playbook_step(n_clicks, current_steps, module_values, wait_values, param_values, param_ids):
     """Add a new step form to the playbook creator"""
-    if n_clicks:
-        new_step_number = len(current_steps) + 1
-        return current_steps + [generate_step_form(new_step_number)]
-    return current_steps
+    # Only act when the add button was clicked
+    if not n_clicks:
+        raise PreventUpdate
+
+    # current_steps may contain falsy entries (e.g., None) if some
+    # children were conditionally omitted. Filter them out.
+    if not current_steps:
+        current_count = 0
+    else:
+        # Filter out any falsy children (None) that can appear when
+        # a step's remove-button is conditionally omitted.
+        current_count = sum(1 for s in current_steps if s)
+
+    new_step_number = current_count + 1
+
+    # Build a map of parameter values by step number
+    params_by_step = {}
+    if param_ids and param_values:
+        for idx, param_id in enumerate(param_ids):
+            step_num = param_id.get("step")
+            param_name = param_id.get("param")
+            if step_num and param_name:
+                if step_num not in params_by_step:
+                    params_by_step[step_num] = {}
+                params_by_step[step_num][param_name] = param_values[idx] if idx < len(param_values) else None
+
+    # Recreate the step forms with existing data to ensure numbering and IDs remain consistent
+    remaining_steps = []
+    for i in range(current_count):
+        # Get existing values from the pattern-matched States
+        existing_module = module_values[i] if i < len(module_values) else None
+        existing_wait = wait_values[i] if i < len(wait_values) else None
+        
+        # Get existing parameter values for this step (old step number is i+1)
+        old_step_num = i + 1
+        existing_param_values = params_by_step.get(old_step_num, {})
+        
+        # Regenerate params with correct step index if module is selected
+        if existing_module:
+            existing_params = generate_attack_technique_config(
+                existing_module, 
+                mode="automator", 
+                existing_values=existing_param_values,  # Pass existing values
+                step_index=i + 1,  # Use the NEW step number
+                id_type="creator"
+            )
+        else:
+            existing_params = None
+        
+        # Regenerate with new index (1-based) but existing values
+        step_form = generate_step_form(
+            i + 1, 
+            remove_btn=True,
+            existing_module=existing_module,
+            existing_wait=existing_wait,
+            existing_params_children=existing_params
+        )
+        remaining_steps.append(step_form)
+    
+    # Add the new empty step at the end
+    new_step = generate_step_form(new_step_number, remove_btn=True)
+    remaining_steps.append(new_step)
+
+    return remaining_steps
 
 '''[Playbook Creator] Callback to remove a step from playbook'''
 @callback(
     Output("playbook-steps-container", "children", allow_duplicate=True),
     Input({"type": "remove-step-button", "index": ALL}, "n_clicks"),
     State("playbook-steps-container", "children"),
+    State({"type": "step-module-dropdown", "index": ALL}, "value"),
+    State({"type": "step-wait-input", "index": ALL}, "value"),
+    State({"type": "attack-technique-config-creator", "step": ALL, "technique": ALL, "param": ALL}, "value"),
+    State({"type": "attack-technique-config-creator", "step": ALL, "technique": ALL, "param": ALL}, "id"),
     prevent_initial_call=True
 )
-def remove_playbook_step(n_clicks, current_steps):
+def remove_playbook_step(n_clicks, current_steps, module_values, wait_values, param_values, param_ids):
     """Remove a step from the playbook creator"""
     if not any(n_clicks):
         raise PreventUpdate
@@ -1472,11 +1589,73 @@ def remove_playbook_step(n_clicks, current_steps):
     button_id = json.loads(ctx.triggered[0]["prop_id"].rsplit(".")[0])
     step_to_remove = button_id["index"]
 
-    # Remove the step and renumber remaining steps
-    remaining_steps = [step for step in current_steps if int(step["props"]["children"][0]["props"]["children"][0]["props"]["children"][0]["props"]["children"][0]["props"]["children"].split()[-1]) != step_to_remove]
-    renumbered_steps = [generate_step_form(i+1) for i in range(len(remaining_steps))]
+    # Remove the step by index and renumber remaining steps
+    # step_to_remove can be int or str depending on JSON decoding; normalize to int
+    try:
+        step_index = int(step_to_remove) - 1
+    except Exception:
+        raise PreventUpdate
+
+    # Validate index and current_steps
+    if not current_steps or step_index < 0 or step_index >= len(current_steps):
+        raise PreventUpdate
+
+    # Filter out falsy entries
+    valid_steps_count = sum(1 for s in current_steps if s)
     
-    return renumbered_steps
+    # Build a map of parameter values by step number
+    params_by_step = {}
+    if param_ids and param_values:
+        for idx, param_id in enumerate(param_ids):
+            step_num = param_id.get("step")
+            param_name = param_id.get("param")
+            if step_num and param_name:
+                if step_num not in params_by_step:
+                    params_by_step[step_num] = {}
+                params_by_step[step_num][param_name] = param_values[idx] if idx < len(param_values) else None
+    
+    # Build list of remaining step indices and their values
+    remaining_steps = []
+    new_step_num = 1
+    
+    for i in range(valid_steps_count):
+        if i != step_index:
+            # Get existing values from the pattern-matched States
+            existing_module = module_values[i] if i < len(module_values) else None
+            existing_wait = wait_values[i] if i < len(wait_values) else None
+            
+            # Get existing parameter values for this step (old step number is i+1)
+            old_step_num = i + 1
+            existing_param_values = params_by_step.get(old_step_num, {})
+            
+            # Regenerate params with correct step index if module is selected
+            if existing_module:
+                existing_params = generate_attack_technique_config(
+                    existing_module, 
+                    mode="automator", 
+                    existing_values=existing_param_values,  # Pass existing values
+                    step_index=new_step_num,  # Use the NEW step number
+                    id_type="creator"
+                )
+            else:
+                existing_params = None
+            
+            # Determine if remove button should be shown
+            # (will be true for all steps since we'll have at least 1 after removal)
+            show_remove_btn = (valid_steps_count - 1) > 1
+            
+            # Regenerate with new sequential index but existing values
+            step_form = generate_step_form(
+                new_step_num, 
+                remove_btn=show_remove_btn,
+                existing_module=existing_module,
+                existing_wait=existing_wait,
+                existing_params_children=existing_params
+            )
+            remaining_steps.append(step_form)
+            new_step_num += 1
+
+    return remaining_steps
 
 '''[Playbook Creator] Callback to create a new playbook from offcanvas configuration'''
 @callback(
@@ -1485,22 +1664,27 @@ def remove_playbook_step(n_clicks, current_steps):
     Output("app-error-display-modal", "is_open", allow_duplicate=True),
     Output("app-error-display-modal-body", "children", allow_duplicate=True),
     Output("automator-offcanvas", "is_open", allow_duplicate=True),
+    Output("automator-offcanvas", "children", allow_duplicate=True),
     Output('playbook-list-container', 'children', allow_duplicate=True),
     Output("playbook-stats", "children", allow_duplicate=True),
     Input("create-playbook-offcanvas-button", "n_clicks"),
     [
-         State("pb-name-input-offcanvas", "value"),
+        State("pb-name-input-offcanvas", "value"),
         State("pb-desc-input-offcanvas", "value"),
         State("pb-author-input-offcanvas", "value"),
         State("pb-refs-input-offcanvas", "value"),
         State({"type": "step-module-dropdown", "index": ALL}, "value"),
         State({"type": "step-wait-input", "index": ALL}, "value"),
-        State({"type": "param-input", "param": ALL}, "value"),
-        State({"type": "param-input", "param": ALL}, "id")
+    # Pattern-match all technique-config inputs but include the 'step' key
+    # so we can group param values by step.
+    State({"type": "attack-technique-config-creator", "step": ALL, "technique": ALL, "param": ALL}, "value"),
+    State({"type": "attack-technique-config-creator", "step": ALL, "technique": ALL, "param": ALL}, "id"),
+    State({"type": "attack-technique-config-creator", "step": ALL, "technique": ALL, "param": ALL}, "contents"),
+    State({"type": "attack-technique-config-creator", "step": ALL, "technique": ALL, "param": ALL}, "filename")
     ],
     prevent_initial_call=True
 )
-def create_playbook_from_offcanvas(n_clicks, name, desc, author, refs, modules, waits, param_values, param_ids):
+def create_playbook_from_offcanvas(n_clicks, name, desc, author, refs, modules, waits, param_values, param_ids, file_contents, file_names):
     """Create a new playbook from the off-canvas form data"""
     if not n_clicks:
         raise PreventUpdate
@@ -1521,32 +1705,75 @@ def create_playbook_from_offcanvas(n_clicks, name, desc, author, refs, modules, 
             references=[refs] if refs else None
         )
         
-        # Group parameters by step
-        step_params = {}
-        for i, module in enumerate(modules):
-            if module:  # If module is selected
-                # Get technique parameters configuration
-                technique = TechniqueRegistry.get_technique(module)()
-                technique_params = technique.get_parameters()
-                
-                # Initialize params dict for this step
-                step_params[i] = {}
-                
-                # Match parameters with their values for this step's technique
-                for param_id, param_value in zip(param_ids, param_values):
-                    param_name = param_id['param']
-                    if param_name in technique_params:
-                        # Convert empty strings to None for optional parameters
-                        if param_value == "" and not technique_params[param_name].get('required', False):
-                            param_value = None
-                        step_params[i][param_name] = param_value
+        # Build a nested parameter map keyed by step number to avoid mixing
+        # parameters from different step forms. Each param_id contains a
+        # 'step' key (added when generating inputs) which we use to group values.
+        params_by_step = {}
+        if param_ids:
+            for idx, pid in enumerate(param_ids):
+                # pid is a dict like {"type":"attack-technique-config","step": X, "technique": T, "param": P}
+                step_key = pid.get('step')
+                try:
+                    step_key = int(step_key) if step_key is not None else None
+                except Exception:
+                    # keep as-is if not convertable
+                    pass
+
+                if step_key is None:
+                    # If we don't have step info, put under 1 to preserve backward compatibility
+                    step_key = 1
+
+                if step_key not in params_by_step:
+                    params_by_step[step_key] = { 'values': {}, 'files': {} }
+
+                # Grab corresponding entries from the parallel state lists
+                value = param_values[idx] if param_values and idx < len(param_values) else None
+                contents = file_contents[idx] if file_contents and idx < len(file_contents) else None
+                filename = file_names[idx] if file_names and idx < len(file_names) else None
+
+                param_name = pid.get('param')
+                if param_name:
+                    params_by_step[step_key]['values'][param_name] = value
+                    # If this input provided file contents, map it too
+                    if contents:
+                        params_by_step[step_key]['files'][param_name] = { 'contents': contents, 'filename': filename }
         
         # Add steps with their parameters
         for i, (module, wait) in enumerate(zip(modules, waits)):
             if module:  # Only add steps with selected modules
+                # Get technique parameters to validate and collect only this technique's params
+                technique = TechniqueRegistry.get_technique(module)()
+                technique_params = technique.get_parameters()
+                
+                # Build params dict for this step by checking which params belong to this technique
+                step_no = i + 1
+                step_params = {}
+                step_data = params_by_step.get(step_no, { 'values': {}, 'files': {} })
+                for param_name in technique_params:
+                    param_config = technique_params[param_name]
+
+                    # File upload parameter handling
+                    if param_config.get('input_field_type') == 'upload':
+                        if param_name in step_data['files']:
+                            step_params[param_name] = step_data['files'][param_name]['contents']
+                        elif param_config.get('required', False):
+                            raise ValueError(f"Required file parameter '{param_name}' not provided for module {module} (step {step_no})")
+                    else:
+                        if param_name in step_data['values']:
+                            param_value = step_data['values'][param_name]
+                            # Treat empty strings as missing values
+                            if param_value == "":
+                                if param_config.get('required', False):
+                                    raise ValueError(f"Required parameter '{param_name}' not provided for module {module} (step {step_no})")
+                                else:
+                                    param_value = None
+                            step_params[param_name] = param_value
+                        elif param_config.get('required', False):
+                            raise ValueError(f"Required parameter '{param_name}' not provided for module {module} (step {step_no})")
+                
                 new_step = PlaybookStep(
                     module=module,
-                    params=step_params.get(i, {}),  # Get parameters for this step
+                    params=step_params,
                     wait=int(wait) if wait else 0
                 )
                 new_playbook.add_step(new_step, i + 1)
@@ -1566,48 +1793,23 @@ def create_playbook_from_offcanvas(n_clicks, name, desc, author, refs, modules, 
         stats = get_playbook_stats()
         stats_text = (f"{stats['total_playbooks']} playbooks loaded • "f"Last sync: {stats['last_sync'].strftime('%I:%M %p') if stats['last_sync'] else 'never'}")
 
-        return True, f"New Playbook Created: {name}", False, "", False, playbook_items, stats_text
+        return True, f"New Playbook Created: {name}", False, "", False, [], playbook_items, stats_text
     
     except Exception as e:
-        return False, "", True, str(e), False, no_update, no_update
+        # On error: keep form open with user's data intact (no_update for children)
+        return False, "", True, str(e), no_update, no_update, no_update, no_update
     
 '''Playbook editor callbacks'''
-'''[Playbook Editor] Callback to open playbook editor off canvas'''
+'''[Playbook Editor] Callback to open playbook editor and load playbook data'''
 @callback(
     Output("playbook-editor-offcanvas", "is_open", allow_duplicate = True),
+    Output("playbook-editor-offcanvas", "children", allow_duplicate=True),
     Output(component_id="selected-playbook-data-editor-memory-store", component_property="data", allow_duplicate= True),
     Input({'type': 'edit-playbook-button', 'index': ALL}, 'n_clicks'),
     prevent_initial_call=True
 )
-def update_editable_playbook_view(n_clicks):
-    if not any(n_clicks):
-        raise PreventUpdate
-    
-    # Find which button was clicked
-    ctx = callback_context
-    if not ctx.triggered:
-        raise PreventUpdate
-    
-    # Extract playbook file name from context
-    button_id = ctx.triggered[0]['prop_id'].rsplit('.',1)[0]
-    selected_pb = eval(button_id)['index']
-
-    return True, selected_pb
-
-'''[Playbook Editor] Callback to load & display existing playbook information'''
-@callback(
-    [
-        Output("pb-name-input-editor", "value"),
-        Output("pb-desc-input-editor", "value"),
-        Output("pb-author-input-editor", "value"),
-        Output("pb-refs-input-editor", "value"),
-        Output("playbook-steps-editor-container", "children")
-    ],
-    Input({'type': 'edit-playbook-button', 'index': ALL}, 'n_clicks'),
-    prevent_initial_call=True
-)
-def load_playbook_data(n_clicks):
-    """Load existing playbook data into editor when opened"""
+def open_and_load_playbook_editor(n_clicks):
+    """Open editor offcanvas and load existing playbook data in a single callback"""
     if not n_clicks:
         raise PreventUpdate
     
@@ -1627,27 +1829,64 @@ def load_playbook_data(n_clicks):
         # Generate step forms with existing data
         steps = []
         for step_no, step_data in playbook.data['PB_Sequence'].items():
+            param_form = generate_attack_technique_config(
+                                step_data.get('Module'),
+                                mode="automator",
+                                existing_values=step_data.get('Params', {}),
+                                step_index=int(step_no),
+                                id_type="editor"
+                            )
+
             step_form = dbc.Card([
-                dbc.CardBody([
-                    # Step header
+                dbc.CardHeader([
                     dbc.Row([
                         dbc.Col([
-                            html.H5(f"Step {step_no}", className="mb-3 text-success")
+                            html.Div([
+                                html.I(
+                                    className="fas fa-layer-group me-2", 
+                                    style={
+                                        "color": "#dc3545", 
+                                        "fontSize": "1rem"
+                                    }
+                                ),
+                                html.Span(
+                                    f"Step {step_no}", 
+                                    className="halberd-brand",
+                                    style={
+                                        "fontSize": "1rem",
+                                        "fontWeight": "700",
+                                        "color": "#ffffff"
+                                    }
+                                )
+                            ], className="d-flex align-items-center")
                         ], width=10),
                         dbc.Col([
-                            html.Button(
-                                html.I(className="bi bi-trash"),
+                            dbc.Button(
+                                html.I(className="fas fa-trash-alt"),
                                 id={"type": "remove-step-editor-button", "index": step_no},
-                                className="btn btn-link text-danger",
-                                style={"float": "right"}
+                                color="link",
+                                className="text-danger p-0",
+                                title="Remove step"
                             ) if int(step_no) > 1 else None
-                        ], width=2)
-                    ]),
-                    
+                        ], width=2, className="text-end")
+                    ], className="align-items-center")
+                ], style={
+                    "background": "linear-gradient(135deg, rgba(220, 53, 69, 0.15) 0%, rgba(108, 117, 125, 0.15) 100%)",
+                    "borderBottom": "2px solid rgba(220, 53, 69, 0.3)",
+                    "borderRadius": "8px 8px 0 0"
+                }),
+                dbc.CardBody([
                     # Module selector
                     dbc.Row([
                         dbc.Col([
-                            dbc.Label("Module *"),
+                            dbc.Label(
+                                [
+                                    html.I(className="fas fa-cube me-2", style={"color": "#6c757d"}),
+                                    "Module *"
+                                ],
+                                className="halberd-text mb-2 d-block",
+                                style={"fontWeight": "600"}
+                            ),
                             dcc.Dropdown(
                                 id={"type": "step-module-dropdown-editor", "index": step_no},
                                 options=[
@@ -1655,47 +1894,154 @@ def load_playbook_data(n_clicks):
                                     for tid, technique in TechniqueRegistry.list_techniques().items()
                                 ],
                                 value=step_data.get('Module'),
-                                placeholder="Select module",
-                                className="bg-halberd-dark halberd-dropdown halberd-text"
+                                placeholder="Select technique module...",
+                                className="halberd-dropdown",
+                                style={
+                                    "background": "rgba(33, 37, 41, 0.8)",
+                                    "border": "2px solid rgba(108, 117, 125, 0.3)",
+                                    "borderRadius": "8px"
+                                }
                             )
                         ])
-                    ], className="mb-3"),
+                    ], className="mb-4"),
                     
-                    # Parameters container
-                    html.Div(
-                        # Create parameter inputs if module data available
-                        playbook_editor_create_parameter_inputs(
-                            step_data.get('Module'),
-                            step_data.get('Params', {})
-                        ) if step_data.get('Module') else [],
-                        id={"type": "step-params-container-editor", "index": step_no}
-                    ),
+                    # Parameters container with header
+                    html.Div([
+                        html.Div([
+                            html.I(className="fas fa-sliders-h me-2", style={"color": "#6c757d", "fontSize": "0.9rem"}),
+                            html.Span("Parameters", style={"fontSize": "0.9rem", "fontWeight": "600"})
+                        ], className="text-muted mb-3"),
+                        html.Div(
+                            # Create parameter inputs if module data available (use central helper)
+                            param_form if step_data.get('Module') else [],
+                            
+                            id={"type": "step-params-container-editor", "index": step_no},
+                            style={
+                                "minHeight": "50px",
+                                "padding": "10px",
+                                "backgroundColor": "rgba(33, 37, 41, 0.4)",
+                                "borderRadius": "8px",
+                                "border": "1px solid rgba(108, 117, 125, 0.2)"
+                            }
+                        )
+                    ], className="mb-4"),
 
                     # Wait time input
                     dbc.Row([
                         dbc.Col([
-                            dbc.Label("Wait (seconds)"),
+                            dbc.Label(
+                                [
+                                    html.I(className="fas fa-hourglass-end me-2", style={"color": "#6c757d"}),
+                                    "Wait After Step (seconds)"
+                                ],
+                                className="halberd-text mb-2 d-block",
+                                style={"fontWeight": "600"}
+                            ),
                             dbc.Input(
                                 type="number",
                                 id={"type": "step-wait-input-editor", "index": step_no},
                                 value=step_data.get('Wait', 0),
                                 placeholder="0",
                                 min=0,
-                                className="bg-halberd-dark halberd-text halberd-input"
+                                className="halberd-input",
+                                style={
+                                    "background": "rgba(33, 37, 41, 0.8)",
+                                    "border": "2px solid rgba(108, 117, 125, 0.3)",
+                                    "borderRadius": "8px",
+                                    "color": "#ffffff",
+                                    "padding": "12px 16px"
+                                }
                             )
-                        ])
-                    ], className="mb-3"),
-                ])
-            ], className="mb-3 halberd-depth-card")
+                        ], width=12)
+                    ], className="mb-0"),
+                ], style={
+                    "padding": "24px",
+                    "backgroundColor": "rgba(33, 37, 41, 0.5)"
+                })
+            ], className="mb-3 halberd-depth-card", style={
+                "border": "1px solid rgba(220, 53, 69, 0.2)",
+                "borderRadius": "12px"
+            })
             steps.append(step_form)
                 
-        return (
-            playbook.name,
-            playbook.description,
-            playbook.author,
-            ', '.join(playbook.references) if playbook.references else '',
-            steps
-        )
+        # Return complete editor form with all data populated
+        form_content = dbc.Form([
+            dbc.Row([
+                dbc.Col([
+                    dbc.Label("Playbook Name *", html_for="pb-name-input-editor"),
+                    dbc.Input(
+                        type="text",
+                        id="pb-name-input-editor",
+                        placeholder="Enter playbook name",
+                        value=playbook.name,
+                        className="bg-halberd-dark halberd-input halberd-text"
+                    )
+                ])
+            ], className="mb-3"),
+            
+            dbc.Row([
+                dbc.Col([
+                    dbc.Label("Description *", html_for="pb-desc-input-editor"),
+                    dbc.Textarea(
+                        id="pb-desc-input-editor",
+                        placeholder="Enter playbook description",
+                        value=playbook.description,
+                        className="bg-halberd-dark halberd-input halberd-text"
+                    )
+                ])
+            ], className="mb-3"),
+            
+            dbc.Row([
+                dbc.Col([
+                    dbc.Label("Author *", html_for="pb-author-input-editor"),
+                    dbc.Input(
+                        type="text",
+                        id="pb-author-input-editor",
+                        placeholder="Enter author name",
+                        value=playbook.author,
+                        className="bg-halberd-dark halberd-input halberd-text"
+                    )
+                ])
+            ], className="mb-3"),
+            
+            dbc.Row([
+                dbc.Col([
+                    dbc.Label("References", html_for="pb-refs-input-editor"),
+                    dbc.Input(
+                        type="text",
+                        id="pb-refs-input-editor",
+                        placeholder="Enter references (optional)",
+                        value=', '.join(playbook.references) if playbook.references else '',
+                        className="bg-halberd-dark halberd-input halberd-text"
+                    )
+                ])
+            ], className="mb-4"),
+
+            # Steps section
+            html.Div([
+                html.H4("Playbook Steps", className="mb-3 halberd-brand-heading"),
+                html.Div(steps, id="playbook-steps-editor-container"),
+                
+                # Add step button
+                dbc.Button(
+                    [html.I(className="bi bi-plus-lg me-2"), "Add Step"],
+                    id="add-playbook-step-editor-button",
+                    color="secondary",
+                    className="mt-3 mb-4"
+                ),
+            ]),
+
+            # Update playbook button
+            dbc.Button(
+                [html.I(className="bi bi-save me-2"), "Update Playbook"],
+                id="update-playbook-editor-button",
+                className="w-100 halberd-button"
+            )
+        ])
+        
+        # Return: is_open=True, form_content, selected_playbook_name
+        return True, form_content, selected_pb
+        
     except:
         raise PreventUpdate
 
@@ -1778,8 +2124,15 @@ def update_step_parameters_editor(module_id):
     """Update parameter fields when module selection changes"""
     if not module_id:
         return []
-    
-    return playbook_editor_create_parameter_inputs(module_id)
+    # Determine which editor step triggered this MATCH callback so we can
+    # include the step index in generated parameter IDs.
+    ctx = callback_context
+    if not ctx.triggered:
+        return []
+
+    triggered_id = json.loads(ctx.triggered[0]["prop_id"].rsplit('.', 1)[0])
+    step_index = triggered_id.get("index")
+    return generate_attack_technique_config(module_id, mode="automator", step_index=step_index, id_type="editor")
 
 @callback(
     Output("app-notification", "is_open", allow_duplicate=True),
@@ -1787,6 +2140,7 @@ def update_step_parameters_editor(module_id):
     Output("app-error-display-modal", "is_open", allow_duplicate=True),
     Output("app-error-display-modal-body", "children", allow_duplicate=True),
     Output("playbook-editor-offcanvas", "is_open", allow_duplicate = True),
+    Output("playbook-editor-offcanvas", "children", allow_duplicate=True),
     Input("update-playbook-editor-button", "n_clicks"),
     [
         State("pb-name-input-editor", "value"),
@@ -1795,13 +2149,15 @@ def update_step_parameters_editor(module_id):
         State("pb-refs-input-editor", "value"),
         State({"type": "step-module-dropdown-editor", "index": ALL}, "value"),
         State({"type": "step-wait-input-editor", "index": ALL}, "value"),
-        State({"type": "param-input-editor", "param": ALL}, "value"),
-        State({"type": "param-input-editor", "param": ALL}, "id"),
+    State({"type": "attack-technique-config-editor", "step": ALL, "technique": ALL, "param": ALL}, "value"),
+    State({"type": "attack-technique-config-editor", "step": ALL, "technique": ALL, "param": ALL}, "id"),
+    State({"type": "attack-technique-config-editor", "step": ALL, "technique": ALL, "param": ALL}, "contents"),
+    State({"type": "attack-technique-config-editor", "step": ALL, "technique": ALL, "param": ALL}, "filename"),
         State("selected-playbook-data-editor-memory-store", "data"),
     ],
     prevent_initial_call=True
 )
-def update_playbook_from_editor(n_clicks, name, desc, author, refs, modules, waits, param_values, param_ids, selected_playbook):
+def update_playbook_from_editor(n_clicks, name, desc, author, refs, modules, waits, param_values, param_ids, file_contents, file_names, selected_playbook):
     """Update existing playbook from editor data"""
     if not n_clicks:
         raise PreventUpdate
@@ -1818,20 +2174,67 @@ def update_playbook_from_editor(n_clicks, name, desc, author, refs, modules, wai
         # Clear existing sequence
         playbook.data['PB_Sequence'] = {}
         
-        # Group parameters by step
+        # Build a nested parameter map keyed by step number so editor parameters
+        # map correctly to their step. Each param_id should contain a 'step'
+        # key (added when generating inputs). If missing, fall back to step 1.
+        params_by_step = {}
+        if param_ids:
+            for idx, pid in enumerate(param_ids):
+                step_key = None
+                if isinstance(pid, dict):
+                    step_key = pid.get('step')
+                try:
+                    step_key = int(step_key) if step_key is not None else None
+                except Exception:
+                    pass
+
+                if step_key is None:
+                    step_key = 1
+
+                if step_key not in params_by_step:
+                    params_by_step[step_key] = { 'values': {}, 'files': {} }
+
+                value = param_values[idx] if param_values and idx < len(param_values) else None
+                contents = file_contents[idx] if file_contents and idx < len(file_contents) else None
+                filename = file_names[idx] if file_names and idx < len(file_names) else None
+
+                param_name = pid.get('param') if isinstance(pid, dict) else pid
+                if param_name:
+                    params_by_step[step_key]['values'][param_name] = value
+                    if contents:
+                        params_by_step[step_key]['files'][param_name] = { 'contents': contents, 'filename': filename }
+
+        # Now validate and assemble per-step params based on technique parameter definitions
         step_params = {}
         for i, module in enumerate(modules):
             if module:
                 technique = TechniqueRegistry.get_technique(module)()
                 technique_params = technique.get_parameters()
+                step_no = i + 1
                 step_params[i] = {}
-                
-                for param_id, param_value in zip(param_ids, param_values):
-                    param_name = param_id['param']
-                    if param_name in technique_params:
-                        if param_value == "" and not technique_params[param_name].get('required', False):
-                            param_value = None
-                        step_params[i][param_name] = param_value
+                step_data = params_by_step.get(step_no, { 'values': {}, 'files': {} })
+
+                for param_name in technique_params:
+                    param_config = technique_params[param_name]
+
+                    # File upload parameter handling
+                    if param_config.get('input_field_type') == 'upload':
+                        if param_name in step_data['files']:
+                            step_params[i][param_name] = step_data['files'][param_name]['contents']
+                        elif param_config.get('required', False):
+                            raise ValueError(f"Required file parameter '{param_name}' not provided for module {module} (step {step_no})")
+                    else:
+                        if param_name in step_data['values']:
+                            param_value = step_data['values'][param_name]
+                            # Treat empty strings as missing values
+                            if param_value == "":
+                                if param_config.get('required', False):
+                                    raise ValueError(f"Required parameter '{param_name}' not provided for module {module} (step {step_no})")
+                                else:
+                                    param_value = None
+                            step_params[i][param_name] = param_value
+                        elif param_config.get('required', False):
+                            raise ValueError(f"Required parameter '{param_name}' not provided for module {module} (step {step_no})")
         
         # Add updated steps
         for i, (module, wait) in enumerate(zip(modules, waits)):
@@ -1844,10 +2247,14 @@ def update_playbook_from_editor(n_clicks, name, desc, author, refs, modules, wai
         
         # Save updated playbook
         playbook.save()
-        return True, f"Playbook Updated: {name}", False, "", False
+        return True, f"Playbook Updated: {name}", False, "", False, []  # Clear children on success
         
     except Exception as e:
-        return False, "", True, str(e), False
+        print(f"ERROR in update_playbook_from_editor: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        # On error: keep form open with user's data intact (no_update for children)
+        return False, "", True, str(e), no_update, no_update
 
 '''[Playbook Editor] Callback to remove step from playbook and update the playbook steps'''
 @callback(
