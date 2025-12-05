@@ -1713,8 +1713,6 @@ def create_playbook_from_offcanvas(n_clicks, name, desc, author, refs, modules, 
                     # If this input provided file contents, map it too
                     if contents:
                         params_by_step[step_key]['files'][param_name] = { 'contents': contents, 'filename': filename }
-
-        print(f"DEBUG: params_by_step keys = {list(params_by_step.keys())}")
         
         # Add steps with their parameters
         for i, (module, wait) in enumerate(zip(modules, waits)):
@@ -1734,20 +1732,21 @@ def create_playbook_from_offcanvas(n_clicks, name, desc, author, refs, modules, 
                     if param_config.get('input_field_type') == 'upload':
                         if param_name in step_data['files']:
                             step_params[param_name] = step_data['files'][param_name]['contents']
-                            print(f"DEBUG: Added file upload for param '{param_name}' in step {step_no}")
                         elif param_config.get('required', False):
                             raise ValueError(f"Required file parameter '{param_name}' not provided for module {module} (step {step_no})")
                     else:
                         if param_name in step_data['values']:
                             param_value = step_data['values'][param_name]
-                            if param_value == "" and not param_config.get('required', False):
-                                param_value = None
+                            # Treat empty strings as missing values
+                            if param_value == "":
+                                if param_config.get('required', False):
+                                    raise ValueError(f"Required parameter '{param_name}' not provided for module {module} (step {step_no})")
+                                else:
+                                    param_value = None
                             step_params[param_name] = param_value
-                            print(f"DEBUG: Added {param_config.get('input_field_type')} parameter '{param_name}' = {param_value} for step {step_no}")
                         elif param_config.get('required', False):
                             raise ValueError(f"Required parameter '{param_name}' not provided for module {module} (step {step_no})")
                 
-                print(f"DEBUG: Step {i+1} params: {list(step_params.keys())}")
                 new_step = PlaybookStep(
                     module=module,
                     params=step_params,
@@ -2198,16 +2197,18 @@ def update_playbook_from_editor(n_clicks, name, desc, author, refs, modules, wai
                     if param_config.get('input_field_type') == 'upload':
                         if param_name in step_data['files']:
                             step_params[i][param_name] = step_data['files'][param_name]['contents']
-                            print(f"DEBUG: Added file upload for param '{param_name}' in step {step_no}")
                         elif param_config.get('required', False):
                             raise ValueError(f"Required file parameter '{param_name}' not provided for module {module} (step {step_no})")
                     else:
                         if param_name in step_data['values']:
                             param_value = step_data['values'][param_name]
-                            if param_value == "" and not param_config.get('required', False):
-                                param_value = None
+                            # Treat empty strings as missing values
+                            if param_value == "":
+                                if param_config.get('required', False):
+                                    raise ValueError(f"Required parameter '{param_name}' not provided for module {module} (step {step_no})")
+                                else:
+                                    param_value = None
                             step_params[i][param_name] = param_value
-                            print(f"DEBUG: Added {param_config.get('input_field_type')} parameter '{param_name}' = {param_value} for step {step_no}")
                         elif param_config.get('required', False):
                             raise ValueError(f"Required parameter '{param_name}' not provided for module {module} (step {step_no})")
         

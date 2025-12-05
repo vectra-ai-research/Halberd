@@ -1032,7 +1032,7 @@ def generate_attack_technique_config(technique, mode="attack", existing_values={
                             type = input_config['input_field_type'],
                             placeholder = f"Default: {input_config['default']}" if input_config['default'] else f"Enter {input_config['name'].lower()}...", 
                             debounce = True,
-                            id = ( {"type": "attack-technique-config", "technique": technique ,"param": input_field, "step": step_index, "canvas-type": id_type} if step_index is not None else {"type": "attack-technique-config", "technique": technique ,"param": input_field} ),
+                            id = ( {"type": f"attack-technique-config-{id_type}", "technique": technique ,"param": input_field, "step": step_index} if step_index is not None and id_type else {"type": "attack-technique-config", "technique": technique ,"param": input_field} ),
                             className="enhanced-param-input",
                             style={
                                 "background": "rgba(33, 37, 41, 0.8)",
@@ -1050,7 +1050,7 @@ def generate_attack_technique_config(technique, mode="attack", existing_values={
                     
                     # Select Dropdown
                     dbc.Select(
-                        id = ( {"type": "attack-technique-config", "technique": technique ,"param": input_field, "step": step_index, "canvas-type": id_type} if step_index is not None else {"type": "attack-technique-config", "technique": technique ,"param": input_field} ),
+                        id = ( {"type": f"attack-technique-config-{id_type}", "technique": technique ,"param": input_field, "step": step_index} if step_index is not None and id_type else {"type": "attack-technique-config", "technique": technique ,"param": input_field} ),
                         options=input_config["input_list"],
                         placeholder = f"Default: {input_config['default']}" if input_config['default'] else f"Select {input_config['name'].lower()}...",
                         className="enhanced-param-select",
@@ -1069,7 +1069,7 @@ def generate_attack_technique_config(technique, mode="attack", existing_values={
                     # Boolean Switch
                     html.Div([
                         daq.BooleanSwitch(
-                            id = ( {"type": "attack-technique-config", "technique": technique ,"param": input_field, "step": step_index, "canvas-type": id_type} if step_index is not None else {"type": "attack-technique-config", "technique": technique ,"param": input_field} ),
+                            id = ( {"type": f"attack-technique-config-{id_type}", "technique": technique ,"param": input_field, "step": step_index} if step_index is not None and id_type else {"type": "attack-technique-config", "technique": technique ,"param": input_field} ),
                             on=existing_values.get(input_field, input_config['default']),
                             color="#dc3545",
                             className="enhanced-boolean-switch",
@@ -1085,15 +1085,15 @@ def generate_attack_technique_config(technique, mode="attack", existing_values={
                     # File Upload
                     html.Div([
                         dcc.Upload(
-                            id = ( {"type": "attack-technique-config", "technique": technique ,"param": input_field, "step": step_index, "canvas-type": id_type} if step_index is not None else {"type": "attack-technique-config", "technique": technique ,"param": input_field} ),
+                            id = ( {"type": f"attack-technique-config-{id_type}", "technique": technique ,"param": input_field, "step": step_index} if step_index is not None and id_type else {"type": "attack-technique-config", "technique": technique ,"param": input_field} ),
                             children=html.Div([
                                 html.Div([
                                     html.I(className="fas fa-cloud-upload-alt", style={"fontSize": "2rem", "color": "#6c757d", "marginBottom": "8px"}),
                                     html.Small("Drag and drop or click to select files", className="text-muted"),
                                     html.Div(
                                         id=(
-                                            {"type": "attack-technique-config-filename-display", "param": input_field, "step": step_index, "canvas-type": id_type} 
-                                            if step_index is not None 
+                                            {"type": f"attack-technique-config-filename-display-{id_type}", "param": input_field, "step": step_index} 
+                                            if step_index is not None and id_type
                                             else {"type": "attack-technique-config-filename-display", "param": input_field}
                                         ), 
                                         style={"marginTop": "8px", "color": "#fff", "fontSize": "0.85rem"}
