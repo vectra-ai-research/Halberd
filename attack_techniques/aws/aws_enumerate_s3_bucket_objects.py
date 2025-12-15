@@ -36,16 +36,17 @@ class AWSEnumerateS3BucketObjects(BaseTechnique):
             # Enumerate S3 buckets
             raw_response = my_client.list_objects_v2(Bucket=bucket_name)
 
-            if 200 <= raw_response['ResponseMetadata']['HTTPStatusCode'] <300:
+            if 200 <= raw_response['ResponseMetadata']['HTTPStatusCode'] < 300:
                 # Create output
-                objects = [bucket['Key'] for bucket in raw_response['Contents']]
+                # FIX 1: Use .get('Contents', []) to handle empty buckets safely without crashing
+                objects = [bucket['Key'] for bucket in raw_response.get('Contents', [])]
                 
-                
-                if objects:
-                    return ExecutionStatus.SUCCESS, {
-                        "message": f"Successfully enumerated {len(objects)} S3 bucket objects" if objects else "No S3 bucket objects found",
-                        "value": objects
-                    }
+                # FIX 2: Removed 'if objects:' check.
+                # We want to return SUCCESS even if the list is empty, as long as the API call worked.
+                return ExecutionStatus.SUCCESS, {
+                    "message": f"Successfully enumerated {len(objects)} S3 bucket objects" if objects else "No S3 bucket objects found",
+                    "value": objects
+                }
 
             return ExecutionStatus.FAILURE, {
                 "error": raw_response.get('ResponseMetadata','N/A'),
