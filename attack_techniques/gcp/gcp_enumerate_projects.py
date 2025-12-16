@@ -31,23 +31,44 @@ class GCPEnumerateProjects(BaseTechnique):
         try:
             org_id: str = kwargs.get('organization_id')
             folder_id: str = kwargs.get('folder_id')
-            filter: str
-            project_list: list
+            filter_by_folder: str = None
+            filter_by_org: str = None
+            project_list = []
 
             if org_id:
-                filter = f"parent.type:organization parent.id:{org_id}"
-            elif folder_id:
-                filter = f"parent.type:folder parent.id:{folder_id}"
-            elif folder_id and org_id:
-                filter = f"parent.type:folder parent.id:{folder_id}"
-            else:
-                filter = None
+                filter_by_org = f"parent.type:organization parent.id:{org_id}"
+            if folder_id:
+                filter_by_folder = f"parent.type:folder parent.id:{folder_id}"
             manager = GCPAccess()
             manager.get_current_access()
             credential = manager.credential
             service = discovery.build('cloudresourcemanager', 'v1', credentials=credential)
-            service_request = service.projects().list(filter=filter) if filter else service.projects().list()
-            response = service_request.execute()
+            request_by_org = service.projects().list(filter=filter_by_org) if org_id else None
+            request_by_folder = service.projects().list(filter=filter_by_folder) if folder_id else None
+            
+            if org_id and folder_id:
+                response_by_folder = request_by_folder.execute()
+                response_by_org = request_by_org.execute()
+                # Combine projects from both responses without duplicates
+                projects = []
+                seen_project_ids = set()
+                
+                for resp in [response_by_org, response_by_folder]:
+                    if 'projects' in resp:
+                        for project in resp['projects']:
+                            project_id = project.get("projectId")
+                            if project_id not in seen_project_ids:
+                                projects.append(project)
+                                seen_project_ids.add(project_id)
+                
+                response = {'projects': projects}
+            elif org_id:
+                response = request_by_org.execute()
+            elif folder_id:
+                response = request_by_folder.execute()
+            else:
+                response = service.projects().list().execute()
+            
 
             if 'projects' in response:
                 project_list = []
@@ -71,11 +92,6 @@ class GCPEnumerateProjects(BaseTechnique):
                 
             }
 
-        # except google.api_core.exceptions.GoogleAPIError as e:
-        #     return ExecutionStatus.FAILURE, {
-        #         "error": {"GoogleAPIError": str(e)},
-        #         "message": {"GoogleAPIError": str(e)}
-        #     }
         except Exception as e:
             return ExecutionStatus.FAILURE, {
                 "error": str(e),
