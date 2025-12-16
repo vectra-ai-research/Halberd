@@ -5,7 +5,6 @@ from ..technique_registry import TechniqueRegistry
 from typing import Dict, Any, Tuple
 
 from core.gcp.gcp_access import GCPAccess
-# from google.cloud import resourcemanager_v3
 from googleapiclient import discovery
 
 @TechniqueRegistry.register
@@ -31,6 +30,13 @@ class GCPEnumerateProjects(BaseTechnique):
         try:
             org_id: str = kwargs.get('organization_id')
             folder_id: str = kwargs.get('folder_id')
+            
+            # Validate empty strings
+            if org_id and org_id.strip() == "":
+                org_id = None
+            if folder_id and folder_id.strip() == "":
+                folder_id = None
+            
             filter_by_folder: str = None
             filter_by_org: str = None
             project_list = []
