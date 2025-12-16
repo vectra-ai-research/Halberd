@@ -116,7 +116,7 @@ class GCPPersistenceViaSSHKeyAddition(BaseTechnique):
         ]
         
         super().__init__(
-            name="GCP Persistence via SSH Key Addition",
+            name="Add SSH Key to GCP Project Metadata",
             description="Adds an SSH key to GCP project metadata to maintain persistence",
             mitre_techniques=mitre_techniques,
             notes=technique_notes,
