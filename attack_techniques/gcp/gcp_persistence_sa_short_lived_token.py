@@ -1,7 +1,7 @@
 from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, TechniqueNote, TechniqueReference
 from ..technique_registry import TechniqueRegistry
 
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Optional
 
 from core.gcp.gcp_access import GCPAccess
 # from google.cloud import resourcemanager_v3
@@ -29,7 +29,18 @@ class GCPPersistenceGenerateSAShortLivedToken(BaseTechnique):
         self.validate_parameters(kwargs)
         try:
             service_account_email: str = kwargs.get('service_account_email')
-            scopes: list = kwargs.get('scopes', None)
+            scopes: Optional[str] = kwargs.get('scopes', None)
+            
+            # Validate service_account_email is not None or empty
+            if not service_account_email or service_account_email.strip() == "":
+                return ExecutionStatus.FAILURE, {
+                    "error": "service_account_email is required",
+                    "message": "Service account email must be provided"
+                }
+            
+            # Validate scopes - treat empty string as None
+            if scopes and isinstance(scopes, str) and scopes.strip() == "":
+                scopes = None
 
             if not scopes:
                 scopes = [
@@ -70,7 +81,7 @@ class GCPPersistenceGenerateSAShortLivedToken(BaseTechnique):
         return {
                 "service_account_email": {
                      "type": "str",
-                     "required": False,
+                     "required": True,
                      "default": None,
                      "name": "Service Account Email",
                      "input_field_type": "text",
