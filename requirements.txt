@@ -175,3 +175,4 @@ tiktoken==0.9.0
 pycountry==24.6.1
 google-api-python-client==2.118.0
 google-cloud-storage-control==1.6.0
+google-cloud-iam>=2.18.0
