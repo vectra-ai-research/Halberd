@@ -59,7 +59,7 @@ docker compose up -d
 Perfect for development or custom configurations.
 
 **Prerequisites:**
-- Python 3.8.x - 3.12.x
+- Python 3.8.x - 3.13.x
 
 **Steps:**
 
