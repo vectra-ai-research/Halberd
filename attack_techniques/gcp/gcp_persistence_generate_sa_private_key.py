@@ -28,8 +28,19 @@ class GCPPersistenceGenerateSAServiceAccountPrivateKey(BaseTechnique):
         self.validate_parameters(kwargs)
         try:
             service_account_email: str = kwargs.get('service_account_email')
+            
+            # Validate service_account_email is not None or empty
+            if not service_account_email or service_account_email.strip() == "":
+                return ExecutionStatus.FAILURE, {
+                    "error": "service_account_email is required",
+                    "message": "Service account email must be provided"
+                }
 
-            iam_admin_client = iam_admin_v1.IAMClient()
+            manager = GCPAccess()
+            manager.get_current_access()
+            credential = manager.credential
+
+            iam_admin_client = iam_admin_v1.IAMClient(credentials=credential)
             name = f"projects/-/serviceAccounts/{service_account_email}"
 
             response = iam_admin_client.create_service_account_key(
@@ -52,15 +63,15 @@ class GCPPersistenceGenerateSAServiceAccountPrivateKey(BaseTechnique):
 
         except Exception as e:
             return ExecutionStatus.FAILURE, {
-                "error": {"Exception" : str(e)},
-                "message": {"Exception" : str(e)}
+                "error": str(e),
+                "message": f"Failed to generate service account private key: {str(e)}"
             }
         
-    def  get_parameters(self) -> Dict[str, Dict[str, Any]]:
+    def get_parameters(self) -> Dict[str, Dict[str, Any]]:
         return {
             "service_account_email": {
                 "type": "str",
-                "required": False,
+                "required": True,
                 "default": None,
                 "name": "Service Account Email",
                 "input_field_type": "text",
