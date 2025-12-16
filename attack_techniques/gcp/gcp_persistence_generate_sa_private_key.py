@@ -2,6 +2,7 @@ from ..base_technique import BaseTechnique, ExecutionStatus, MitreTechnique, Tec
 from ..technique_registry import TechniqueRegistry
 
 from typing import Dict, Any, Tuple
+import json
 
 from core.gcp.gcp_access import GCPAccess
 from google.cloud import iam_admin_v1
@@ -51,10 +52,28 @@ class GCPPersistenceGenerateSAServiceAccountPrivateKey(BaseTechnique):
                 }
             )
 
-            key_info = {
-                "name": response.name,
-                "private_key_data": response.private_key_data.decode('utf-8')
-            }
+            try:
+                decoded_key_data = response.private_key_data.decode('utf-8')
+                parsed_key_data = json.loads(decoded_key_data)
+                
+                key_info = {
+                    "name": response.name,
+                    "type": parsed_key_data.get("type"),
+                    "project_id": parsed_key_data.get("project_id"),
+                    "private_key_id": parsed_key_data.get("private_key_id"),
+                    "private_key": parsed_key_data.get("private_key"),
+                    "client_email": parsed_key_data.get("client_email"),
+                    "client_id": parsed_key_data.get("client_id"),
+                    "auth_uri": parsed_key_data.get("auth_uri"),
+                    "token_uri": parsed_key_data.get("token_uri"),
+                    "auth_provider_x509_cert_url": parsed_key_data.get("auth_provider_x509_cert_url"),
+                    "client_x509_cert_url": parsed_key_data.get("client_x509_cert_url")
+                }
+            except json.JSONDecodeError as e:
+                return ExecutionStatus.FAILURE, {
+                    "error": f"Failed to parse private key data as JSON: {str(e)}",
+                    "message": "The generated private key data could not be parsed as valid JSON"
+                }
 
             return ExecutionStatus.SUCCESS, {
                 "message": "Service account private key generated successfully.",
