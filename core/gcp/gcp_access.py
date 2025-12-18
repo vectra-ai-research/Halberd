@@ -15,6 +15,7 @@ class GCPAccess():
     credential = None
     credential_type: str = None
     credential_name: str = None
+    credential_current: bool = False
 
     def __init__(self, token=None, raw_credentials=None, scopes=None, name=None):
         """Initialize GCPAccess directly with raw credential string and optional scopes"""
@@ -50,17 +51,18 @@ class GCPAccess():
                             loaded_credentials,
                             scopes=scopes
                         )
-                        self.credential.current = True
-                        self.credential.name = name
                         self.credential_type = "service_account_private_key"
                     elif self._is_user_account(loaded_credentials):
                         self.credential = UserAccountCredentials.from_authorized_user_info(
                             loaded_credentials,
                             scopes=scopes
                         )
-                        self.credential.current = True
-                        self.credential.name = name
-                        self.credential_type = "user_account"
+                        if loaded_credentials.get("revoke_uri") is None:
+                            self.credential_type = "adc"
+                        else:
+                            self.credential_type = "regular"
+                    self.credential_current = True
+                    self.credential_name = name
                 elif token is not None and raw_credentials is None:
                     _, token_info = self._get_token_info(token)
 
@@ -69,8 +71,8 @@ class GCPAccess():
                         token=token,
                         scopes=token_info["scope"].split(" ") if "scope" in token_info else ["https://www.googleapis.com/auth/cloud-platform"]
                     )
-                    self.credential.current = True
-                    self.credential.name = name
+                    self.credential_current = True
+                    self.credential_name = name
                     self.credential_type = "short_lived_token"
                 else:
                     raise ValueError("Invalid credential type. Must be Service Account or User Account.")
@@ -170,11 +172,14 @@ class GCPAccess():
         """Save credential"""
         try :
             self.set_deactivate_current_credentials()
+            credential_to_check = self.list_credentials()
+            if any(cred["name"] == self.credential_name for cred in credential_to_check):
+                raise ValueError("Credential name already exists")
             if self.credential == None:
                 raise ValueError("No credential to save")
-            if self.credential.name == None:
+            if self.credential_name == None:
                 raise ValueError("Credential name is required")
-            if self.credential.current == None:
+            if self.credential_current == None:
                 raise ValueError("Credential current is required")
             if os.path.exists(GCP_CREDS_FILE):
                 with open(GCP_CREDS_FILE,"r") as file:
@@ -186,21 +191,11 @@ class GCPAccess():
                         data =[]
             else :
                 data = []
-            # Prepare the credential dictionary to be saved
-            # Determine the credential type more reliably
-            if not hasattr(self, "encoded_credential") and isinstance(self.credential, ShortLivedTokenCredentials):
-                cred_type = "short_lived_token"
-            elif isinstance(self.credential, ServiceAccountCredentials):
-                cred_type = "service_account_private_key"
-            elif isinstance(self.credential, UserAccountCredentials):
-                cred_type = "user_account"
-            else:
-                cred_type = None
 
             credential_to_saved = {
-                "name": getattr(self.credential, "name", None),
-                "current": getattr(self.credential, "current", False),
-                "type": cred_type,
+                "name": getattr(self, "credential_name", None),
+                "current": getattr(self, "credential_current", False),
+                "type": getattr(self, "credential_type", None),
                 "credential": (
                     self.encoded_credential.decode('utf-8')
                     if hasattr(self, "encoded_credential")
@@ -212,15 +207,6 @@ class GCPAccess():
                 ),
             }
 
-            # if cred_type == "short_lived_token":
-            #     # Attempt to get expiration date from token info endpoint
-            #     try:
-            #         token_info = self._get_token_info(self.credential.token)
-            #         expires_in = token_info.get("expires_in")
-            #         expiration_date = (datetime.now() + timedelta(seconds=float(expires_in))).strftime("%Y-%m-%d %H:%M:%S")
-            #         credential_to_saved["expiration_date"] = expiration_date
-            #     except Exception:
-            #         credential_to_saved["expiration_date"] = None
 
             data.append(credential_to_saved)
             
@@ -262,6 +248,8 @@ class GCPAccess():
     def get_current_access(self):
         """Returns the current saved credentials"""
         credentials = self.list_credentials()
+        if not credentials:
+            return None
         for credential in credentials:
             if credential["current"] == True:
                 decoded_cred = base64.b64decode(credential["credential"]).decode("utf-8")
@@ -271,7 +259,7 @@ class GCPAccess():
                         cred_dict,
                         scopes=["https://www.googleapis.com/auth/cloud-platform"]
                     )
-                elif credential["type"] == "user_account":
+                elif credential["type"] in ["adc", "regular"]:
                     self.credential = UserAccountCredentials.from_authorized_user_info(
                         cred_dict,
                         scopes=["https://www.googleapis.com/auth/cloud-platform"]
@@ -285,8 +273,13 @@ class GCPAccess():
                     self.credential = cred_dict
                 self.credential_type = credential["type"]
                 self.credential_name = credential["name"]
-                return
-        raise ValueError("No current saved credential")
+                return {
+                    "name": credential["name"],
+                    "current": credential["current"],
+                    "credential": cred_dict,
+                    "type": credential["type"],
+                }
+        return None
         
     
     def set_deactivate_current_credentials(self):

@@ -9,6 +9,7 @@ from core.Constants import *
 import uuid
 import datetime
 import boto3
+import requests
 from typing import Optional, Dict, List, Tuple, Any
 
 tools = [
@@ -368,23 +369,24 @@ def execute_technique(t_id: str, technique_input: dict):
         except:
             active_entity = "Unknown"
 
-    # if attack_surface == "gcp":
-    #     try:
-    #         current_access = None
-    #         if t_id == "GCPEstablishAccessAsServiceAccount":
-    #             manager = GCPAccess(raw_credentials=file_content[0],name=values[0])
-    #             current_access = manager.get_current_access().get("name")
-    #             current_access = manager.get_detailed_credential(name=current_access)
-    #         else:
-    #             manager = GCPAccess()
-    #             current_access = manager.get_current_access()
-    #         if current_access["credential"]["type"] == "service_account":
-    #             active_entity = current_access["credential"]["client_email"]
-    #         if current_access["credential"]["type"] == "user_authorized":
-    #             active_entity = current_access["credential"]["client_id"]
-
-    #     except:
-    #         active_entity = "Unknown"
+    if attack_surface == "gcp":
+        try:
+            manager = GCPAccess()
+            current_access = manager.get_current_access()
+            if current_access["type"] == "service_account_private_key":
+                active_entity = current_access["credential"]["client_email"]
+            if current_access["type"] == "adc":
+                active_entity = current_access["credential"]["client_id"]
+            if current_access["type"] == "regular":
+                active_entity = current_access.get("credential", {}).get("client_email", current_access.get("credential", {}).get("client_id", "Unknown"))
+            if current_access["type"] == "short_lived_token":
+                url = "https://www.googleapis.com/oauth2/v1/tokeninfo"
+                params = {"access_token": current_access["credential"]["token"]}
+                response = requests.get(url, params=params)
+                token_info = response.json()
+                active_entity = token_info.get("email", "valid_service_account_token")
+        except:
+            active_entity = "Unknown"
 
     # Log technique execution start
     event_id = str(uuid.uuid4()) #Generate unique event_id for the execution
