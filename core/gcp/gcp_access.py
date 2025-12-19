@@ -1,6 +1,8 @@
 import base64
 from datetime import datetime, timedelta
 import os
+from dataclasses import dataclass
+from typing import Optional, Dict, Any
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from google.oauth2.credentials import Credentials as UserAccountCredentials
 from google.oauth2.credentials import Credentials as ShortLivedTokenCredentials
@@ -9,6 +11,14 @@ from google.auth.exceptions import RefreshError
 import json
 import requests
 from core.Constants import GCP_CREDS_FILE
+
+@dataclass
+class TokenInfoResponse:
+    """Structured response for token info requests"""
+    success: bool
+    data: Optional[Dict[str, Any]] = None
+    status_code: Optional[int] = None
+    error: Optional[str] = None
 
 class GCPAccess():
     """GCP access manager"""
@@ -64,12 +74,15 @@ class GCPAccess():
                     self.credential_current = True
                     self.credential_name = name
                 elif token is not None and raw_credentials is None:
-                    _, token_info = self._get_token_info(token)
+                    token_response = self._get_token_info(token)
+                    
+                    if not token_response.success:
+                        raise ValueError(f"Failed to validate token with Google tokeninfo endpoint: HTTP {token_response.status_code} - {token_response.error}")
 
                     # Initialize with short-lived token
                     self.credential = ShortLivedTokenCredentials(
                         token=token,
-                        scopes=token_info["scope"].split(" ") if "scope" in token_info else ["https://www.googleapis.com/auth/cloud-platform"]
+                        scopes=token_response.data["scope"].split(" ") if "scope" in token_response.data else ["https://www.googleapis.com/auth/cloud-platform"]
                     )
                     self.credential_current = True
                     self.credential_name = name
@@ -144,11 +157,11 @@ class GCPAccess():
                     return True, None
                 return False, None
             elif self.credential_type == "short_lived_token":
-                response_state, token_info = self._get_token_info(self.credential.token)
+                token_response = self._get_token_info(self.credential.token)
     
-                if response_state == True:
+                if token_response.success:
                     now = datetime.now()
-                    new_time = now + timedelta(seconds=float(token_info.get("expires_in", 0)))
+                    new_time = now + timedelta(seconds=float(token_response.data.get("expires_in", 0)))
                     readable_str = new_time.strftime("%Y-%m-%d %H:%M:%S")
                     return False, readable_str
                 else:
@@ -327,16 +340,34 @@ class GCPAccess():
         return credentials_data.get("type") == "authorized_user"
     
     @staticmethod
-    def _get_token_info(token: str):
+    def _get_token_info(token: str) -> 'TokenInfoResponse':
         """
         Get detailed information about a GCP OAuth2 token using Google's tokeninfo endpoint.
-        Returns the token info as a dictionary if valid, otherwise raises an exception.
+        Returns a TokenInfoResponse object containing success status, token data, and HTTP status code.
         """
-        response = requests.get(
-            "https://www.googleapis.com/oauth2/v1/tokeninfo",
-            params={"access_token": token}
-        )
-        if response.status_code == 200:
-            return True, response.json()
-        else:
-            return False, None
+        try:
+            response = requests.get(
+                "https://www.googleapis.com/oauth2/v1/tokeninfo",
+                params={"access_token": token},
+                timeout=5
+            )
+            if response.status_code == 200:
+                return TokenInfoResponse(
+                    success=True,
+                    data=response.json(),
+                    status_code=response.status_code
+                )
+            else:
+                return TokenInfoResponse(
+                    success=False,
+                    data=None,
+                    status_code=response.status_code,
+                    error=f"{response.json().get('error', 'Unknown error')}"
+                )
+        except Exception as e:
+            return TokenInfoResponse(
+                success=False,
+                data=None,
+                status_code=None,
+                error=str(e)
+            )

@@ -370,21 +370,24 @@ def execute_technique(t_id: str, technique_input: dict):
             active_entity = "Unknown"
 
     if attack_surface == "gcp":
-        try:
+        try:    
             manager = GCPAccess()
             current_access = manager.get_current_access()
             if current_access["type"] == "service_account_private_key":
                 active_entity = current_access["credential"]["client_email"]
-            if current_access["type"] == "adc":
+            elif current_access["type"] == "adc":
                 active_entity = current_access["credential"]["client_id"]
-            if current_access["type"] == "regular":
+            elif current_access["type"] == "regular":
                 active_entity = current_access.get("credential", {}).get("client_email", current_access.get("credential", {}).get("client_id", "Unknown"))
-            if current_access["type"] == "short_lived_token":
+            elif current_access["type"] == "short_lived_token":
                 url = "https://www.googleapis.com/oauth2/v1/tokeninfo"
                 params = {"access_token": current_access["credential"]["token"]}
-                response = requests.get(url, params=params)
-                token_info = response.json()
-                active_entity = token_info.get("email", "valid_service_account_token")
+                response = requests.get(url, params=params, timeout=5)
+                if response.status_code == 200:
+                    token_info = response.json()
+                    active_entity = token_info.get("email", "valid_service_account_token")
+                else:
+                    active_entity = "Unknown"
         except:
             active_entity = "Unknown"
 
