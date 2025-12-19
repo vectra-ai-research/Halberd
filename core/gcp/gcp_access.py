@@ -205,19 +205,26 @@ class GCPAccess():
             else :
                 data = []
 
+            # Prepare credential data for storage
+            if hasattr(self, "encoded_credential"):
+                credential_data = self.encoded_credential.decode('utf-8')
+            elif self.credential_type == "short_lived_token":
+                # For short-lived tokens, store token and scopes directly
+                token_data = {
+                    "token": self.credential.token,
+                    "scopes": list(self.credential.scopes) if self.credential.scopes else ["https://www.googleapis.com/auth/cloud-platform"]
+                }
+                credential_data = base64.b64encode(json.dumps(token_data).encode('utf-8')).decode('utf-8')
+            else:
+                # For other credential types, to_json() returns a string that needs wrapping
+                cred_json = self.credential.to_json() if hasattr(self.credential, "to_json") else {}
+                credential_data = base64.b64encode(json.dumps(cred_json).encode('utf-8')).decode('utf-8')
+
             credential_to_saved = {
                 "name": getattr(self, "credential_name", None),
                 "current": getattr(self, "credential_current", False),
                 "type": getattr(self, "credential_type", None),
-                "credential": (
-                    self.encoded_credential.decode('utf-8')
-                    if hasattr(self, "encoded_credential")
-                    else base64.b64encode(
-                        json.dumps(
-                            self.credential.to_json() if hasattr(self.credential, "to_json") else {}
-                        ).encode('utf-8')
-                    ).decode('utf-8')
-                ),
+                "credential": credential_data,
             }
 
 
@@ -278,9 +285,11 @@ class GCPAccess():
                         scopes=["https://www.googleapis.com/auth/cloud-platform"]
                     )
                 elif credential["type"] == "short_lived_token":
-                    cred_dict = json.loads(cred_dict)
-                    token = cred_dict.get("token") if isinstance(cred_dict, dict) else None
-                    scopes = cred_dict.get("scopes") if isinstance(cred_dict, dict) else ["https://www.googleapis.com/auth/cloud-platform"]
+                    # Handle double-wrapped JSON (to_json() returns string, then json.dumps wraps it again)
+                    if isinstance(cred_dict, str):
+                        cred_dict = json.loads(cred_dict)
+                    token = cred_dict.get("token")
+                    scopes = cred_dict.get("scopes", ["https://www.googleapis.com/auth/cloud-platform"])
                     self.credential = ShortLivedTokenCredentials(token=token, scopes=scopes)
                 else:
                     self.credential = cred_dict
