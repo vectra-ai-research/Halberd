@@ -1,6 +1,8 @@
 import base64
 from datetime import datetime, timedelta
 import os
+from dataclasses import dataclass
+from typing import Optional, Dict, Any
 from google.oauth2.service_account import Credentials as ServiceAccountCredentials
 from google.oauth2.credentials import Credentials as UserAccountCredentials
 from google.oauth2.credentials import Credentials as ShortLivedTokenCredentials
@@ -10,11 +12,20 @@ import json
 import requests
 from core.Constants import GCP_CREDS_FILE
 
+@dataclass
+class TokenInfoResponse:
+    """Structured response for token info requests"""
+    success: bool
+    data: Optional[Dict[str, Any]] = None
+    status_code: Optional[int] = None
+    error: Optional[str] = None
+
 class GCPAccess():
     """GCP access manager"""
     credential = None
     credential_type: str = None
     credential_name: str = None
+    credential_current: bool = False
 
     def __init__(self, token=None, raw_credentials=None, scopes=None, name=None):
         """Initialize GCPAccess directly with raw credential string and optional scopes"""
@@ -50,27 +61,31 @@ class GCPAccess():
                             loaded_credentials,
                             scopes=scopes
                         )
-                        self.credential.current = True
-                        self.credential.name = name
                         self.credential_type = "service_account_private_key"
                     elif self._is_user_account(loaded_credentials):
                         self.credential = UserAccountCredentials.from_authorized_user_info(
                             loaded_credentials,
                             scopes=scopes
                         )
-                        self.credential.current = True
-                        self.credential.name = name
-                        self.credential_type = "user_account"
+                        if loaded_credentials.get("revoke_uri") is None:
+                            self.credential_type = "adc"
+                        else:
+                            self.credential_type = "regular"
+                    self.credential_current = True
+                    self.credential_name = name
                 elif token is not None and raw_credentials is None:
-                    _, token_info = self._get_token_info(token)
+                    token_response = self._get_token_info(token)
+                    
+                    if not token_response.success:
+                        raise ValueError(f"Failed to validate token with Google tokeninfo endpoint: HTTP {token_response.status_code} - {token_response.error}")
 
                     # Initialize with short-lived token
                     self.credential = ShortLivedTokenCredentials(
                         token=token,
-                        scopes=token_info["scope"].split(" ") if "scope" in token_info else ["https://www.googleapis.com/auth/cloud-platform"]
+                        scopes=token_response.data["scope"].split(" ") if "scope" in token_response.data else ["https://www.googleapis.com/auth/cloud-platform"]
                     )
-                    self.credential.current = True
-                    self.credential.name = name
+                    self.credential_current = True
+                    self.credential_name = name
                     self.credential_type = "short_lived_token"
                 else:
                     raise ValueError("Invalid credential type. Must be Service Account or User Account.")
@@ -142,11 +157,11 @@ class GCPAccess():
                     return True, None
                 return False, None
             elif self.credential_type == "short_lived_token":
-                response_state, token_info = self._get_token_info(self.credential.token)
+                token_response = self._get_token_info(self.credential.token)
     
-                if response_state == True:
+                if token_response.success:
                     now = datetime.now()
-                    new_time = now + timedelta(seconds=float(token_info.get("expires_in", 0)))
+                    new_time = now + timedelta(seconds=float(token_response.data.get("expires_in", 0)))
                     readable_str = new_time.strftime("%Y-%m-%d %H:%M:%S")
                     return False, readable_str
                 else:
@@ -170,11 +185,14 @@ class GCPAccess():
         """Save credential"""
         try :
             self.set_deactivate_current_credentials()
+            credential_to_check = self.list_credentials()
+            if any(cred["name"] == self.credential_name for cred in credential_to_check):
+                raise ValueError("Credential name already exists")
             if self.credential == None:
                 raise ValueError("No credential to save")
-            if self.credential.name == None:
+            if self.credential_name == None:
                 raise ValueError("Credential name is required")
-            if self.credential.current == None:
+            if self.credential_current == None:
                 raise ValueError("Credential current is required")
             if os.path.exists(GCP_CREDS_FILE):
                 with open(GCP_CREDS_FILE,"r") as file:
@@ -186,41 +204,29 @@ class GCPAccess():
                         data =[]
             else :
                 data = []
-            # Prepare the credential dictionary to be saved
-            # Determine the credential type more reliably
-            if not hasattr(self, "encoded_credential") and isinstance(self.credential, ShortLivedTokenCredentials):
-                cred_type = "short_lived_token"
-            elif isinstance(self.credential, ServiceAccountCredentials):
-                cred_type = "service_account_private_key"
-            elif isinstance(self.credential, UserAccountCredentials):
-                cred_type = "user_account"
+
+            # Prepare credential data for storage
+            if hasattr(self, "encoded_credential"):
+                credential_data = self.encoded_credential.decode('utf-8')
+            elif self.credential_type == "short_lived_token":
+                # For short-lived tokens, store token and scopes directly
+                token_data = {
+                    "token": self.credential.token,
+                    "scopes": list(self.credential.scopes) if self.credential.scopes else ["https://www.googleapis.com/auth/cloud-platform"]
+                }
+                credential_data = base64.b64encode(json.dumps(token_data).encode('utf-8')).decode('utf-8')
             else:
-                cred_type = None
+                # For other credential types, to_json() returns a string that needs wrapping
+                cred_json = self.credential.to_json() if hasattr(self.credential, "to_json") else {}
+                credential_data = base64.b64encode(json.dumps(cred_json).encode('utf-8')).decode('utf-8')
 
             credential_to_saved = {
-                "name": getattr(self.credential, "name", None),
-                "current": getattr(self.credential, "current", False),
-                "type": cred_type,
-                "credential": (
-                    self.encoded_credential.decode('utf-8')
-                    if hasattr(self, "encoded_credential")
-                    else base64.b64encode(
-                        json.dumps(
-                            self.credential.to_json() if hasattr(self.credential, "to_json") else {}
-                        ).encode('utf-8')
-                    ).decode('utf-8')
-                ),
+                "name": getattr(self, "credential_name", None),
+                "current": getattr(self, "credential_current", False),
+                "type": getattr(self, "credential_type", None),
+                "credential": credential_data,
             }
 
-            # if cred_type == "short_lived_token":
-            #     # Attempt to get expiration date from token info endpoint
-            #     try:
-            #         token_info = self._get_token_info(self.credential.token)
-            #         expires_in = token_info.get("expires_in")
-            #         expiration_date = (datetime.now() + timedelta(seconds=float(expires_in))).strftime("%Y-%m-%d %H:%M:%S")
-            #         credential_to_saved["expiration_date"] = expiration_date
-            #     except Exception:
-            #         credential_to_saved["expiration_date"] = None
 
             data.append(credential_to_saved)
             
@@ -262,6 +268,8 @@ class GCPAccess():
     def get_current_access(self):
         """Returns the current saved credentials"""
         credentials = self.list_credentials()
+        if not credentials:
+            return None
         for credential in credentials:
             if credential["current"] == True:
                 decoded_cred = base64.b64decode(credential["credential"]).decode("utf-8")
@@ -271,22 +279,29 @@ class GCPAccess():
                         cred_dict,
                         scopes=["https://www.googleapis.com/auth/cloud-platform"]
                     )
-                elif credential["type"] == "user_account":
+                elif credential["type"] in ["adc", "regular"]:
                     self.credential = UserAccountCredentials.from_authorized_user_info(
                         cred_dict,
                         scopes=["https://www.googleapis.com/auth/cloud-platform"]
                     )
                 elif credential["type"] == "short_lived_token":
-                    cred_dict = json.loads(cred_dict)
-                    token = cred_dict.get("token") if isinstance(cred_dict, dict) else None
-                    scopes = cred_dict.get("scopes") if isinstance(cred_dict, dict) else ["https://www.googleapis.com/auth/cloud-platform"]
+                    # Handle double-wrapped JSON (to_json() returns string, then json.dumps wraps it again)
+                    if isinstance(cred_dict, str):
+                        cred_dict = json.loads(cred_dict)
+                    token = cred_dict.get("token")
+                    scopes = cred_dict.get("scopes", ["https://www.googleapis.com/auth/cloud-platform"])
                     self.credential = ShortLivedTokenCredentials(token=token, scopes=scopes)
                 else:
                     self.credential = cred_dict
                 self.credential_type = credential["type"]
                 self.credential_name = credential["name"]
-                return
-        raise ValueError("No current saved credential")
+                return {
+                    "name": credential["name"],
+                    "current": credential["current"],
+                    "credential": cred_dict,
+                    "type": credential["type"],
+                }
+        return None
         
     
     def set_deactivate_current_credentials(self):
@@ -334,16 +349,34 @@ class GCPAccess():
         return credentials_data.get("type") == "authorized_user"
     
     @staticmethod
-    def _get_token_info(token: str):
+    def _get_token_info(token: str) -> 'TokenInfoResponse':
         """
         Get detailed information about a GCP OAuth2 token using Google's tokeninfo endpoint.
-        Returns the token info as a dictionary if valid, otherwise raises an exception.
+        Returns a TokenInfoResponse object containing success status, token data, and HTTP status code.
         """
-        response = requests.get(
-            "https://www.googleapis.com/oauth2/v1/tokeninfo",
-            params={"access_token": token}
-        )
-        if response.status_code == 200:
-            return True, response.json()
-        else:
-            return False, None
+        try:
+            response = requests.get(
+                "https://www.googleapis.com/oauth2/v1/tokeninfo",
+                params={"access_token": token},
+                timeout=5
+            )
+            if response.status_code == 200:
+                return TokenInfoResponse(
+                    success=True,
+                    data=response.json(),
+                    status_code=response.status_code
+                )
+            else:
+                return TokenInfoResponse(
+                    success=False,
+                    data=None,
+                    status_code=response.status_code,
+                    error=f"{response.json().get('error', 'Unknown error')}"
+                )
+        except Exception as e:
+            return TokenInfoResponse(
+                success=False,
+                data=None,
+                status_code=None,
+                error=str(e)
+            )
