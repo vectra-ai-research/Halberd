@@ -6,13 +6,21 @@ import os
 import time
 import copy
 import uuid
+import boto3
+import requests
 from pathlib import Path
 from datetime import datetime
 from core.Constants import *
-from typing import List, Dict, Any, Optional, Union
+from typing import List, Dict, Any, Optional, Union, Tuple
 from core.playbook.playbook_error import PlaybookError
 from core.playbook.playbook_step import PlaybookStep
 from attack_techniques.technique_registry import TechniqueRegistry
+from core.logging.logger import app_logger, StructuredAppLog
+from core.output_manager.output_manager import OutputManager
+from core.entra.entra_token_manager import EntraTokenManager
+from core.aws.aws_session_manager import SessionManager
+from core.azure.azure_access import AzureAccess
+from core.gcp.gcp_access import GCPAccess
 
 class Playbook:
     """Creates, modifies, executes and manages Halberd playbook"""
@@ -265,9 +273,9 @@ class Playbook:
                 # Log execution start time
                 execution_start_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
                 
-                # Execute playbook step
-                execution_result = self._execute_step(step_number)
-                self.generate_report(module_tid = self.step(step_number).module, execution_start_time = execution_start_time, execution_result = execution_result, execution_folder_path = execution_folder_path)
+                # Execute playbook step (returns tuple of result and event_id)
+                execution_result, event_id = self._execute_step(step_number)
+                self.generate_report(module_tid=self.step(step_number).module, execution_start_time=execution_start_time, execution_result=execution_result, execution_folder_path=execution_folder_path, event_id=event_id)
             else:
                 raise ValueError(f"Step number {step_number} is out of range")
         else:
@@ -275,23 +283,23 @@ class Playbook:
             for step_no in range(1, self.steps + 1):
                 # Log execution start time
                 execution_start_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                # Execute playbook step
-                execution_result = self._execute_step(step_no)
+                # Execute playbook step (returns tuple of result and event_id)
+                execution_result, event_id = self._execute_step(step_no)
                 # Generate report
-                self.generate_report(module_tid = self.step(step_no).module, execution_start_time = execution_start_time, execution_result = execution_result, execution_folder_path = execution_folder_path)
+                self.generate_report(module_tid=self.step(step_no).module, execution_start_time=execution_start_time, execution_result=execution_result, execution_folder_path=execution_folder_path, event_id=event_id)
                 # Start wait to execute next step
                 time.sleep(self.step(step_no).wait if self.step(step_no).wait else 0)
 
             # Update playbook run status
             self._status = "Completed"
 
-    def _execute_step(self, step_number: int):
+    def _execute_step(self, step_number: int) -> Tuple[Any, str]:
         """
-        Execute a single step of the playbook.
+        Execute a single step of the playbook with logging and output storage.
         
         :param step_number: The step number to execute.
+        :return: Tuple of (execution_result, event_id)
         """
-
         step = self.step(step_number)
         print(f"Executing step {step_number}: {step.module}")
 
@@ -301,14 +309,169 @@ class Playbook:
         # Technique input
         step_input = step.params
 
-        # Execute technique
+        # Get technique category and tactic
+        attack_surface = TechniqueRegistry.get_technique_category(t_id)
         technique = TechniqueRegistry.get_technique(t_id)
+        technique_instance = technique()
+        
+        # Get tactic from technique's MITRE info
+        tactic = None
+        if technique_instance.mitre_techniques:
+            tactics = technique_instance.mitre_techniques[0].tactics
+            tactic = tactics[0] if tactics else None
 
-        output = technique().execute(**step_input)
+        # Get active entity for logging
+        active_entity = self._get_active_entity(attack_surface)
 
-        return output
+        # Generate unique event_id
+        event_id = str(uuid.uuid4())
+
+        # Log technique execution start
+        app_logger.info(StructuredAppLog("Technique Execution",
+            event_id=event_id,
+            source=active_entity,
+            status="started",
+            technique=t_id,
+            tactic=tactic,
+            playbook=self.name,
+            step_number=step_number,
+            timestamp=datetime.now().isoformat())
+        )
+
+        # Execute technique
+        output = technique_instance.execute(**step_input)
+
+        # Initialize output manager
+        output_manager = OutputManager()
+
+        # Check if technique output is in the expected tuple format (success, response)
+        if isinstance(output, tuple) and len(output) == 2:
+            result, response = output
+
+            if result.value == "success":
+                # Log technique execution success
+                app_logger.info(StructuredAppLog("Technique Execution",
+                    event_id=event_id,
+                    source=active_entity,
+                    status="completed",
+                    result="success",
+                    technique=t_id,
+                    target=None,
+                    tactic=tactic,
+                    playbook=self.name,
+                    step_number=step_number,
+                    timestamp=datetime.now().isoformat())
+                )
+
+                # Store output using OutputManager
+                output_manager.store_technique_output(
+                    data=response['value'], 
+                    technique_name=t_id, 
+                    event_id=event_id
+                )
+            else:
+                # Log technique execution failure
+                app_logger.info(StructuredAppLog("Technique Execution",
+                    event_id=event_id,
+                    source=active_entity,
+                    status="completed",
+                    result="failed",
+                    technique=t_id,
+                    target=None,
+                    tactic=tactic,
+                    playbook=self.name,
+                    step_number=step_number,
+                    timestamp=datetime.now().isoformat())
+                )
+
+                # Store error output using OutputManager
+                output_manager.store_technique_output(
+                    data=response.get('error', str(response)), 
+                    technique_name=t_id, 
+                    event_id=event_id
+                )
+        else:
+            # Log unexpected output format
+            app_logger.info(StructuredAppLog("Technique Execution",
+                event_id=event_id,
+                source=active_entity,
+                status="completed",
+                result="failed",
+                technique=t_id,
+                target=None,
+                tactic=tactic,
+                playbook=self.name,
+                step_number=step_number,
+                timestamp=datetime.now().isoformat())
+            )
+
+        return output, event_id
+
+    def _get_active_entity(self, attack_surface: str) -> str:
+        """
+        Determine the active authenticated entity based on the attack surface.
+        
+        :param attack_surface: The attack surface/category (entra_id, m365, aws, azure, gcp)
+        :return: The active entity identifier or "Unknown"
+        """
+        active_entity = "Unknown"
+
+        if attack_surface in ["m365", "entra_id"]:
+            try:
+                manager = EntraTokenManager()
+                access_token = manager.get_active_token()
+                
+                if access_token:
+                    access_info = manager.decode_jwt_token(access_token)
+                    if access_info:
+                        active_entity = access_info.get('Entity', 'Unknown')
+            except Exception:
+                active_entity = "Unknown"
+        
+        elif attack_surface == "aws":
+            try:
+                manager = SessionManager()
+                sts_client = boto3.client('sts')
+                session_info = sts_client.get_caller_identity()
+                active_entity = session_info.get('UserId', 'Unknown')
+            except Exception:
+                active_entity = "Unknown"
+
+        elif attack_surface == "azure":
+            try:
+                current_access = AzureAccess().get_current_subscription_info()
+                if current_access:
+                    active_entity = current_access.get('user', {}).get('name', 'Unknown')
+            except Exception:
+                active_entity = "Unknown"
+
+        elif attack_surface == "gcp":
+            try:
+                manager = GCPAccess()
+                current_access = manager.get_current_access()
+                if current_access:
+                    access_type = current_access.get("type")
+                    credential = current_access.get("credential", {})
+                    
+                    if access_type == "service_account_private_key":
+                        active_entity = credential.get("client_email", "Unknown")
+                    elif access_type == "adc":
+                        active_entity = credential.get("client_id", "Unknown")
+                    elif access_type == "regular":
+                        active_entity = credential.get("client_email", credential.get("client_id", "Unknown"))
+                    elif access_type == "short_lived_token":
+                        url = "https://www.googleapis.com/oauth2/v1/tokeninfo"
+                        params = {"access_token": credential.get("token")}
+                        response = requests.get(url, params=params, timeout=5)
+                        if response.status_code == 200:
+                            token_info = response.json()
+                            active_entity = token_info.get("email", "Unknown")
+            except Exception:
+                active_entity = "Unknown"
+
+        return active_entity
     
-    def generate_report(self, module_tid : str, execution_start_time, execution_result, execution_folder_path : str, save_output : Optional[bool] = True) -> None:
+    def generate_report(self, module_tid: str, execution_start_time, execution_result, execution_folder_path: str, event_id: str, save_output: Optional[bool] = True) -> None:
         """
         Generate report of playbook step execution.
         
@@ -316,6 +479,8 @@ class Playbook:
         :param execution_start_time: The start time of step execution.
         :param execution_result: The result of playbook step execution.
         :param execution_folder_path: The path of current playbook execution folder.
+        :param event_id: The unique event ID for this execution.
+        :param save_output: Whether to save the output to a file.
         """
         execution_report_file_path = os.path.join(execution_folder_path, "Report.csv")
         module_output_file = os.path.join(execution_folder_path, f"Result_{module_tid}.txt")
@@ -329,11 +494,11 @@ class Playbook:
         # Create summary report
         try:
             if result.value == "success":
-                self._playbook_create_csv_report(execution_report_file_path, execution_start_time, module_tid, "success")
+                self._playbook_create_csv_report(execution_report_file_path, execution_start_time, module_tid, "success", event_id)
             else:
-                self._playbook_create_csv_report(execution_report_file_path, execution_start_time, module_tid, "failed")
+                self._playbook_create_csv_report(execution_report_file_path, execution_start_time, module_tid, "failed", event_id)
         except:
-            self._playbook_create_csv_report(execution_report_file_path, execution_start_time, module_tid, "failed")
+            self._playbook_create_csv_report(execution_report_file_path, execution_start_time, module_tid, "failed", event_id)
 
         # Store responses
         if save_output:
@@ -342,31 +507,31 @@ class Playbook:
                 # write result data to the file
                 file.write(str(response))
 
-    def _playbook_create_csv_report(self, report_file_name, time_stamp, module, result):
+    def _playbook_create_csv_report(self, report_file_name, time_stamp, module, result, event_id):
         """
-        create and write to execution summary report in CSV format
+        Create and write to execution summary report in CSV format.
         
         :param report_file_name: Filename of the report to be generated.
         :param time_stamp: The start time of step execution.
         :param module: The module ID.
         :param result: The result of playbook step execution.
+        :param event_id: The unique event ID for this execution.
         """
-
-        # define headers
-        headers = ["Time_Stamp", "Module", "Result"]
+        # Define headers including event_id for traceability
+        headers = ["Time_Stamp", "Module", "Result", "Event_ID"]
 
         if Path(f"{AUTOMATOR_DIR}/{report_file_name}").exists():
             pass
         else:
-            # create new report file with headers
-            f = open(report_file_name,"a")
-            report_input = {"Time_Stamp":"Time_Stamp", "Module":"Module", "Result":"Result"}
-            write_log = csv.DictWriter(f, fieldnames= headers)
+            # Create new report file with headers
+            f = open(report_file_name, "a")
+            report_input = {"Time_Stamp": "Time_Stamp", "Module": "Module", "Result": "Result", "Event_ID": "Event_ID"}
+            write_log = csv.DictWriter(f, fieldnames=headers)
             write_log.writerow(report_input)
 
-        # write execution information to report
-        report_input = {"Time_Stamp": time_stamp, "Module": module, "Result": result}
-        write_log = csv.DictWriter(f, fieldnames= headers)
+        # Write execution information to report
+        report_input = {"Time_Stamp": time_stamp, "Module": module, "Result": result, "Event_ID": event_id}
+        write_log = csv.DictWriter(f, fieldnames=headers)
         write_log.writerow(report_input)
 
     def status(self) -> str:
