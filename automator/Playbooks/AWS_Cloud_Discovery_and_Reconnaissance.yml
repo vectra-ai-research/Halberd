@@ -1,0 +1,62 @@
+PB_Author: Halberd Team
+PB_Creation_Date: 01-08-2025
+PB_Description: This playbook emulates the reconnaissance phase an attacker performs
+  after gaining initial access to an AWS environment. It systematically discovers
+  identities, data stores, compute infrastructure, and security monitoring configurations.
+  All techniques are non-destructive read-only operations that demonstrate common
+  MITRE ATT&CK Discovery techniques used in cloud environments.
+PB_Name: AWS Cloud Discovery and Reconnaissance
+PB_References:
+- https://attack.mitre.org/tactics/TA0007/
+- https://docs.aws.amazon.com/IAM/latest/UserGuide/introduction.html
+- https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-security-groups.html
+PB_Sequence:
+  1:
+    Module: AWSEnumerateIAMUsers
+    Params:
+      path_prefix: null
+    Wait: 5
+  2:
+    Module: AWSEnumerateIAMRoles
+    Params:
+      path_prefix: null
+    Wait: 5
+  3:
+    Module: AWSReconAccountAuthorizationInfo
+    Params:
+      filter_aws_managed_policy: false
+      filter_group: false
+      filter_local_managed_policy: false
+      filter_role: false
+      filter_user: false
+    Wait: 10
+  4:
+    Module: AWSEnumerateS3Buckets
+    Params: {}
+    Wait: 5
+  5:
+    Module: AWSReconS3PublicBuckets
+    Params: {}
+    Wait: 10
+  6:
+    Module: AWSEnumerateEC2Instances
+    Params:
+      aws_region: null
+      dry_run: false
+      instance_id: null
+      max_results: null
+      state: null
+    Wait: 10
+  7:
+    Module: AWSReconEC2OverPermissiveSG
+    Params: {}
+    Wait: 10
+  8:
+    Module: AWSEnumerateCloudtrailTrails
+    Params: {}
+    Wait: 5
+  9:
+    Module: AWSEnumerateGuarddutyDetectors
+    Params: {}
+    Wait: 5
+

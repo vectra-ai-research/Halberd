@@ -221,6 +221,30 @@ Open your browser and navigate to `http://localhost:8050` (or your configured ho
 
 > 💡 **Pro Tip**: Start with enumeration techniques to understand your environment before attempting more advanced attacks.
 
+### 📋 Example Playbook
+
+Halberd comes with a ready-to-use example playbook that demonstrates how to chain multiple techniques into a comprehensive attack scenario.
+
+**AWS Cloud Discovery and Reconnaissance**
+
+This playbook emulates the reconnaissance phase an attacker performs after gaining initial access to an AWS environment. It systematically discovers identities, data stores, compute infrastructure, and security monitoring configurations.
+
+The playbook executes 9 non-destructive, read-only techniques:
+- Enumerate IAM users and roles
+- Gather account authorization information
+- List S3 buckets and identify publicly accessible ones
+- Discover EC2 instances
+- Identify overpermissive security groups
+- Enumerate CloudTrail trails and GuardDuty detectors
+
+**How to Use:**
+1. Ensure you have established AWS access
+2. Navigate to the **Automator** page in Halberd
+3. Load the playbook: `AWS Cloud Discovery and Reconnaissance`
+4. Click **Execute** to run the playbook
+
+> 💡 **Custom Playbooks**: You can create your own playbooks by defining sequences of techniques in YAML format or directly from the Halberd `Automator` UI. All playbooks are stored in the `automator/Playbooks/` directory.
+
 ---
 
 ## 🏗️ Architecture & Capabilities

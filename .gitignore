@@ -678,7 +678,10 @@ tests.py
 Techniques/TacticsMap.yml
 Techniques/TechniquesMap.yml
 automator/Outputs/
-automator/Playbooks/
+# Ignore all user playbooks by default
+automator/Playbooks/*
+# Include out-of-the-box example playbooks
+!automator/Playbooks/AWS_Cloud_Discovery_and_Reconnaissance.yml
 automator/Exports/
 automator/Schedules.yml
 .vscode/*
