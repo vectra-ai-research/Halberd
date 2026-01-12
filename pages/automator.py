@@ -52,7 +52,7 @@ def create_playbook_manager_layout():
                             className="me-2 halberd-button-secondary",
                             style={'width':'100%'}
                         ),
-                        md=4
+                        md=3
                     ),
                     dbc.Col(
                         # Import playbook button
@@ -74,7 +74,7 @@ def create_playbook_manager_layout():
                                 style={'width':'100%'}
                             ),
                         ),
-                        md=4
+                        md=3
                     ),
                     dbc.Col(
                         html.Div(
@@ -95,7 +95,31 @@ def create_playbook_manager_layout():
                             ),
                             id="view-progress-button-container"
                         ),
-                        md=4
+                        md=3
+                    ),
+                    dbc.Col(
+                        # History button - view past playbook executions
+                        html.A(
+                            dbc.Button(
+                                [
+                                    DashIconify(
+                                        icon="mdi:history",
+                                        width=20,
+                                        className="me-2"
+                                    ),
+                                    "History"
+                                ],
+                                id="automator-history-button",
+                                n_clicks=0,
+                                className="me-2 halberd-button-secondary",
+                                style={'width':'100%'}
+                            ),
+                            href="/automator-history",
+                            target="_blank",
+                            className="halberd-text",
+                            style={'width':'100%', 'textDecoration': 'none'}
+                        ),
+                        md=3
                     )
                 ],className="mb-3"),
                 # Search bar

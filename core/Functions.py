@@ -1956,10 +1956,185 @@ def parse_execution_report(execution_folder):
                     results.append({
                         'module': row.get('Module'),
                         'status': row.get('Result'),
-                        'timestamp': row.get('Time_Stamp')
+                        'timestamp': row.get('Time_Stamp'),
+                        'event_id': row.get('Event_ID', '')
                     })
     except Exception as e:
         print(f"Error parsing report: {str(e)}")
         return []
         
     return results
+
+def get_all_automator_executions():
+    """
+    Scan automator/Outputs/ directory and return list of all executions with metadata.
+    
+    Returns:
+        list: List of dictionaries containing execution metadata:
+            - folder_name: Name of the execution folder
+            - folder_path: Full path to the execution folder
+            - playbook_name: Name of the playbook (extracted from folder name)
+            - execution_time: Timestamp of execution (extracted from folder name)
+            - step_count: Number of steps executed
+            - success_count: Number of successful steps
+            - failed_count: Number of failed steps
+    """
+    executions = []
+    
+    if not os.path.exists(AUTOMATOR_OUTPUT_DIR):
+        return executions
+    
+    try:
+        # List all directories in automator outputs
+        for folder_name in os.listdir(AUTOMATOR_OUTPUT_DIR):
+            folder_path = os.path.join(AUTOMATOR_OUTPUT_DIR, folder_name)
+            
+            # Skip if not a directory
+            if not os.path.isdir(folder_path):
+                continue
+            
+            # Parse folder name to extract playbook name and timestamp
+            # Format: <playbook_name>_<YYYY-MM-DD>_<HH-MM-SS>
+            parts = folder_name.rsplit('_', 2)
+            if len(parts) >= 3:
+                playbook_name = parts[0]
+                execution_date = parts[1]
+                execution_time = parts[2]
+                execution_timestamp = f"{execution_date} {execution_time.replace('-', ':')}"
+            else:
+                playbook_name = folder_name
+                execution_timestamp = "Unknown"
+            
+            # Parse execution report for step counts
+            report_results = parse_execution_report(folder_path)
+            step_count = len(report_results)
+            success_count = sum(1 for r in report_results if r.get('status') == 'success')
+            failed_count = sum(1 for r in report_results if r.get('status') == 'failed')
+            
+            executions.append({
+                'folder_name': folder_name,
+                'folder_path': folder_path,
+                'playbook_name': playbook_name,
+                'execution_time': execution_timestamp,
+                'step_count': step_count,
+                'success_count': success_count,
+                'failed_count': failed_count
+            })
+    except Exception as e:
+        print(f"Error scanning automator executions: {str(e)}")
+        return []
+    
+    # Sort by execution time (newest first)
+    executions.sort(key=lambda x: x['execution_time'], reverse=True)
+    
+    return executions
+
+def generate_automator_execution_table():
+    """
+    Generate a DataTable component displaying all automator playbook executions.
+    
+    Returns:
+        html.Div: A Dash HTML component containing the execution history table
+    """
+    executions = get_all_automator_executions()
+    
+    # Create DataFrame for display
+    display_data = []
+    for execution in executions:
+        display_data.append({
+            'Playbook': execution['playbook_name'],
+            'Execution Time': execution['execution_time'],
+            'Steps': execution['step_count'],
+            'Success': execution['success_count'],
+            'Failed': execution['failed_count'],
+            'Folder': execution['folder_name']
+        })
+    
+    df = pd.DataFrame(display_data)
+    
+    # Handle empty dataframe
+    if df.empty:
+        return html.Div([
+            html.P("No playbook executions found.", className="text-muted text-center py-3")
+        ])
+    
+    return html.Div([
+        dash_table.DataTable(
+            id='automator-execution-table',
+            columns=[
+                {"name": i, "id": i} 
+                for i in df.columns if i != 'Folder'
+            ],
+            data=df.to_dict('records'),
+            style_table={
+                'overflowX': 'auto',
+                'backgroundColor': '#2F4F4F'
+            },
+            style_data={
+                'backgroundColor': '#1a1a1a',
+                'color': 'white',
+                'border': '1px solid #3a3a3a',
+                'height': '50px',
+                'lineHeight': '40px',
+                'whiteSpace': 'normal',
+                'minWidth': '100px',
+                'padding': '10px'
+            },
+            style_cell={
+                'textAlign': 'left',
+                'backgroundColor': '#1a1a1a',
+                'color': 'white',
+                'border': '1px solid #3a3a3a'
+            },
+            style_header={
+                'backgroundColor': '#2b2b2b',
+                'fontWeight': 'bold',
+                'border': '1px solid #3a3a3a'
+            },
+            style_data_conditional=[
+                {
+                    'if': {'row_index': 'odd'},
+                    'backgroundColor': '#202020',
+                },
+                {
+                    'if': {'state': 'selected'},
+                    'backgroundColor': '#363636',
+                    'border': '1px solid #3a3a3a',
+                },
+                {
+                    'if': {'state': 'active'},
+                    'backgroundColor': '#363636',
+                    'border': '1px solid #3a3a3a',
+                },
+                {
+                    'if': {
+                        'filter_query': '{Failed} > 0',
+                        'column_id': 'Failed'
+                    },
+                    'color': '#dc3545',
+                    'fontWeight': 'bold'
+                },
+                {
+                    'if': {
+                        'filter_query': '{Success} > 0',
+                        'column_id': 'Success'
+                    },
+                    'color': '#28a745',
+                    'fontWeight': 'bold'
+                }
+            ],
+            style_filter={
+                'backgroundColor': '#2b2b2b',
+                'color': 'white',
+            },
+            style_filter_conditional=[{
+                'if': {'column_id': c},
+                'backgroundColor': '#2b2b2b',
+                'color': 'white',
+            } for c in df.columns],
+            sort_action='native',
+            row_selectable='single',
+            filter_action='native',
+            page_size=5
+        ),
+    ], className="bg-halberd-dark halberd-text")
