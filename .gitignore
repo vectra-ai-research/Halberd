@@ -688,3 +688,7 @@ automator/Schedules.yml
 package-lock.json
 package.json
 commitlint.config.js
+
+# AI workflows
+CLAUDE.md
+.claude

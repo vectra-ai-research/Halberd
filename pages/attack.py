@@ -1090,12 +1090,15 @@ def update_access_button_callback(active_tab, is_open):
 @callback(
         Output("attack-access-info-display-modal", "is_open", allow_duplicate=True),
         Output("attack-access-info-display-modal-body", "children", allow_duplicate = True),
-        Input(component_id = "attack-access-info-dynamic-btn", component_property = "n_clicks"),
+        [
+            Input(component_id = "attack-access-info-dynamic-btn", component_property = "n_clicks"),
+            Input(component_id = "credential-dropdown-content", component_property = "n_clicks")
+        ],
         State(component_id = "attack-surface-tabs", component_property = "active_tab"),
         prevent_initial_call=True
 )
-def display_access_info_in_modal_callback(n_clicks, active_tab):
-    if n_clicks is None:
+def display_access_info_in_modal_callback(cred_manager_clicks, access_btn_clicks, active_tab):
+    if not cred_manager_clicks and not access_btn_clicks:
         raise PreventUpdate
     
     def create_access_section(dropdown_id, remove_button_id, info_div_id):
