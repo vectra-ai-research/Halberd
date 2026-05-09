@@ -1,7 +1,7 @@
 """Halberd version and metadata information"""
 
 # Version number format is: MAJOR.MINOR.PATCH 
-__version__ = "3.0.0"
+__version__ = "3.1.0"
 
 # Additional metadata
 __name__ = "Halberd : Multi-Cloud Agentic Attack Tool"

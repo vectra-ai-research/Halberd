@@ -9,9 +9,9 @@ class Msft_Token:
     def __init__(self, token_value: str):
         self.token_value = token_value
         self.decoded_token = self._decode_token()
-        self.target_tenant = self.decoded_token['tid']
-        self.entity_type = self.decoded_token['idtyp']
-        self.expiration = self._convert_expiration(self.decoded_token['exp'])
+        self.target_tenant = self.decoded_token.get('tid', 'Unknown')
+        self.entity_type = self.decoded_token.get('idtyp', 'user')  # Default to user if not specified
+        self.expiration = self._convert_expiration(self.decoded_token.get('exp', 0))
         self.authenticated_entity = self._get_authenticated_entity()
         self.scope = self._get_scope()
         self.access_type = "Delegated" if self.entity_type == "user" else "App-only"
@@ -28,24 +28,39 @@ class Msft_Token:
 
     @staticmethod
     def _convert_expiration(exp_epoch: int) -> str:
-        return datetime.datetime.fromtimestamp(exp_epoch, tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        try:
+            if exp_epoch == 0:
+                return "Unknown"
+            return datetime.datetime.fromtimestamp(exp_epoch, tz=datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        except (ValueError, OSError, OverflowError):
+            return "Invalid Date"
 
     def _get_authenticated_entity(self) -> str:
-        return self.decoded_token['upn'] if self.entity_type == "user" else self.decoded_token['app_displayname']
+        if self.entity_type == "user":
+            return self.decoded_token.get('upn', 'Unknown User')
+        else:
+            return self.decoded_token.get('app_displayname', 'Unknown App')
     
     def _get_app_name(self) -> str:
-        if 'app_displayname' in self.decoded_token.keys():
-            return self.decoded_token['app_displayname']
+        return self.decoded_token.get('app_displayname', 'Unknown App')
 
     def _get_scope(self) -> Union[str, list]:
         if self.entity_type == "user":
-            if isinstance(self.decoded_token['scp'], list):
-                return self.decoded_token['scp']
-            return self.decoded_token['scp'].split()
+            # Handle user tokens with 'scp' claim
+            if 'scp' in self.decoded_token:
+                if isinstance(self.decoded_token['scp'], list):
+                    return self.decoded_token['scp']
+                return self.decoded_token['scp'].split()
+            else:
+                return []  # No scopes available
         else:
-            if isinstance(self.decoded_token['roles'], list):
-                return self.decoded_token['roles']
-            return self.decoded_token['roles'].split()
+            # Handle app tokens with 'roles' claim
+            if 'roles' in self.decoded_token:
+                if isinstance(self.decoded_token['roles'], list):
+                    return self.decoded_token['roles']
+                return self.decoded_token['roles'].split()
+            else:
+                return []  # No roles available
     
     def _get_access_type(self) -> str:
         return "Delegated" if self.entity_type == "user" else "App-only"
