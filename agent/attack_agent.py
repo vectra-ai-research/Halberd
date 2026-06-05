@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import json
 import time
 import random
+import os
 
 load_dotenv()
 
@@ -63,6 +64,7 @@ tool_functions = {
 MAX_TOTAL_TOKENS = 200000  # Anthropic's total token limit 
 MAX_MODEL_TOKENS = 4096  # Claude-3-7-sonnet max tokens
 MAX_TOOL_RESPONSE_TOKENS = 15000  # Max size for tool responses
+DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
 
 # Rate limiting parameters
 RATE_LIMIT_TOKENS_PER_MIN = 20000  # Anthropic's rate limit (tokens per minute)
@@ -202,6 +204,10 @@ class AttackAgent:
         """Check if Anthropic client is ready to use"""
         return self.anthropic is not None
 
+    def get_anthropic_model(self):
+        """Get selected Anthropic model from environment."""
+        return os.environ.get("ANTHROPIC_MODEL", DEFAULT_ANTHROPIC_MODEL)
+
     def count_tokens_for_messages(self, messages, include_system=True):
         """
         Count tokens for a complete message array using Anthropic's native counting.
@@ -230,14 +236,14 @@ class AttackAgent:
             if include_system:
                 # Include system message in counting
                 count_result = self.anthropic.messages.count_tokens(
-                    model="claude-3-7-sonnet-20250219",
+                    model=self.get_anthropic_model(),
                     messages=messages_for_counting,
                     system=IDENTITY
                 )
             else:
                 # Count only conversation messages
                 count_result = self.anthropic.messages.count_tokens(
-                    model="claude-3-7-sonnet-20250219",
+                    model=self.get_anthropic_model(),
                     messages=messages_for_counting
                 )
             
@@ -268,7 +274,7 @@ class AttackAgent:
             
             # Count tokens without system message (since this is just content)
             count_result = self.anthropic.messages.count_tokens(
-                model="claude-3-7-sonnet-20250219",
+                model=self.get_anthropic_model(),
                 messages=messages
             )
             
@@ -386,7 +392,7 @@ class AttackAgent:
                 
                 # Make the API call
                 response = self.anthropic.messages.create(
-                    model="claude-3-7-sonnet-20250219",
+                    model=self.get_anthropic_model(),
                     system=[
                         {
                             "type": "text",

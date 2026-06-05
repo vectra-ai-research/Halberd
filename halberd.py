@@ -13,6 +13,12 @@ from core.entra.entra_token_manager import EntraTokenManager
 entra_token_manager = EntraTokenManager() # Initialize Entra token manager
 entra_token_manager._monitor_thread.start() #Start token refresh monitoring
 
+ANTHROPIC_MODEL_OPTIONS = [
+    {"label": "Claude Opus 4.6", "value": "claude-opus-4-6"},
+    {"label": "Claude Sonnet 4.6", "value": "claude-sonnet-4-6"},
+]
+DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6"
+
 # Create Halberd application
 app = dash.Dash(
     __name__,  
@@ -120,6 +126,14 @@ def generate_settings_offcanvas():
                             id="anthropic-api-key-input-editor",
                             placeholder="Enter API Key",
                             className="bg-halberd-dark halberd-input halberd-text mb-4"
+                        ),
+                        dbc.Label("Anthropic Model"),
+                        dcc.Dropdown(
+                            id="anthropic-model-input-editor",
+                            options=ANTHROPIC_MODEL_OPTIONS,
+                            value=os.environ.get("ANTHROPIC_MODEL", DEFAULT_ANTHROPIC_MODEL),
+                            clearable=False,
+                            className="mb-4"
                         ),
                         dbc.Fade(
                             id="anthropic-api-key-fade",
@@ -290,19 +304,21 @@ def toggle_pb_schedule_canvas_callback(n_clicks):
     Output(component_id = "anthropic-api-key-fade", component_property = "is_in", allow_duplicate=True), 
     Output(component_id = "anthropic-api-key-fade", component_property = "children", allow_duplicate=True),
     Output('anthropic-api-key-input-editor', 'value'),
+    Output('anthropic-model-input-editor', 'value'),
     Input('save-settings-button', 'n_clicks'),
     State('anthropic-api-key-input-editor', 'value'),
+    State('anthropic-model-input-editor', 'value'),
     prevent_initial_call=True
 )
-def save_api_key_to_env_dotenv(n_clicks, api_key_value):
+def save_api_key_to_env_dotenv(n_clicks, api_key_value, model_value):
     """
     Callback to save the Anthropic API key to .env file
     """
     if not n_clicks:
         raise PreventUpdate
-    
+
     if not api_key_value or api_key_value.strip() == "":
-        return True, html.Div("Please enter a valid API key", className="text-danger"), ""
+        return True, html.Div("Please enter a valid API key", className="text-danger"), "", model_value
     
     env_file_path = ".env"
     
@@ -314,8 +330,13 @@ def save_api_key_to_env_dotenv(n_clicks, api_key_value):
         
         # Set the API key in .env file
         set_key(env_file_path, "ANTHROPIC_API_KEY", api_key_value.strip())
+        set_key(env_file_path, "ANTHROPIC_MODEL", model_value)
+
+        # Apply updated settings immediately for the current process.
+        os.environ["ANTHROPIC_API_KEY"] = api_key_value.strip()
+        os.environ["ANTHROPIC_MODEL"] = model_value
         
-        return True, html.Div("API key saved successfully!", className="text-success"), ""
+        return True, html.Div("Settings saved successfully!", className="text-success"), "", model_value
     
     except Exception as e:
-        return True, html.Div(f"Error saving API key: {str(e)}", className="text-danger"), ""
+        return True, html.Div(f"Error saving settings: {str(e)}", className="text-danger"), api_key_value, model_value

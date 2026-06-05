@@ -316,6 +316,7 @@ Configure Halberd using environment variables:
 - `HALBERD_HOST`: Host address to bind the server (default: `127.0.0.1`)
 - `HALBERD_PORT`: Port number to run the server (default: `8050`)
 - `ANTHROPIC_API_KEY`: API key for Halberd Attack Agent (optional)
+- `ANTHROPIC_MODEL`: Anthropic model for Halberd Attack Agent (default: `claude-sonnet-4-6`)
 
 ### Docker Compose Configuration
 
