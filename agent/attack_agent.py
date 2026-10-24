@@ -5,6 +5,11 @@ import json
 import time
 import random
 
+from core.orcarouter import runtime
+from core.orcarouter.client import OrcaApiError
+from core.orcarouter.config import DEFAULT_MODEL
+from core.orcarouter.credentials import redact
+
 load_dotenv()
 
 IDENTITY = """You are Halberd Attack Agent, a helpful and knowledgeable AI assistant for Halberd Attack Tool. 
@@ -202,13 +207,62 @@ class AttackAgent:
         """Check if Anthropic client is ready to use"""
         return self.anthropic is not None
 
+    # ------------------------------------------------------------------
+    # Provider selection. The OrcaRouter path is additive: the Anthropic
+    # behaviour above is untouched when the Anthropic provider is selected.
+    # ------------------------------------------------------------------
+    @property
+    def provider_id(self):
+        return runtime.get_agent_settings().provider()
+
+    @property
+    def model_id(self):
+        if self.provider_id == "orcarouter":
+            return runtime.get_agent_settings().model() or DEFAULT_MODEL
+        return runtime.get_agent_settings().model()
+
+    @property
+    def orcarouter_client(self):
+        """Lazy OrcaRouter client; recreated when the stored key changes."""
+        credential = runtime.current_credential()
+        if credential is None:
+            self._orca_client = None
+            self._orca_key = None
+            return None
+        if getattr(self, "_orca_client", None) is None or self._orca_key != credential.api_key:
+            self._orca_client = runtime.client(credential.api_key)
+            self._orca_key = credential.api_key
+            self._orca_generation = credential.generation
+            self._orca_account = credential.account_id
+        return self._orca_client
+
+    def is_ready(self):
+        """True when the selected provider holds a usable credential."""
+        if self.provider_id == "orcarouter":
+            return self.orcarouter_client is not None
+        return self.is_anthropic_ready()
+
+    def provider_status(self):
+        """A short status string for the chat page."""
+        if self.provider_id != "orcarouter":
+            return {"provider": "anthropic", "ready": self.is_anthropic_ready(), "model": self.model_id}
+        credential = runtime.current_credential()
+        return {
+            "provider": "orcarouter",
+            "ready": credential is not None,
+            "model": self.model_id,
+            "needs_reauth": runtime.credential_store().needs_reauth(),
+            "masked": credential.masked if credential else "",
+        }
+
     def count_tokens_for_messages(self, messages, include_system=True):
         """
         Count tokens for a complete message array using Anthropic's native counting.
         This includes both conversation messages and system message if specified.
         """
-        if not self.is_anthropic_ready():
-            # Fallback estimation if client not ready
+        if self.provider_id != "anthropic" or not self.is_anthropic_ready():
+            # OrcaRouter does not expose Anthropic's native counter; use the
+            # project's existing character-based estimate.
             return self._estimate_tokens_fallback(messages, include_system)
         
         try:
@@ -252,7 +306,7 @@ class AttackAgent:
         Count tokens for arbitrary content by converting to message format.
         Used for tool responses, strings, etc.
         """
-        if not self.is_anthropic_ready():
+        if self.provider_id != "anthropic" or not self.is_anthropic_ready():
             # Fallback estimation
             if isinstance(content, str):
                 return len(content) // 4
@@ -331,6 +385,9 @@ class AttackAgent:
 
     def generate_message(self, messages, max_tokens):
         """Generate a message using Anthropic API. Implements rate limiting."""
+        if self.provider_id == "orcarouter":
+            return self._generate_orcarouter_message(messages, max_tokens)
+
         # Initialize rate limiter if it doesn't exist
         if not hasattr(self, 'rate_limiter'):
             self.rate_limiter = RateLimiter()
@@ -439,6 +496,89 @@ class AttackAgent:
                     # For non-rate-limit errors, don't retry
                     return {"error": error_str}
     
+    def _generate_orcarouter_message(self, messages, max_tokens):
+        """Generate a message through OrcaRouter (OpenAI-compatible chat route).
+
+        The provider returns an Anthropic-shaped response so the tool loop above
+        does not need a second implementation.
+        """
+        if not hasattr(self, 'rate_limiter'):
+            self.rate_limiter = RateLimiter()
+
+        client = self.orcarouter_client
+        if client is None:
+            return {
+                "error": "API Key Not Found: add an OrcaRouter API key or use "
+                "Connect with OrcaRouter in Halberd settings."
+            }
+
+        # The generation this request is made under; a late 401 must only ever
+        # mark this exact credential, never a credential replaced meanwhile.
+        request_generation = getattr(self, "_orca_generation", None)
+        request_account = getattr(self, "_orca_account", None)
+
+        total_tokens = self.count_tokens_for_messages(messages, include_system=True)
+        input_tokens = total_tokens
+        self.current_conversation_input_tokens += input_tokens
+        self.total_input_tokens += input_tokens
+
+        if total_tokens > MAX_TOTAL_TOKENS - max_tokens:
+            messages = self.truncate_messages_history(messages, MAX_TOTAL_TOKENS - max_tokens)
+            new_total_tokens = self.count_tokens_for_messages(messages, include_system=True)
+            token_reduction = total_tokens - new_total_tokens
+            self.current_conversation_input_tokens -= token_reduction
+            self.total_input_tokens -= token_reduction
+            total_tokens = new_total_tokens
+
+        estimated_output_tokens = int(max_tokens * 0.75)
+        required_delay = self.rate_limiter.get_required_delay(total_tokens, estimated_output_tokens)
+        if required_delay > 0:
+            time.sleep(required_delay)
+        else:
+            time_since_last_call = time.time() - self.last_api_call_time
+            if time_since_last_call < MIN_DELAY_BETWEEN_CALLS and self.last_api_call_time > 0:
+                time.sleep(MIN_DELAY_BETWEEN_CALLS - time_since_last_call)
+
+        self.last_api_call_time = time.time()
+
+        max_retries = 5
+        base_delay = 2
+        for attempt in range(max_retries):
+            try:
+                call_start_time = time.time()
+                response = client.chat(
+                    model=self.model_id,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    tools=tools,
+                    system=IDENTITY,
+                )
+                actual_output_tokens = self.count_tokens_in_response(response)
+                self.current_conversation_output_tokens += actual_output_tokens
+                self.total_output_tokens += actual_output_tokens
+                self.rate_limiter.record_usage(total_tokens, actual_output_tokens, call_start_time)
+                return response
+
+            except OrcaApiError as e:
+                if e.needs_reauth:
+                    # Terminal reauthentication: no refresh grant exists.
+                    if request_generation is not None:
+                        runtime.credential_store().mark_needs_reauth(request_account, request_generation)
+                    return {
+                        "error": "OrcaRouter rejected this API key (401). Reconnect with OrcaRouter "
+                        "or paste a new key in Halberd settings, then try again."
+                    }
+                if e.code == "rate_limited":
+                    if attempt == max_retries - 1:
+                        return {"error": f"OrcaRouter rate limit exceeded after {max_retries} attempts."}
+                    delay = base_delay * (2 ** attempt) + random.uniform(0, 1)
+                    print(f"OrcaRouter rate limit hit. Retrying in {delay:.2f} seconds (attempt {attempt+1}/{max_retries})...")
+                    time.sleep(delay)
+                    continue
+                return {"error": redact(e.message)}
+            except Exception as e:
+                return {"error": redact(str(e))}
+
     def process_user_input(self, user_input):
         """
         Process user input, manage tool calls, and maintain a valid conversation structure.

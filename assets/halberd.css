@@ -2417,3 +2417,13 @@
     --shadow-heavy: rgba(0, 0, 0, 0.6);
   }
 }
+/* OrcaRouter model selector: keep each catalog option on one line. */
+#agent-model-selector .Select-menu-outer {
+  min-width: 100%;
+}
+
+#agent-model-selector .VirtualizedSelectOption {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

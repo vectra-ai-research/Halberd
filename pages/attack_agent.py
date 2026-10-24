@@ -10,6 +10,8 @@ import json
 from datetime import datetime
 from typing import List, Dict, Any, Optional, Literal
 from agent.attack_agent import AttackAgent
+from core.orcarouter import runtime
+from core.orcarouter.selector import build_model_options
 
 # Register page to app       
 register_page(__name__, path='/attack-agent', name='Attack Agent')
@@ -433,11 +435,23 @@ default_welcome_display = [
 ]
 
 # Page layout
+def _attachment_modalities():
+    """Input modalities the pending chat attachments actually require."""
+    modalities = set()
+    for attachment in attachment_tracker.get_attachments():
+        if "image" in attachment.type:
+            modalities.add("image")
+        elif "pdf" in attachment.type:
+            modalities.add("document")
+    return sorted(modalities)
+
+
 layout = html.Div([
     dbc.Container([
         # dcc.Location to track URL changes
         dcc.Location(id="url-location", refresh=False),
         dcc.Store(id="current-page-path", data="/attack-agent"),  # Store current page
+        dcc.Store(id="attachment-modalities-store", data=[]),
         # Main chat interface
         dbc.Row([
             dbc.Col([
@@ -466,6 +480,27 @@ layout = html.Div([
                         typing_indicator,
                         # Display for uploaded files waiting to be sent
                         html.Div(id="upload-display", className="mb-2"),
+
+                        # Model selector: a live OrcaRouter catalog dropdown when
+                        # that provider is selected; hidden for Anthropic.
+                        dbc.Row([
+                            dbc.Col([
+                                html.Div([
+                                    DashIconify(icon="mdi:shield-half-full", width=16, className="me-2"),
+                                    html.Span("OrcaRouter Cyber Inference model", className="small halberd-text"),
+                                ]),
+                                dcc.Dropdown(
+                                    id="agent-model-selector",
+                                    options=[],
+                                    value=None,
+                                    clearable=False,
+                                    className="halberd-dropdown mt-1",
+                                ),
+                            ], width=8),
+                            dbc.Col([
+                                html.Div(id="agent-model-status", className="small halberd-text")
+                            ], width=4, className="d-flex align-items-end"),
+                        ], id="agent-model-row", className="mb-2", style={"display": "none"}),
 
                         dbc.Col([
                             dbc.Row(
@@ -523,6 +558,60 @@ style={
     "padding-left": "20px"
 })
 
+# Model selector: options always come from the live OrcaRouter catalog (or the
+# verified seed while the catalog is unreachable), filtered by the modalities the
+# pending attachments actually need. It is never a free-text field.
+@callback(
+    Output("agent-model-selector", "options"),
+    Output("agent-model-selector", "value"),
+    Output("agent-model-selector", "disabled"),
+    Output("agent-model-row", "style"),
+    Output("agent-model-status", "children"),
+    Input("agent-provider-store", "data"),
+    Input("attachment-modalities-store", "data"),
+    State("agent-model-selector", "value"),
+)
+def update_agent_model_options(provider_data, modalities, current_value):
+    provider = (provider_data or {}).get("provider") or runtime.get_agent_settings().provider()
+    if provider != "orcarouter":
+        return [], None, True, {"display": "none"}, ""
+
+    modalities = modalities or []
+    required = ("image",) if "image" in modalities else ()
+    result = runtime.model_catalog("chat", required)
+    state = build_model_options(provider, result, current_value, runtime.current_model(), modalities)
+
+    severity_class = {"warning": "text-warning", "success": "text-success", "muted": "text-muted"}
+    status = [html.Span(text, className=severity_class.get(severity, "")) for severity, text in state.notices]
+    return (
+        state.options,
+        state.value,
+        state.disabled,
+        {"display": "block"} if state.visible else {"display": "none"},
+        status,
+    )
+
+
+@callback(
+    Output("agent-model-status", "children", allow_duplicate=True),
+    Input("agent-model-selector", "value"),
+    State("agent-provider-store", "data"),
+    State("attachment-modalities-store", "data"),
+    prevent_initial_call=True,
+)
+def persist_agent_model(model_id, provider_data, modalities):
+    provider = (provider_data or {}).get("provider") or runtime.get_agent_settings().provider()
+    if provider != "orcarouter" or not model_id:
+        raise PreventUpdate
+    required = ("image",) if "image" in (modalities or []) else ()
+    result = runtime.model_catalog("chat", required)
+    try:
+        runtime.get_agent_settings().set_model(model_id, result.models)
+    except ValueError as exc:
+        return html.Span(str(exc), className="text-danger")
+    return dash.no_update
+
+
 # Callback to update the chat on button click or Enter key press
 @callback(
     Output("user-input", "value"),
@@ -530,6 +619,7 @@ style={
     Output("typing-indicator", "style"),
     Output("trigger-bot-response", "children"),
     Output("upload-display", "children", allow_duplicate=True),
+    Output("attachment-modalities-store", "data", allow_duplicate=True),
     Input("send-button", "n_clicks"),
     State("user-input", "value"),
     prevent_initial_call=True
@@ -575,7 +665,7 @@ def update_chat(n_clicks, user_message):
     chat_display = create_chat_display(chat_history_tracker.to_dict_list())
     
     # Show typing indicator, trigger bot response and clear the attachment store
-    return "", chat_display, {"display": "block"}, 1, []
+    return "", chat_display, {"display": "block"}, 1, [], []
 
 # Helper function to create chat display from history
 def create_chat_display(chat_history):
@@ -681,8 +771,8 @@ def generate_bot_response(response_trigger):
     # Add artificial delay (about 1.5 seconds) to simulate thinking
     time.sleep(1.5)
 
-    # Check if anthropic key is available to use API client
-    if chatbot_agent.is_anthropic_ready():
+    # Check if the selected provider holds a usable credential
+    if chatbot_agent.is_ready():
         try:
             # Get bot response using the ChatBot agent
             bot_response = chatbot_agent.process_user_input(user_prompt_tracker.get_prompts())
@@ -710,7 +800,14 @@ def generate_bot_response(response_trigger):
             # Hide typing indicator
             return chat_display, {"display": "none"}
     else:
-        chat_history_tracker.add_bot_message(message = "API Key Not Found : Add Anthropic API key to use Halberd Attack Agent", msg_type = "text")
+        if chatbot_agent.provider_id == "orcarouter":
+            missing_message = (
+                "API Key Not Found : Add an OrcaRouter API key or use Connect with OrcaRouter "
+                "in Halberd settings to use the Attack Agent"
+            )
+        else:
+            missing_message = "API Key Not Found : Add Anthropic API key to use Halberd Attack Agent"
+        chat_history_tracker.add_bot_message(message = missing_message, msg_type = "text")
             
         # Create chat display with error message
         chat_display = create_chat_display(chat_history_tracker.to_dict_list())
@@ -781,7 +878,8 @@ def reset_conversation(n_clicks):
 '''Callback to attach file to agent chat'''
 @callback(
     Output("upload-display", "children"),
-    Input(component_id = 'upload-to-agent-chat-button', component_property = 'n_clicks'), 
+    Output("attachment-modalities-store", "data"),
+    Input(component_id = 'upload-to-agent-chat-button', component_property = 'n_clicks'),
     Input(component_id = 'upload-to-agent-chat', component_property = 'contents'),
     Input(component_id = 'upload-to-agent-chat', component_property = 'filename'),
     prevent_initial_call=True
@@ -832,7 +930,7 @@ def upload_attachment_callback(n_clicks, ex_file_content, ex_file_name):
                 )
 
             # Return the div to display
-            return html.Div(file_display_items, className="halberd-text")
+            return html.Div(file_display_items, className="halberd-text"), _attachment_modalities()
         except Exception as e:
             raise PreventUpdate
     else:
@@ -841,7 +939,8 @@ def upload_attachment_callback(n_clicks, ex_file_content, ex_file_name):
 '''Callback to remove a file from agent chat'''
 @callback(
     Output("upload-display", "children", allow_duplicate=True),
-    Input({"type": "remove-chat-attachment-btn", "index": ALL}, "n_clicks"), 
+    Output("attachment-modalities-store", "data", allow_duplicate=True),
+    Input({"type": "remove-chat-attachment-btn", "index": ALL}, "n_clicks"),
     prevent_initial_call=True
 )
 def remove_attachment_callback(n_clicks):
@@ -878,8 +977,8 @@ def remove_attachment_callback(n_clicks):
                 ], className="file-preview-item enhanced-file-upload")
             )
         file_display = html.Div(file_display_items, className="halberd-text")
-        
-        return file_display
+
+        return file_display, _attachment_modalities()
     else:
         raise PreventUpdate
 
